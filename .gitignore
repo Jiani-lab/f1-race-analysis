@@ -13,3 +13,4 @@ wheels/
 .env
 backend/sessions/*
 !backend/sessions/.gitkeep
+backend/push_subscription.json

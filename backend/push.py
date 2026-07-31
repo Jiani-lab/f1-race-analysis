@@ -22,9 +22,14 @@ load_dotenv()
 
 STATE_PATH = Path(__file__).parent / "push_subscription.json"
 
-VAPID_PRIVATE_KEY_PEM = os.environ.get("VAPID_PRIVATE_KEY_PEM", "").replace("\\n", "\n")
 VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "")
 VAPID_PUBLIC_KEY_B64 = os.environ.get("VAPID_PUBLIC_KEY_B64", "")
+# Real bug found via a direct real-data test (not assumed): py_vapid's
+# Vapid.from_string() expects the raw base64url-encoded 32-byte private
+# scalar, NOT a PEM string -- passing a "-----BEGIN PRIVATE KEY-----" PEM
+# blob through it raises "ASN.1 parsing error: invalid length" because it
+# tries to base64url-decode the PEM headers as if they were key bytes.
+VAPID_PRIVATE_KEY_B64 = os.environ.get("VAPID_PRIVATE_KEY_B64", "")
 
 
 def _load_state() -> dict:
@@ -79,7 +84,7 @@ def send_push(title: str, body: str, url: str) -> bool:
         webpush(
             subscription_info=subscription,
             data=payload,
-            vapid_private_key=VAPID_PRIVATE_KEY_PEM,
+            vapid_private_key=VAPID_PRIVATE_KEY_B64,
             vapid_claims={"sub": VAPID_SUBJECT},
         )
         return True

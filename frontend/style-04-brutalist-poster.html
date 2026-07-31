@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Style 04 — Neo-Brutalist Race Poster</title>
+<style>
+  :root{
+    --ink:#111111;
+    --paper:#F2ECDD;
+    --paper-dim:#e8e0c9;
+    --mclaren:#FF8000;
+    --redbull:#3671C6;
+    --mercedes:#27F4D2;
+    --ferrari:#E8002D;
+    --shadow-off: 10px;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+
+  html{ -webkit-text-size-adjust:100%; }
+
+  body{
+    margin:0;
+    background:var(--paper-dim);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(17,17,17,0.035) 39px, rgba(17,17,17,0.035) 40px);
+    color:var(--ink);
+    font-family: "Helvetica Neue", "Arial Black", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding: clamp(0.75rem, 3vw, 2.5rem);
+    min-height:100vh;
+  }
+
+  /* generic focus ring — thick, high-contrast, on-brand instead of a soft blue glow */
+  :focus-visible{
+    outline: 4px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  a{ color:inherit; }
+
+  .checker-strip{
+    height:14px;
+    width:100%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Crect width='14' height='14' fill='%23111111'/%3E%3Crect x='14' width='14' height='14' fill='%23F2ECDD'/%3E%3Crect y='14' width='14' height='14' fill='%23F2ECDD'/%3E%3Crect x='14' y='14' width='14' height='14' fill='%23111111'/%3E%3C/svg%3E");
+    background-size:14px 14px;
+    border-top:4px solid var(--ink);
+    border-bottom:4px solid var(--ink);
+  }
+
+  /* ============ frame ============ */
+  .poster-frame{
+    max-width:1360px;
+    margin:0 auto;
+    background:var(--paper);
+    border:6px solid var(--ink);
+    box-shadow: 16px 16px 0 var(--ink);
+    padding: clamp(1.1rem, 2.6vw, 2.4rem);
+    position:relative;
+  }
+
+  /* ============ masthead ============ */
+  .masthead{
+    display:grid;
+    grid-template-columns: 2.3fr 1fr 1fr;
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+    align-items:end;
+    border-bottom: 6px solid var(--ink);
+    padding-bottom: clamp(1rem, 2vw, 1.5rem);
+    margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
+  }
+
+  .kicker{
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 0.78rem;
+    font-weight:700;
+    letter-spacing: 0.28em;
+    text-transform:uppercase;
+    margin: 0 0 0.5rem;
+  }
+
+  .race-title{
+    margin:0;
+    font-weight:900;
+    letter-spacing:-0.03em;
+    line-height:0.86;
+    text-wrap:balance;
+    font-size: clamp(2.6rem, 7.4vw, 6.6rem);
+  }
+  .race-title .country{ display:block; }
+  .race-title .gp{
+    display:block;
+    color:var(--paper);
+    -webkit-text-stroke: 2px var(--ink);
+    text-shadow:
+      3px 0 0 var(--ink), -3px 0 0 var(--ink),
+      0 3px 0 var(--ink), 0 -3px 0 var(--ink),
+      3px 3px 0 var(--ink), -3px -3px 0 var(--ink),
+      3px -3px 0 var(--ink), -3px 3px 0 var(--ink);
+  }
+
+  .badge{
+    border:5px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    padding: 0.75rem 0.9rem;
+    box-shadow: var(--shadow-off) var(--shadow-off) 0 rgba(17,17,17,0.35);
+    transform: rotate(-1.5deg);
+  }
+  .badge .label{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size:0.72rem;
+    letter-spacing:0.18em;
+    font-weight:700;
+    opacity:0.85;
+    margin:0 0 0.15rem;
+  }
+  .badge .value{
+    font-weight:900;
+    letter-spacing:-0.02em;
+    font-size: clamp(1.3rem, 2.6vw, 1.9rem);
+    margin:0;
+  }
+  .badge.lap{ transform: rotate(1.2deg); background:var(--paper); color:var(--ink); }
+  .badge.lap .value{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size: clamp(2rem, 4.2vw, 3rem);
+  }
+  .badge.lap .status{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-weight:700;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    margin-top:0.35rem;
+    display:inline-block;
+    background:var(--ink);
+    color:var(--paper);
+    padding:0.15rem 0.45rem;
+  }
+
+  /* ============ main asymmetric grid ============ */
+  .main-grid{
+    display:grid;
+    grid-template-columns: 1.55fr 1fr;
+    grid-template-rows: auto auto;
+    gap: clamp(1.1rem, 2.2vw, 1.75rem);
+    margin-bottom: clamp(1.5rem, 2.6vw, 2.25rem);
+  }
+
+  .hero{
+    grid-row: 1 / 3;
+    position:relative;
+    border:6px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    padding: clamp(1.4rem, 3vw, 2.25rem);
+    box-shadow: 14px 14px 0 rgba(17,17,17,0.25);
+    overflow:visible;
+  }
+
+  .stamp{
+    position:absolute;
+    top: -22px;
+    right: clamp(0.5rem, 4vw, 2rem);
+    background:var(--ferrari);
+    color:#fff;
+    font-weight:900;
+    letter-spacing:0.02em;
+    font-size: clamp(1rem, 1.9vw, 1.35rem);
+    padding: 0.55rem 1.1rem;
+    border:5px solid var(--ink);
+    transform: rotate(-6deg);
+    box-shadow: 7px 7px 0 var(--ink);
+    z-index:3;
+  }
+
+  .hero-eyebrow{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size:0.78rem;
+    letter-spacing:0.24em;
+    text-transform:uppercase;
+    color: var(--paper);
+    opacity:0.7;
+    margin:0.5rem 0 0.75rem;
+    font-weight:700;
+  }
+
+  .hero h2{
+    margin:0 0 1.1rem;
+    font-weight:900;
+    letter-spacing:-0.03em;
+    line-height:0.96;
+    font-size: clamp(1.9rem, 4.6vw, 3.4rem);
+    text-wrap:balance;
+  }
+
+  .radio-quote{
+    background:var(--paper);
+    color:var(--ink);
+    border:5px solid var(--paper);
+    outline: 4px solid var(--ink);
+    outline-offset: -4px;
+    padding: clamp(1rem,2.2vw,1.5rem);
+    margin: 0 0 1.25rem;
+    position:relative;
+  }
+  .radio-quote::before{
+    content:"“";
+    position:absolute;
+    top:-0.6rem;
+    left:0.6rem;
+    font-size:3.5rem;
+    line-height:1;
+    font-weight:900;
+    color:var(--ferrari);
+    background:var(--paper);
+    padding:0 0.3rem;
+  }
+  .radio-quote p{
+    margin:0;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    font-size: clamp(1.05rem, 2vw, 1.4rem);
+    line-height:1.28;
+    /* Real bug found via screenshot review: the oversized decorative
+       quote-mark glyph (::before, 3.5rem, positioned over the text's own
+       start) was clipping the first 1-2 characters of every quote ("NO
+       EXIT KERBS..." rendered as "O EXIT KERBS..."). text-indent only
+       pushes the first line clear of the glyph, leaving wrapped lines
+       flush left as a normal pull-quote should read. */
+    text-indent: 2.4rem;
+  }
+  .radio-quote cite{
+    display:block;
+    font-style:normal;
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size:0.78rem;
+    letter-spacing:0.1em;
+    margin-top:0.75rem;
+    font-weight:700;
+    color:#3a3a3a;
+  }
+
+  .hero-note{
+    font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+    line-height:1.5;
+    max-width:56ch;
+    color:var(--paper);
+    opacity:0.92;
+  }
+  .hero-note strong{ color:var(--mclaren); }
+
+  /* ---- sidebar cards ---- */
+  .side-card{
+    border:5px solid var(--ink);
+    padding: clamp(1rem, 2vw, 1.4rem);
+    box-shadow: 9px 9px 0 var(--ink);
+  }
+  .side-card.penalty{ background:var(--ferrari); color:#fff; }
+  .side-card.strategy{ background:var(--redbull); color:#fff; }
+
+  .side-tag{
+    display:inline-block;
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size:0.7rem;
+    letter-spacing:0.18em;
+    font-weight:700;
+    text-transform:uppercase;
+    background:var(--ink);
+    color:currentColor;
+    padding:0.2rem 0.5rem;
+    margin-bottom:0.7rem;
+    border:2px solid currentColor;
+  }
+
+  .penalty-figure{
+    font-weight:900;
+    letter-spacing:-0.04em;
+    line-height:0.85;
+    font-size: clamp(2.6rem, 5.4vw, 4.2rem);
+    margin:0 0 0.5rem;
+  }
+  .side-card p{
+    margin:0 0 0.6rem;
+    font-size:0.95rem;
+    line-height:1.4;
+    font-weight:600;
+  }
+  .side-card .fine-print{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size:0.72rem;
+    letter-spacing:0.04em;
+    opacity:0.85;
+    font-weight:700;
+    margin:0;
+  }
+  .side-card .result-flip{
+    display:flex;
+    align-items:center;
+    gap:0.5rem;
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-weight:800;
+    font-size:1rem;
+    margin-top:0.85rem;
+  }
+  .side-card .result-flip .arrow{ font-size:1.2rem; }
+
+  .strategy p{ font-size:1rem; font-weight:700; line-height:1.45; }
+
+  /* ============ standings ============ */
+  .standings-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:1rem;
+    margin: 0 0 0.9rem;
+    flex-wrap:wrap;
+  }
+  .standings-head h3{
+    margin:0;
+    font-weight:900;
+    letter-spacing:-0.02em;
+    font-size: clamp(1.4rem, 2.6vw, 2rem);
+  }
+  .standings-head .sub{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size:0.8rem;
+    font-weight:700;
+    letter-spacing:0.06em;
+    color:#3a3a3a;
+  }
+
+  .standings{
+    display:grid;
+    grid-template-columns: 1.9fr 1fr 1fr 1fr 1fr;
+    gap: 0.9rem;
+    border-top:6px solid var(--ink);
+    padding-top: 1rem;
+  }
+
+  .driver-row{
+    border:5px solid var(--ink);
+    background:var(--ink);
+    color:var(--paper);
+    padding: 0.9rem 0.85rem 1rem;
+    display:flex;
+    flex-direction:column;
+    gap:0.35rem;
+    box-shadow: 7px 7px 0 var(--ink-shadow, var(--ink));
+    text-decoration:none;
+    transition: transform 0.15s cubic-bezier(0.16,1,0.3,1), box-shadow 0.15s cubic-bezier(0.16,1,0.3,1);
+    cursor:pointer;
+  }
+  .driver-row:hover, .driver-row:focus-visible{
+    transform: translate(-4px,-4px);
+    box-shadow: 12px 12px 0 var(--ink);
+  }
+  .driver-row:active{
+    transform: translate(0,0);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .driver-row.p1{
+    grid-column: span 1;
+    background:var(--mclaren);
+    color:var(--ink);
+  }
+  .driver-row.p3{ background:var(--mercedes); color:var(--ink); }
+  .driver-row.p2{ background:var(--redbull); color:#fff; }
+  .driver-row.p4, .driver-row.p5{ background:var(--ferrari); color:#fff; }
+
+  .row-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+  }
+  .pos{
+    font-weight:900;
+    letter-spacing:-0.04em;
+    line-height:0.8;
+    font-size: clamp(2.1rem, 4.4vw, 3.4rem);
+  }
+  .carno{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-weight:700;
+    font-size:0.85rem;
+    border:2px solid currentColor;
+    padding:0.15rem 0.4rem;
+    margin-top:0.3rem;
+  }
+  .driver-name{
+    font-weight:900;
+    letter-spacing:-0.01em;
+    font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+    line-height:1.05;
+    text-transform:uppercase;
+  }
+  .team-name{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size:0.68rem;
+    letter-spacing:0.05em;
+    font-weight:700;
+    opacity:0.85;
+  }
+  .gap{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-weight:800;
+    font-size: clamp(1rem, 1.8vw, 1.3rem);
+    margin-top:0.2rem;
+  }
+  .gap .unit{ font-size:0.7em; opacity:0.8; }
+  .penalty-flag{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size:0.62rem;
+    font-weight:700;
+    letter-spacing:0.04em;
+    background:var(--ink);
+    color:#fff;
+    padding:0.15rem 0.35rem;
+    display:inline-block;
+    margin-top:0.25rem;
+    width:fit-content;
+  }
+
+  /* ============ footer ============ */
+  .footer-strip{
+    margin-top: clamp(1.5rem, 2.6vw, 2rem);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+    flex-wrap:wrap;
+    border-top:6px solid var(--ink);
+    padding-top: clamp(1rem, 2vw, 1.4rem);
+  }
+
+  .cta-btn{
+    font-family: inherit;
+    font-weight:900;
+    letter-spacing:-0.01em;
+    font-size:1rem;
+    background:var(--ink);
+    color:var(--paper);
+    border:5px solid var(--ink);
+    padding: 0.85rem 1.4rem;
+    box-shadow: 7px 7px 0 rgba(17,17,17,0.3);
+    cursor:pointer;
+    transition: transform 0.15s cubic-bezier(0.16,1,0.3,1), box-shadow 0.15s cubic-bezier(0.16,1,0.3,1), background 0.1s linear, color 0.1s linear;
+  }
+  .cta-btn:hover{
+    background:var(--paper);
+    color:var(--ink);
+    transform: translate(-3px,-3px);
+    box-shadow: 10px 10px 0 var(--ink);
+  }
+  .cta-btn:active{
+    transform: translate(0,0);
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .footer-print{
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-size:0.72rem;
+    letter-spacing:0.05em;
+    color:#3a3a3a;
+    font-weight:700;
+    max-width:46ch;
+  }
+
+  /* ============ stamp entrance — the one authored moment ============ */
+  @keyframes stamp-in{
+    0%{ transform: rotate(-6deg) scale(2.4); opacity:0; }
+    60%{ opacity:1; }
+    100%{ transform: rotate(-6deg) scale(1); opacity:1; }
+  }
+  @media (prefers-reduced-motion: no-preference){
+    .stamp{ animation: stamp-in 0.55s cubic-bezier(0.16,1,0.3,1) both; animation-delay:0.1s; }
+  }
+
+  /* ============ style label ============ */
+  .style-label{
+    position:fixed;
+    bottom: 14px;
+    right: 14px;
+    z-index:50;
+    background:var(--ink);
+    color:var(--paper);
+    font-family: ui-monospace,"SF Mono",Consolas,monospace;
+    font-weight:700;
+    font-size:0.72rem;
+    letter-spacing:0.08em;
+    padding:0.45rem 0.7rem;
+    border:2px solid var(--paper);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.4);
+  }
+
+  /* ============ responsive ============ */
+  @media (max-width: 860px){
+    .masthead{ grid-template-columns: 1fr; }
+    .badge{ transform:none; }
+    .badge.lap{ transform:none; }
+    .main-grid{ grid-template-columns: 1fr; }
+    .hero{ grid-row:auto; }
+    .stamp{ position:static; display:inline-block; margin-bottom:0.75rem; transform: rotate(-3deg); }
+    .standings{ grid-template-columns: 1fr 1fr; }
+    .driver-row.p1{ grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 480px){
+    .standings{ grid-template-columns: 1fr; }
+    .driver-row.p1{ grid-column: auto; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="poster-frame">
+
+    <!-- MASTHEAD -->
+    <header class="masthead">
+      <div>
+        <p class="kicker">FIA Formula 1 World Championship · Round 11 of 24</p>
+        <h1 class="race-title">
+          <span class="country">HUNGARIAN</span>
+          <span class="gp">GRAND PRIX</span>
+        </h1>
+      </div>
+
+      <div class="badge">
+        <p class="label">Round</p>
+        <p class="value">11 / 2026</p>
+      </div>
+
+      <div class="badge lap">
+        <p class="label">Lap</p>
+        <p class="value">70&thinsp;/&thinsp;70</p>
+        <span class="status">CHEQUERED FLAG</span>
+      </div>
+    </header>
+
+    <!-- MAIN STORY GRID -->
+    <div class="main-grid">
+
+      <!-- HERO: Piastri retirement -->
+      <article class="hero">
+        <span class="stamp">RETIRED · LAP 57</span>
+        <p class="hero-eyebrow">Race-defining moment</p>
+        <h2>Gearbox failure ends Piastri's podium fight — VSC scrambles the order</h2>
+
+        <div class="radio-quote">
+          <p>NO EXIT KERBS. THAT'S MAYBE WHAT HAPPENED TO OSCAR'S CAR.</p>
+          <cite>— Lando Norris, team radio, McLaren pit wall</cite>
+        </div>
+
+        <p class="hero-note">
+          Piastri was running <strong>P2/P3</strong> when his MCL39 coasted to a stop with terminal gearbox failure,
+          triggering a Virtual Safety Car across laps 56–57 and reshuffling the entire podium picture with 13 laps
+          still to run.
+        </p>
+      </article>
+
+      <!-- SIDEBAR: strategy insight -->
+      <aside class="side-card strategy">
+        <span class="side-tag">Strategy Insight</span>
+        <p>Verstappen did not pit during the VSC — trading a cheap stop for track position while the field bunched up behind the Safety Car.</p>
+        <p class="fine-print">RED BULL RACING · LAP 56–57 CALL</p>
+      </aside>
+
+      <!-- SIDEBAR: Hamilton penalty -->
+      <aside class="side-card penalty">
+        <span class="side-tag">Time Penalty</span>
+        <p class="penalty-figure">+5s</p>
+        <p>Hamilton served a 5-second penalty for speeding in the pit lane on lap 68 — enough to hand his own position away at the flag.</p>
+        <div class="radio-quote" style="margin-bottom:0;">
+          <p style="font-size:0.95rem;">AND WE GOT 5 SECOND PENALTY FOR SPEEDING INTO THE PITLANE.</p>
+          <cite>— Lewis Hamilton, team radio, lap 68</cite>
+        </div>
+        <div class="result-flip">
+          <span>P4</span><span class="arrow">→</span><span>P5</span>
+          <span style="font-weight:600; opacity:0.85;">&nbsp;· Leclerc inherits P4</span>
+        </div>
+      </aside>
+
+    </div>
+
+    <!-- STANDINGS -->
+    <section>
+      <div class="standings-head">
+        <h3>Classification — Top 5</h3>
+        <span class="sub">GAP TO CAR AHEAD · FINAL, LAP 70</span>
+      </div>
+
+      <div class="standings">
+        <a class="driver-row p1" href="#" tabindex="0">
+          <div class="row-top">
+            <span class="pos">P1</span>
+            <span class="carno">#4</span>
+          </div>
+          <span class="driver-name">Norris</span>
+          <span class="team-name">McLaren</span>
+          <span class="gap">WINNER</span>
+        </a>
+
+        <a class="driver-row p2" href="#" tabindex="0">
+          <div class="row-top">
+            <span class="pos">P2</span>
+            <span class="carno">#1</span>
+          </div>
+          <span class="driver-name">Verstappen</span>
+          <span class="team-name">Red Bull Racing</span>
+          <span class="gap">+15.3<span class="unit">s</span></span>
+        </a>
+
+        <a class="driver-row p3" href="#" tabindex="0">
+          <div class="row-top">
+            <span class="pos">P3</span>
+            <span class="carno">#12</span>
+          </div>
+          <span class="driver-name">Antonelli</span>
+          <span class="team-name">Mercedes-AMG</span>
+          <span class="gap">+4.3<span class="unit">s</span></span>
+        </a>
+
+        <a class="driver-row p4" href="#" tabindex="0">
+          <div class="row-top">
+            <span class="pos">P4</span>
+            <span class="carno">#16</span>
+          </div>
+          <span class="driver-name">Leclerc</span>
+          <span class="team-name">Ferrari</span>
+          <span class="gap">+2.45<span class="unit">s</span></span>
+        </a>
+
+        <a class="driver-row p5" href="#" tabindex="0">
+          <div class="row-top">
+            <span class="pos">P5</span>
+            <span class="carno">#44</span>
+          </div>
+          <span class="driver-name">Hamilton</span>
+          <span class="team-name">Ferrari</span>
+          <span class="gap">+1.2<span class="unit">s</span></span>
+          <span class="penalty-flag">INCL. 5S PENALTY</span>
+        </a>
+      </div>
+    </section>
+
+    <div class="checker-strip" style="margin-top: clamp(1.25rem,2.4vw,1.75rem);"></div>
+
+    <!-- FOOTER -->
+    <footer class="footer-strip">
+      <p class="footer-print">FORMULA 1 AWS HUNGARIAN GRAND PRIX 2026 · HUNGARORING · RACE DISTANCE 70 LAPS · UNOFFICIAL FAN ANALYSIS</p>
+      <button class="cta-btn" type="button">→ FULL RACE REPLAY</button>
+    </footer>
+
+  </div>
+
+  <div class="style-label">04 — Neo-Brutalist Poster</div>
+
+</body>
+</html>

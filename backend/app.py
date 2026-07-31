@@ -28,6 +28,7 @@ from detect import is_f1_live_now
 POLL_INTERVAL_SEC = 90
 FRONTEND_HOME = Path(__file__).parent.parent / "frontend" / "home.html"
 FRONTEND_SW = Path(__file__).parent.parent / "frontend" / "sw.js"
+FRONTEND_ICON = Path(__file__).parent.parent / "frontend" / "icon.png"
 
 # Same restraint rules as the Phase 3 in-page badge's pollForNotifications()
 # (frontend/index.html) -- moved server-side because a real push must be
@@ -290,6 +291,11 @@ def service_worker():
     # directory it's served from, and root is the only scope that covers
     # both "/" (home.html) and "/race" (index.html).
     return FileResponse(FRONTEND_SW, media_type="application/javascript")
+
+
+@app.get("/icon.png")
+def notification_icon():
+    return FileResponse(FRONTEND_ICON, media_type="image/png")
 
 
 class PushSubscribeRequest(BaseModel):

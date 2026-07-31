@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hungarian Grand Prix — Race Report</title>
+<style>
+
+  :root {
+    --bg: #19160f;
+    --bg-raised: #221e15;
+    --ink: #f2ecdd;
+    --ink-dim: #c7bda3;
+    --ink-faint: #93876d;
+    --rule: rgba(242,236,221,0.14);
+    --rule-strong: rgba(242,236,221,0.26);
+    --red: #e10600;
+    --paper: #0f0d09;
+
+    --mcl: #FF8000;
+    --rbr: #3671C6;
+    --mer: #27F4D2;
+    --fer: #E8002D;
+
+    --serif: ui-serif, "New York", Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { color-scheme: dark; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 12% -8%, rgba(225,6,0,0.05), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(242,236,221,0.03), transparent 55%);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  a { color: inherit; }
+
+  ::selection { background: var(--red); color: #fff; }
+
+  :focus-visible {
+    outline: 2px solid var(--red);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 32px 80px;
+  }
+
+  .back-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 12px/1 var(--sans);
+    letter-spacing: 0.02em;
+    color: var(--ink-faint);
+    text-decoration: none;
+    margin-bottom: 30px;
+    transition: color 0.15s ease;
+  }
+  .back-nav:hover { color: var(--ink-dim); }
+  .back-nav .arrow { font-size: 13px; transform: translateY(-0.5px); }
+
+  /* ---------- Masthead ---------- */
+
+  .masthead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--red);
+  }
+
+  .masthead-name {
+    font: 700 15px/1 var(--sans);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .masthead-title {
+    font: 600 40px/1.05 var(--serif);
+    letter-spacing: -0.01em;
+    margin: 10px 0 0;
+    color: var(--ink);
+  }
+
+  .masthead-sub {
+    font: 500 14.5px/1.5 var(--sans);
+    color: var(--ink-faint);
+    margin-top: 8px;
+  }
+  .masthead-sub b { color: var(--ink-dim); font-weight: 600; }
+
+  .masthead-right {
+    display: flex;
+    align-items: flex-end;
+    gap: 26px;
+    flex: 0 0 auto;
+  }
+
+  .lap-block { text-align: right; }
+  .lap-label {
+    display: block;
+    font: 600 11px/1 var(--sans);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 6px;
+  }
+  .lap-value {
+    font: 500 44px/1 var(--mono);
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .lap-value .lap-total { color: var(--ink-faint); font-size: 22px; }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: 700 11px/1 var(--sans);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--bg-raised);
+    border: 1px solid var(--rule-strong);
+    padding: 8px 13px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+  .status-pill .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--red);
+  }
+
+  /* ---------- Lead story ---------- */
+
+  .lead {
+    margin-top: 52px;
+  }
+
+  .kicker {
+    font: 700 12px/1 var(--sans);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin: 0 0 18px;
+  }
+
+  .headline {
+    font: 600 clamp(2.1rem, 4.6vw, 4rem)/1.06 var(--serif);
+    letter-spacing: -0.015em;
+    margin: 0;
+    max-width: 16ch;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .dek {
+    font: 400 20px/1.55 var(--serif);
+    color: var(--ink-dim);
+    max-width: 62ch;
+    margin: 22px 0 0;
+  }
+  .dek b { color: var(--ink); font-weight: 600; }
+
+  .lead-anim > * {
+    animation: rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .lead-anim > *:nth-child(1) { animation-delay: 0.02s; }
+  .lead-anim > *:nth-child(2) { animation-delay: 0.08s; }
+  .lead-anim > *:nth-child(3) { animation-delay: 0.16s; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lead-anim > * { animation: none; }
+  }
+
+  /* ---------- Pull quote ---------- */
+
+  .pull-quote {
+    position: relative;
+    margin: 46px 0 40px;
+    padding: 6px 0 6px 4px;
+    max-width: 58ch;
+  }
+
+  .pull-quote::before {
+    content: "“";
+    position: absolute;
+    left: -0.56em;
+    top: -0.32em;
+    font: 700 4.2rem/1 var(--serif);
+    color: var(--rule-strong);
+    z-index: 0;
+  }
+
+  .pull-quote p {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    font: 500 italic clamp(1.4rem, 2.6vw, 2rem)/1.32 var(--serif);
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+
+  .pull-quote footer {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    font: 600 13px/1 var(--sans);
+    color: var(--ink-faint);
+  }
+  .pull-quote footer .name {
+    color: var(--ink-dim);
+    font-weight: 700;
+  }
+  .pull-quote footer .meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.01em;
+  }
+
+  .play-btn {
+    appearance: none;
+    border: 1px solid var(--rule-strong);
+    background: var(--bg-raised);
+    color: var(--ink-dim);
+    font: 700 11px/1 var(--sans);
+    letter-spacing: 0.04em;
+    padding: 7px 12px 7px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    margin-left: auto;
+  }
+  .play-btn .glyph { font-size: 9px; }
+  .play-btn:hover {
+    border-color: var(--red);
+    color: var(--ink);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  }
+  .play-btn:active { transform: translateY(1px); }
+  .play-btn[data-state="playing"] {
+    color: var(--red);
+    border-color: var(--red);
+  }
+  .play-btn[data-state="playing"] .glyph { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* ---------- Body copy ---------- */
+
+  .body-text {
+    font: 400 17px/1.7 var(--serif);
+    color: var(--ink-dim);
+    max-width: 66ch;
+    margin: 22px 0;
+  }
+  .body-text b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- Broadcast graphic replica ---------- */
+
+  .broadcast-graphic {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #050505;
+    border: 1px solid #2a2a2a;
+    padding: 14px 18px;
+    max-width: 66ch;
+    margin: 8px 0 30px;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.5);
+  }
+  .bg-label {
+    flex: 0 0 auto;
+    font: 800 11px/1.3 var(--sans);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--red);
+    border-right: 1px solid #2a2a2a;
+    padding-right: 14px;
+  }
+  .bg-text {
+    font: 600 13.5px/1.4 var(--sans);
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: #f0f0f0;
+  }
+
+  /* ---------- Standings ---------- */
+
+  .standings {
+    margin-top: 64px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+  }
+
+  .standings-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .standings-head h3 {
+    font: 600 22px/1.1 var(--serif);
+    margin: 0;
+    color: var(--ink);
+  }
+
+  .standings-note {
+    font: 500 13px/1 var(--sans);
+    color: var(--ink-faint);
+  }
+
+  .standings-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .standings-row {
+    display: grid;
+    grid-template-columns: 44px 1fr auto;
+    align-items: center;
+    gap: 18px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--rule);
+    transition: background 0.15s ease;
+  }
+  .standings-row:hover { background: rgba(242,236,221,0.03); }
+
+  .standings-row .pos {
+    font: 700 15px/1 var(--mono);
+    color: var(--ink-faint);
+  }
+  .standings-row.p1 .pos { color: var(--ink); }
+
+  .driver-id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+  }
+
+  .driver-name {
+    font: 600 16.5px/1.2 var(--sans);
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .driver-team {
+    font: 500 13px/1.2 var(--sans);
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  .driver-num {
+    font: 700 11px/1 var(--mono);
+    color: var(--ink-faint);
+    margin-left: 2px;
+  }
+
+  .gap-col {
+    text-align: right;
+    flex: 0 0 auto;
+  }
+  .gap-value {
+    display: block;
+    font: 600 17px/1 var(--mono);
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .gap-value.winner { color: var(--mcl); }
+  .gap-label {
+    display: block;
+    font: 600 10.5px/1 var(--sans);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+
+  .standings-footnote {
+    margin: 22px 2px 0;
+    max-width: 68ch;
+    font: 400 14.5px/1.65 var(--sans);
+    color: var(--ink-faint);
+  }
+  .standings-footnote em {
+    color: var(--ink-dim);
+    font-style: italic;
+  }
+
+  /* ---------- Style label ---------- */
+
+  .style-label {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    font: 700 11px/1 var(--mono);
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    background: var(--bg-raised);
+    border: 1px solid var(--rule-strong);
+    padding: 8px 12px;
+    border-radius: 4px;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  /* ---------- Responsive ---------- */
+
+  @media (max-width: 720px) {
+    .page { padding: 20px 18px 60px; }
+
+    .masthead {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    .masthead-right {
+      width: 100%;
+      justify-content: space-between;
+    }
+    .masthead-title { font-size: 30px; }
+
+    .lap-value { font-size: 34px; }
+
+    .pull-quote::before { display: none; }
+    .pull-quote { padding-left: 0; }
+
+    .broadcast-graphic {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .bg-label { border-right: none; padding-right: 0; }
+
+    .standings-row {
+      grid-template-columns: 32px 1fr auto;
+      gap: 12px;
+    }
+    .driver-team { display: none; }
+
+    .play-btn { margin-left: 0; }
+    .pull-quote footer { gap: 10px; }
+
+    .style-label {
+      right: 10px;
+      bottom: 10px;
+      font-size: 10px;
+      padding: 6px 9px;
+    }
+  }
+
+</style>
+</head>
+<body>
+
+  <div class="page">
+
+    <a class="back-nav" href="index.html"><span class="arrow">&#8249;</span> Back to dashboard</a>
+
+    <header class="masthead">
+      <div>
+        <div class="masthead-name">F1 Race Report — 2026 Season</div>
+        <h1 class="masthead-title">Hungarian Grand Prix</h1>
+        <p class="masthead-sub">FORMULA 1 AWS HUNGARIAN GRAND PRIX &middot; Round 11 of 24 &middot; Hungaroring</p>
+      </div>
+      <div class="masthead-right">
+        <div class="lap-block">
+          <span class="lap-label">Lap</span>
+          <span class="lap-value">70<span class="lap-total">/70</span></span>
+        </div>
+        <div class="status-pill"><span class="dot"></span> Race Finished</div>
+      </div>
+    </header>
+
+    <main class="lead">
+      <div class="lead-anim">
+        <p class="kicker">The Story of the Race</p>
+        <h2 class="headline">The gearbox that rewrote Hungary</h2>
+        <p class="dek">A lap-57 retirement turned <b>Oscar Piastri's</b> afternoon — and McLaren's shot at a one-two finish — into <b>Max Verstappen's</b> masterclass in patience under yellow.</p>
+      </div>
+
+      <blockquote class="pull-quote">
+        <p>No exit kerbs. That's maybe what happened to Oscar's car.</p>
+        <footer>
+          <span class="name">Lando Norris</span>
+          <span class="meta">radio to pit wall &middot; lap 57</span>
+          <button class="play-btn" type="button" data-state="idle" onclick="toggleRadio(this)">
+            <span class="glyph">&#9654;</span><span class="label">Play radio</span>
+          </button>
+        </footer>
+      </blockquote>
+
+      <p class="body-text">Piastri had been holding station in the fight for the podium when his McLaren slowed on the exit of Turn 4, a gearbox failure ending his race on the spot. Race control threw the Virtual Safety Car for two laps while marshals cleared the stricken car — two laps that reshuffled the entire complexion of the grand prix.</p>
+
+      <div class="broadcast-graphic">
+        <span class="bg-label">Strategy Insight</span>
+        <span class="bg-text">Verstappen did not pit during the VSC to gain track position</span>
+      </div>
+
+      <p class="body-text">It worked. Verstappen emerged from the sequence with clean air ahead of him and never looked back, crossing the line 15.3 seconds adrift of Norris but comfortably clear of the pack behind him — a race salvaged from what had looked, twenty laps out, like a home defeat.</p>
+    </main>
+
+    <section class="standings">
+      <div class="standings-head">
+        <h3>Final Classification</h3>
+        <span class="standings-note">Top five &mdash; Hungarian Grand Prix</span>
+      </div>
+
+      <ol class="standings-list">
+        <li class="standings-row p1">
+          <span class="pos">P1</span>
+          <div class="driver-id">
+            <span class="swatch" style="background: #FF8000"></span>
+            <span class="driver-name">Norris</span>
+            <span class="driver-num">#4</span>
+            <span class="driver-team">McLaren</span>
+          </div>
+          <div class="gap-col">
+            <span class="gap-value winner">Winner</span>
+            <span class="gap-label">1:32:14.902</span>
+          </div>
+        </li>
+
+        <li class="standings-row">
+          <span class="pos">P2</span>
+          <div class="driver-id">
+            <span class="swatch" style="background: #3671C6"></span>
+            <span class="driver-name">Verstappen</span>
+            <span class="driver-num">#1</span>
+            <span class="driver-team">Red Bull Racing</span>
+          </div>
+          <div class="gap-col">
+            <span class="gap-value">+15.3s</span>
+            <span class="gap-label">to leader</span>
+          </div>
+        </li>
+
+        <li class="standings-row">
+          <span class="pos">P3</span>
+          <div class="driver-id">
+            <span class="swatch" style="background: #27F4D2"></span>
+            <span class="driver-name">Antonelli</span>
+            <span class="driver-num">#12</span>
+            <span class="driver-team">Mercedes-AMG</span>
+          </div>
+          <div class="gap-col">
+            <span class="gap-value">+19.6s</span>
+            <span class="gap-label">to leader</span>
+          </div>
+        </li>
+
+        <li class="standings-row">
+          <span class="pos">P4</span>
+          <div class="driver-id">
+            <span class="swatch" style="background: #E8002D"></span>
+            <span class="driver-name">Leclerc</span>
+            <span class="driver-num">#16</span>
+            <span class="driver-team">Ferrari</span>
+          </div>
+          <div class="gap-col">
+            <span class="gap-value">+22.1s</span>
+            <span class="gap-label">to leader</span>
+          </div>
+        </li>
+
+        <li class="standings-row">
+          <span class="pos">P5</span>
+          <div class="driver-id">
+            <span class="swatch" style="background: #E8002D"></span>
+            <span class="driver-name">Hamilton</span>
+            <span class="driver-num">#44</span>
+            <span class="driver-team">Ferrari</span>
+          </div>
+          <div class="gap-col">
+            <span class="gap-value">+23.3s</span>
+            <span class="gap-label">to leader</span>
+          </div>
+        </li>
+      </ol>
+
+      <p class="standings-footnote">Just 3.65 seconds covered third through fifth at the flag. <em>&ldquo;And we got five second penalty for speeding into the pitlane&rdquo;</em> &mdash; Hamilton's radio on lap 68 told the story before the timing screens caught up: the penalty dropped him from a provisional P4 to P5, promoting Leclerc into the final points-paying position of note.</p>
+    </section>
+
+  </div>
+
+  <div class="style-label">03 &mdash; Editorial Sports Magazine</div>
+
+  <script>
+    function toggleRadio(btn) {
+      var playing = btn.getAttribute('data-state') === 'playing';
+      var label = btn.querySelector('.label');
+      var glyph = btn.querySelector('.glyph');
+      if (playing) {
+        btn.setAttribute('data-state', 'idle');
+        label.textContent = 'Play radio';
+        glyph.innerHTML = '&#9654;';
+      } else {
+        btn.setAttribute('data-state', 'playing');
+        label.textContent = 'Playing…';
+        glyph.innerHTML = '&#9724;';
+        setTimeout(function () {
+          if (btn.getAttribute('data-state') === 'playing') {
+            btn.setAttribute('data-state', 'idle');
+            label.textContent = 'Play radio';
+            glyph.innerHTML = '&#9654;';
+          }
+        }, 4000);
+      }
+    }
+  </script>
+
+</body>
+</html>

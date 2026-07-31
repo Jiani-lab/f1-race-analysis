@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Style 07 — Pit Wall Radio Zine</title>
+<style>
+  :root{
+    --paper: #ece5d6;
+    --paper-2: #e2d9c6;
+    --ink: #2a2521;
+    --ink-soft: #55483d;
+    --carbon: #1c1a18;
+    --carbon-2: #262320;
+    --amber: #d97a1f;
+    --amber-bright: #f0982f;
+    --racing-red: #c81e2c;
+    --mclaren: #FF8000;
+    --redbull: #3671C6;
+    --mercedes: #27F4D2;
+    --ferrari: #E8002D;
+    --tape: #d8cba8;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0; padding:0;
+    background: var(--carbon);
+    color: var(--ink);
+    font-family: "Courier New", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  body{
+    min-height:100vh;
+    padding: 28px 16px 60px;
+    background-color: var(--carbon);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0);
+    background-size: 3px 3px;
+  }
+
+  /* ---------- page / clipboard shell ---------- */
+  .board{
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .sheet{
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.5), transparent 55%),
+      radial-gradient(ellipse at 90% 100%, rgba(0,0,0,0.05), transparent 50%),
+      var(--paper);
+    background-blend-mode: normal;
+    box-shadow:
+      0 2px 0 rgba(0,0,0,0.15),
+      0 30px 60px -20px rgba(0,0,0,0.65),
+      0 10px 25px -10px rgba(0,0,0,0.5);
+    border-radius: 3px;
+    position: relative;
+    transform: rotate(-0.35deg);
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* subtle paper grain via layered noise-like gradients */
+  .sheet::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, transparent 1px, transparent 2px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.012) 0px, transparent 1px, transparent 3px);
+    mix-blend-mode: multiply;
+    pointer-events:none;
+  }
+  .sheet::after{
+    content:"";
+    position:absolute; inset:0;
+    background:
+      radial-gradient(circle at 8% 12%, rgba(120,90,50,0.06), transparent 22%),
+      radial-gradient(circle at 92% 85%, rgba(120,90,50,0.05), transparent 25%),
+      radial-gradient(circle at 60% 95%, rgba(120,90,50,0.04), transparent 20%);
+    pointer-events:none;
+  }
+
+  /* torn top edge */
+  .torn-top{
+    height: 12px;
+    width:100%;
+    background: var(--carbon);
+    clip-path: polygon(
+      0% 100%, 1.5% 40%, 3% 90%, 5% 30%, 7% 80%, 9% 20%, 11% 70%, 13% 15%,
+      15% 85%, 17% 35%, 19% 95%, 21% 25%, 23% 75%, 25% 10%, 27% 80%, 29% 30%,
+      31% 90%, 33% 20%, 35% 70%, 37% 15%, 39% 85%, 41% 40%, 43% 95%, 45% 25%,
+      47% 75%, 49% 10%, 51% 80%, 53% 30%, 55% 90%, 57% 20%, 59% 70%, 61% 15%,
+      63% 85%, 65% 35%, 67% 95%, 69% 25%, 71% 75%, 73% 10%, 75% 80%, 77% 30%,
+      79% 90%, 81% 20%, 83% 70%, 85% 15%, 87% 85%, 89% 40%, 91% 95%, 93% 25%,
+      95% 75%, 97% 10%, 99% 80%, 100% 100%
+    );
+  }
+
+  /* tape corners */
+  .tape{
+    position:absolute;
+    width: 86px; height: 30px;
+    background: linear-gradient(120deg, rgba(216,203,168,0.92), rgba(200,186,148,0.85));
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    opacity: 0.9;
+  }
+  .tape::after{
+    content:"";
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(115deg, rgba(255,255,255,0.25) 0 2px, transparent 2px 5px);
+  }
+  .tape.tl{ top:-10px; left: 28px; transform: rotate(-6deg); }
+  .tape.tr{ top:-10px; right: 34px; transform: rotate(4deg); }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    padding: 40px 40px 26px;
+    border-bottom: 2px solid var(--ink);
+    position: relative;
+  }
+  .masthead-row{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .title-block h1{
+    margin:0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    font-size: clamp(1.7rem, 4vw, 2.5rem);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    line-height: 1.05;
+  }
+  .title-block .sub{
+    margin-top: 6px;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+  .lap-badge{
+    background: var(--carbon);
+    color: var(--paper);
+    padding: 10px 18px;
+    border-radius: 2px;
+    text-align:center;
+    transform: rotate(1.2deg);
+    box-shadow: 3px 4px 0 rgba(0,0,0,0.18);
+    position: relative;
+  }
+  .lap-badge::before{
+    content: "";
+    position:absolute; left:8px; top:8px; width:6px; height:6px;
+    border-radius:50%;
+    background: var(--racing-red);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.15);
+  }
+  .lap-badge .num{
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--amber-bright);
+    line-height:1;
+  }
+  .lap-badge .lbl{
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--paper-2);
+    margin-top: 3px;
+  }
+  .status-line{
+    margin-top: 14px;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    display:flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .status-line .dot{
+    display:inline-block; width:7px; height:7px; border-radius:50%;
+    background: var(--racing-red); margin-right:6px; vertical-align:middle;
+  }
+  .stamp{
+    position:absolute;
+    top: 26px; right: 40px;
+    border: 2px solid var(--racing-red);
+    color: var(--racing-red);
+    font-weight:700;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    padding: 4px 10px;
+    transform: rotate(-9deg);
+    opacity: 0.85;
+    border-radius: 3px;
+  }
+
+  /* ---------- section label ---------- */
+  .section-head{
+    display:flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 26px 40px 4px;
+  }
+  .section-head h2{
+    margin:0;
+    font-family: Georgia, serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .section-head .freq{
+    font-size: 0.72rem;
+    color: var(--racing-red);
+    font-weight:700;
+    letter-spacing: 0.04em;
+  }
+  .section-head::after{
+    content:"";
+    flex:1;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, var(--ink-soft) 0 4px, transparent 4px 8px);
+    opacity: 0.5;
+    margin-left: 4px;
+  }
+
+  /* ---------- radio transcript feed ---------- */
+  .feed{
+    padding: 10px 40px 8px;
+    display:flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .transmission{
+    position: relative;
+    background: rgba(255,255,255,0.35);
+    border: 1px solid rgba(42,37,33,0.18);
+    padding: 14px 18px 15px 18px;
+    border-radius: 2px;
+  }
+  .transmission:nth-child(1){ transform: rotate(-0.5deg); }
+  .transmission:nth-child(2){ transform: rotate(0.4deg); }
+  .transmission:nth-child(3){ transform: rotate(-0.25deg); }
+
+  .transmission .pin{
+    position:absolute;
+    top: -7px; left: 22px;
+    width: 12px; height:12px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffb56b, var(--amber) 60%, #a85e13 100%);
+    box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+  }
+
+  .tx-meta{
+    display:flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .tx-icon{
+    font-size: 0.95rem;
+    filter: grayscale(0.1);
+  }
+  .tx-driver{
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+  .tx-car{
+    font-size: 0.72rem;
+    font-weight:700;
+    color: var(--paper);
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+  .tx-team{
+    font-size: 0.68rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tx-lap{
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--racing-red);
+    font-weight:700;
+    letter-spacing: 0.05em;
+  }
+
+  .tx-quote{
+    font-size: 1.05rem;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+    text-transform: uppercase;
+    font-weight: 700;
+    position: relative;
+    padding-left: 14px;
+    border-left: none;
+  }
+  .tx-quote::before{ content: "\201C"; }
+  .tx-quote::after{ content: "\201D"; }
+
+  .tx-note{
+    margin-top: 9px;
+    font-size: 0.74rem;
+    color: var(--ink-soft);
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+
+  .tx-static{
+    display:flex;
+    gap: 3px;
+    margin-top: 10px;
+    align-items: flex-end;
+    height: 14px;
+  }
+  .tx-static span{
+    width: 2px;
+    background: var(--amber);
+    opacity: 0.55;
+    display:inline-block;
+  }
+
+  /* ---------- standings strip ---------- */
+  .standings{
+    padding: 6px 40px 34px;
+  }
+  .standings-list{
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    border-top: 2px solid var(--ink);
+  }
+  .standings-list li{
+    display:grid;
+    grid-template-columns: 34px 22px 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 4px;
+    border-bottom: 1px dashed rgba(42,37,33,0.35);
+    font-size: 0.86rem;
+  }
+  .standings-list li:first-child{
+    background: rgba(217,122,31,0.08);
+  }
+  .pos{
+    font-family: Georgia, serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--ink);
+  }
+  .swatch{
+    width: 14px; height:14px;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
+  }
+  .drv-name{
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+  }
+  .drv-team{
+    display:block;
+    font-size: 0.66rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 1px;
+    font-weight: 400;
+  }
+  .car-no{
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    text-align:right;
+  }
+  .gap{
+    font-weight: 700;
+    color: var(--racing-red);
+    text-align: right;
+    min-width: 62px;
+  }
+  .standings-list li:first-child .gap{ color: var(--ink-soft); font-weight:700; }
+
+  /* footer ticker */
+  .ticker{
+    border-top: 2px solid var(--ink);
+    background: var(--carbon);
+    color: var(--amber-bright);
+    padding: 9px 40px;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    display:flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ticker b{ color: var(--paper); }
+
+  .style-label{
+    position: fixed;
+    bottom: 14px;
+    right: 14px;
+    background: var(--carbon-2);
+    color: var(--amber-bright);
+    font-family: "Courier New", monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 7px 12px;
+    border-radius: 3px;
+    border: 1px solid rgba(240,152,47,0.4);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+
+  @media (max-width: 640px){
+    .masthead{ padding: 30px 22px 22px; }
+    .section-head{ padding: 22px 22px 4px; }
+    .feed{ padding: 8px 22px; }
+    .standings{ padding: 6px 22px 26px; }
+    .ticker{ padding: 9px 22px; }
+    .stamp{ right: 22px; top: 20px; }
+    .lap-badge .num{ font-size: 1.5rem; }
+    .standings-list li{ grid-template-columns: 26px 18px 1fr auto; gap: 8px; }
+    .standings-list li .car-no{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="board">
+    <div class="sheet">
+      <div class="torn-top"></div>
+      <div class="tape tl"></div>
+      <div class="tape tr"></div>
+
+      <div class="masthead">
+        <div class="stamp">FINISHED</div>
+        <div class="masthead-row">
+          <div class="title-block">
+            <h1>FORMULA 1 AWS<br>HUNGARIAN GRAND PRIX</h1>
+            <div class="sub">Round 11 / 2026 &middot; Hungaroring</div>
+          </div>
+          <div class="lap-badge">
+            <div class="num">70<span style="font-size:1rem;color:var(--paper-2);">/70</span></div>
+            <div class="lbl">Laps Complete</div>
+          </div>
+        </div>
+        <div class="status-line">
+          <span><span class="dot"></span>Race Control &mdash; Checkered Flag</span>
+          <span>Pit Wall Radio Log &mdash; Channel 4</span>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>🎙 Team Radio</h2>
+        <span class="freq">CH.4 &mdash; 156.800 MHz</span>
+      </div>
+
+      <div class="feed">
+
+        <div class="transmission">
+          <div class="pin"></div>
+          <div class="tx-meta">
+            <span class="tx-icon">🎙</span>
+            <span class="tx-driver">Hamilton</span>
+            <span class="tx-car" style="background: var(--ferrari);">#44</span>
+            <span class="tx-team">Ferrari</span>
+            <span class="tx-lap">LAP 68</span>
+          </div>
+          <p class="tx-quote">And we got 5 second penalty for speeding into the pitlane</p>
+          <p class="tx-note">Penalty applied post-race &mdash; drops Hamilton from P4 to P5, Leclerc inherits P4.</p>
+          <div class="tx-static">
+            <span style="height:5px;"></span><span style="height:11px;"></span><span style="height:4px;"></span>
+            <span style="height:9px;"></span><span style="height:6px;"></span><span style="height:13px;"></span>
+            <span style="height:3px;"></span><span style="height:8px;"></span>
+          </div>
+        </div>
+
+        <div class="transmission">
+          <div class="pin"></div>
+          <div class="tx-meta">
+            <span class="tx-icon">🎙</span>
+            <span class="tx-driver">Norris</span>
+            <span class="tx-car" style="background: var(--mclaren);">#4</span>
+            <span class="tx-team">McLaren</span>
+            <span class="tx-lap">LAP 67</span>
+          </div>
+          <p class="tx-quote">And Lando, no exit kerbs. That's maybe what happened to Oscar's car</p>
+          <p class="tx-note">Reference to teammate Piastri's lap-57 gearbox retirement while running P2/P3.</p>
+          <div class="tx-static">
+            <span style="height:9px;"></span><span style="height:4px;"></span><span style="height:12px;"></span>
+            <span style="height:6px;"></span><span style="height:10px;"></span><span style="height:5px;"></span>
+            <span style="height:8px;"></span><span style="height:3px;"></span>
+          </div>
+        </div>
+
+        <div class="transmission">
+          <div class="pin"></div>
+          <div class="tx-meta">
+            <span class="tx-icon">🎙</span>
+            <span class="tx-driver">Verstappen</span>
+            <span class="tx-car" style="background: var(--redbull);">#1</span>
+            <span class="tx-team">Red Bull Racing</span>
+            <span class="tx-lap">LAP 17</span>
+          </div>
+          <p class="tx-quote">Well, that was quite special!</p>
+          <p class="tx-note">Radio energy spikes mid-stint &mdash; earliest flagged transmission of the race.</p>
+          <div class="tx-static">
+            <span style="height:6px;"></span><span style="height:10px;"></span><span style="height:5px;"></span>
+            <span style="height:13px;"></span><span style="height:7px;"></span><span style="height:4px;"></span>
+            <span style="height:9px;"></span><span style="height:6px;"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="section-head">
+        <h2>Classification</h2>
+        <span class="freq">TOP 5</span>
+      </div>
+
+      <div class="standings">
+        <ul class="standings-list">
+          <li>
+            <span class="pos">1</span>
+            <span class="swatch" style="background: var(--mclaren);"></span>
+            <span><span class="drv-name">Norris</span><span class="drv-team">McLaren</span></span>
+            <span class="car-no">#4</span>
+            <span class="gap">LEADER</span>
+          </li>
+          <li>
+            <span class="pos">2</span>
+            <span class="swatch" style="background: var(--redbull);"></span>
+            <span><span class="drv-name">Verstappen</span><span class="drv-team">Red Bull Racing</span></span>
+            <span class="car-no">#1</span>
+            <span class="gap">+15.3s</span>
+          </li>
+          <li>
+            <span class="pos">3</span>
+            <span class="swatch" style="background: var(--mercedes);"></span>
+            <span><span class="drv-name">Antonelli</span><span class="drv-team">Mercedes-AMG</span></span>
+            <span class="car-no">#12</span>
+            <span class="gap">+4.3s</span>
+          </li>
+          <li>
+            <span class="pos">4</span>
+            <span class="swatch" style="background: var(--ferrari);"></span>
+            <span><span class="drv-name">Leclerc</span><span class="drv-team">Ferrari</span></span>
+            <span class="car-no">#16</span>
+            <span class="gap">+2.45s</span>
+          </li>
+          <li>
+            <span class="pos">5</span>
+            <span class="swatch" style="background: var(--ferrari);"></span>
+            <span><span class="drv-name">Hamilton</span><span class="drv-team">Ferrari</span></span>
+            <span class="car-no">#44</span>
+            <span class="gap">+1.2s</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="ticker">
+        <span><b>VSC</b> laps 56&ndash;57 &mdash; Piastri (McLaren #81) retired, gearbox</span>
+        <span>Verstappen stayed out during VSC &mdash; gained track position</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="style-label">07 — Pit Wall Radio Zine</div>
+
+</body>
+</html>
