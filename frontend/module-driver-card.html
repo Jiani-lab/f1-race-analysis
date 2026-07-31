@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>车手卡 — 3个方案</title>
+<style>
+  body { margin:0; padding:40px 20px 100px; background:#050505; color:#fff; font-family:-apple-system,sans-serif; }
+  h1 { font-size:19px; margin:0 0 6px; }
+  .lead { color:#888; font-size:11.5px; margin-bottom:36px; max-width:680px; line-height:1.6; }
+  .row { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; max-width:1200px; margin:0 auto 20px; }
+  @media (max-width:900px){ .row{grid-template-columns:1fr;} }
+  .col-head { text-align:center; margin-bottom:12px; }
+  .col-head .name { font-weight:800; font-size:15px; }
+  .col-head .tag { font-size:11.5px; color:#888; margin-top:2px; }
+
+  /* ============ 1: CLOSING RATE CARD ============ */
+  .c1 { background:#0f0f0f; border:1px solid #262626; border-radius:14px; padding:20px; min-height:280px; }
+  .c1-top { display:flex; align-items:center; gap:10px; }
+  .c1-badge { width:38px; height:38px; border-radius:8px; background:#3671C6; display:flex; align-items:center; justify-content:center; font:900 12px monospace; }
+  .c1-name { font:800 15px -apple-system; }
+  .c1-vs { font:600 11.5px monospace; color:#666; }
+  .c1-stat { margin-top:18px; }
+  .c1-stat .v { font:900 32px monospace; color:#17c964; }
+  .c1-stat .l { font:700 9px monospace; color:#666; letter-spacing:.08em; margin-top:2px; }
+  .c1-eta { display:inline-flex; align-items:center; gap:6px; margin-top:12px; background:rgba(23,201,100,.12); padding:5px 10px; border-radius:6px; font:800 11.5px -apple-system; color:#17c964; }
+  .c1-spark { width:100%; height:36px; margin-top:16px; }
+
+  /* ============ 2: TARGET LOCK HUD ============ */
+  .c2 { background:radial-gradient(circle at 50% 30%,#0f1a0f,#050505 75%); border:1px solid #1a3a1a; border-radius:14px; padding:20px; min-height:280px; position:relative; overflow:hidden; }
+  .c2-reticle { width:110px; height:110px; margin:6px auto 0; position:relative; }
+  .c2-reticle svg { width:100%; height:100%; animation:c2spin 8s linear infinite; }
+  @keyframes c2spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+  .c2-center { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+  .c2-center .gap { font:900 20px monospace; color:#17c964; }
+  .c2-center .lbl { font:800 9px monospace; color:#4a9a4a; letter-spacing:.1em; }
+  .c2-foot { text-align:center; margin-top:10px; }
+  .c2-target { font:800 15px -apple-system; }
+  .c2-rate { font:700 11.5px monospace; color:#17c964; margin-top:4px; }
+  .c2-tag { display:inline-block; margin-top:10px; font:800 9px monospace; letter-spacing:.1em; color:#17c964; border:1px solid #1a5a1a; padding:3px 10px; border-radius:20px; }
+
+  /* ============ 3: MOMENTUM METER ============ */
+  .c3 { background:#0f0f0f; border:1px solid #262626; border-radius:14px; padding:20px; min-height:280px; }
+  .c3-name { font:800 15px -apple-system; }
+  .c3-team { font:600 11.5px monospace; color:#666; }
+  .c3-meter { margin-top:18px; height:10px; border-radius:6px; background:linear-gradient(90deg,#E10600,#333 48%,#333 52%,#17c964); position:relative; }
+  .c3-needle { position:absolute; top:-4px; width:3px; height:18px; background:#fff; border-radius:2px; box-shadow:none; }
+  .c3-labels { display:flex; justify-content:space-between; margin-top:6px; font:700 9px monospace; color:#666; letter-spacing:.06em; }
+  .c3-verdict { margin-top:16px; font:800 15px -apple-system; }
+  .c3-sub { font:600 11.5px monospace; color:#17c964; margin-top:6px; }
+</style>
+</head>
+<body>
+<h1>车手卡 — 3个"分析+预测"方案</h1>
+<div class="lead">内容都一样：VER 在追 LEC（真实数据，来自刚才生成的解说样本：差距从0.589s缩到0.413s，约每圈收窄0.088s），卡片展示的是"追上还要几圈"这个预测，不是单纯的当前差距数字。</div>
+
+<div class="row">
+  <div>
+    <div class="col-head"><div class="name">01 · 追赶速率卡</div><div class="tag">大数字+ETA预测，最直接</div></div>
+    <div class="c1">
+      <div class="c1-top">
+        <div class="c1-badge">VER</div>
+        <div><div class="c1-name">VERSTAPPEN</div><div class="c1-vs">追赶目标：LECLERC (P3)</div></div>
+      </div>
+      <div class="c1-stat"><div class="v">-0.088s</div><div class="l">每圈收窄速率</div></div>
+      <div class="c1-eta">⏱ 预计 5 圈内追上</div>
+      <svg class="c1-spark" viewBox="0 0 240 36"><path d="M5,8 L235,28" stroke="#17c964" stroke-width="2.5" stroke-linecap="round" fill="none"/><circle cx="5" cy="8" r="3" fill="#17c964"/><circle cx="235" cy="28" r="3" fill="#17c964"/></svg>
+    </div>
+  </div>
+
+  <div>
+    <div class="col-head"><div class="name">02 · 目标锁定 HUD</div><div class="tag">赛车游戏瞄准镜感，最"爽"</div></div>
+    <div class="c2">
+      <div class="c2-reticle">
+        <svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="50" fill="none" stroke="#1a5a1a" stroke-width="1.5" stroke-dasharray="4 6"/><circle cx="55" cy="55" r="38" fill="none" stroke="#17c964" stroke-width="1.5"/></svg>
+        <div class="c2-center"><div class="gap">0.413s</div><div class="lbl">CLOSING</div></div>
+      </div>
+      <div class="c2-foot">
+        <div class="c2-target">🎯 VER → LEC (P3)</div>
+        <div class="c2-rate">-0.088s/LAP</div>
+        <div class="c2-tag">TARGET IN RANGE · 5 LAPS</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="col-head"><div class="name">03 · 动能仪表</div><div class="tag">红绿仪表指针，最直觉</div></div>
+    <div class="c3">
+      <div class="c3-name">VERSTAPPEN</div>
+      <div class="c3-team">RED BULL RACING #1</div>
+      <div class="c3-meter"><div class="c3-needle" style="left:78%"></div></div>
+      <div class="c3-labels"><span>掉队</span><span>持平</span><span>追赶中</span></div>
+      <div class="c3-verdict">🔥 强势追赶 LECLERC</div>
+      <div class="c3-sub">0.589s → 0.413s · 5圈内可能完成超越</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

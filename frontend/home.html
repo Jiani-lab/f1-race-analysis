@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>F1 Race Control — Races</title>
+<style>
+  :root {
+    --track:          #050506;
+    --surface:        #101013;
+    --surface-raised: #17171b;
+    --hairline:       rgba(255,255,255,0.08);
+    --hairline-strong: rgba(255,255,255,0.16);
+    --ink:            #f5f5f3;
+    --ink-dim:        #9c9c9f;
+    --ink-faint:      #616164;
+    --f1-red:         #E10600;
+    --f1-red-dim:     rgba(225,6,0,0.16);
+    --green:          #17c964;
+    --green-dim:      rgba(23,201,100,0.14);
+    --amber:          #f5a623;
+    --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { overflow-x: hidden; max-width: 100%; }
+  body {
+    margin: 0; padding: 0 0 60px; background: var(--track); color: var(--ink);
+    font-family: var(--sans);
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 14px);
+  }
+  main { max-width: 1040px; margin: 0 auto; padding: 0 18px; min-width: 0; }
+  a { color: inherit; }
+
+  /* ---------- masthead + account picker ---------- */
+  .masthead { background: linear-gradient(180deg, #14100f 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 18px 18px 16px; }
+  .masthead-inner { max-width: 1040px; margin: 0 auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .mh-flag { display: inline-flex; gap: 3px; margin-bottom: 8px; }
+  .mh-flag span { width: 16px; height: 11px; display: inline-block; }
+  .mh-flag span:nth-child(1) { background: #477050; }
+  .mh-flag span:nth-child(2) { background: #f5f5f3; }
+  .mh-flag span:nth-child(3) { background: #ce2939; }
+  .mh-round { font: 700 11.5px/1 var(--mono); letter-spacing: 0.14em; color: var(--f1-red); text-transform: uppercase; }
+  .mh-title { font: 800 24px/1.15 var(--sans); letter-spacing: -0.01em; margin: 3px 0 0; }
+  .mh-sub { font: 500 14.5px/1.4 var(--sans); color: var(--ink-dim); margin-top: 3px; }
+
+  .account { position: relative; }
+  .account-btn { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--hairline-strong); padding: 6px 12px 6px 6px; border-radius: 24px; cursor: pointer; color: var(--ink); font: 600 13px var(--sans); }
+  .account-btn:hover { background: var(--surface-raised); }
+  .account-avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--f1-red), #ff6a5f); display: flex; align-items: center; justify-content: center; font: 800 11px var(--mono); flex: 0 0 auto; }
+  .account-chevron { color: var(--ink-faint); font-size: 10px; transition: transform .15s; }
+  .account.open .account-chevron { transform: rotate(180deg); }
+  .account-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 200px; background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 10px; padding: 6px; box-shadow: 0 12px 32px rgba(0,0,0,0.5); display: none; z-index: 10; }
+  .account.open .account-menu { display: block; }
+  .account-menu-label { font: 700 9.5px/1 var(--mono); letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; padding: 8px 10px 4px; }
+  .account-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font: 600 13px var(--sans); }
+  .account-item:hover { background: rgba(255,255,255,0.06); }
+  .account-item.active { color: var(--green); }
+  .account-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); flex: 0 0 auto; }
+  .account-item.active .dot { background: var(--green); }
+  .account-sep { height: 1px; background: var(--hairline); margin: 6px 4px; }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 32px 0 22px; }
+  .hero h1 { font: 800 30px/1.2 var(--sans); margin: 0 0 8px; letter-spacing: -0.01em; }
+  .hero p { font: 500 15px/1.6 var(--sans); color: var(--ink-dim); margin: 0; max-width: 640px; }
+
+  /* ---------- race grid ---------- */
+  .grid-head { display: flex; align-items: baseline; gap: 10px; margin: 30px 0 14px; }
+  .grid-head .chip { width: 5px; height: 14px; background: var(--f1-red); border-radius: 1px; }
+  .grid-head h2 { font: 800 13px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; margin: 0; }
+  .grid-head .count { font: 600 13px var(--sans); color: var(--ink-faint); }
+
+  .race-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .race-card { display: block; text-decoration: none; background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 18px; transition: border-color .15s, transform .15s; position: relative; overflow: hidden; }
+  .race-card:hover { border-color: var(--hairline-strong); transform: translateY(-2px); }
+  .race-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--ink-faint); }
+  .race-card.live::before { background: var(--f1-red); }
+  .race-card.ended::before { background: var(--green); }
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; font: 800 10px/1 var(--mono); letter-spacing: 0.1em; padding: 4px 9px; border-radius: 20px; text-transform: uppercase; }
+  .status-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .status-badge.live { background: var(--f1-red-dim); color: #ff6a5f; }
+  .status-badge.live .dot { background: #ff6a5f; animation: pulse 1.1s ease-in-out infinite; }
+  .status-badge.ended { background: var(--green-dim); color: var(--green); }
+  .status-badge.ended .dot { background: var(--green); }
+  .status-badge.idle { background: rgba(255,255,255,0.06); color: var(--ink-faint); }
+  .status-badge.idle .dot { background: var(--ink-faint); }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+  .race-round { font: 700 10.5px/1 var(--mono); letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; margin-top: 12px; }
+  .race-name { font: 800 16px/1.3 var(--sans); margin-top: 5px; }
+  .race-meta { font: 600 12px/1 var(--mono); color: var(--ink-faint); margin-top: 10px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .race-cta { font: 700 11.5px/1 var(--mono); letter-spacing: 0.04em; color: var(--f1-red); margin-top: 14px; text-transform: uppercase; }
+  .race-card:hover .race-cta { color: #ff2a1f; }
+
+  .empty-state { font: 500 14.5px/1.7 var(--sans); color: var(--ink-faint); padding: 30px 4px; text-align: center; border: 1px dashed var(--hairline-strong); border-radius: 12px; }
+
+  /* ---------- one-time push-notification setup ---------- */
+  .push-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 18px 20px; margin-top: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .push-card .body { flex: 1; min-width: 220px; }
+  .push-card .title { font: 800 14px var(--sans); }
+  .push-card .sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
+  .push-card select { background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 8px 10px; border-radius: 8px; font: 500 13px var(--sans); }
+  .push-card button { background: var(--f1-red); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font: 800 12px var(--sans); cursor: pointer; white-space: nowrap; }
+  .push-card button:hover { background: #ff2a1f; }
+  .push-card button:disabled { opacity: .5; cursor: default; }
+  .push-card.enabled { border-color: rgba(23,201,100,0.35); }
+  .push-card .status-line { font: 700 12px var(--sans); color: var(--green); display: none; }
+  .push-card.enabled .status-line { display: block; }
+  .push-card.enabled .setup-row { display: none; }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <div class="mh-flag"><span></span><span></span><span></span></div>
+      <div class="mh-round">LIVE-WIRED DASHBOARD</div>
+      <div class="mh-title">F1 RACE CONTROL</div>
+      <div class="mh-sub">Real screen + audio capture, real recall, no scripted content</div>
+    </div>
+    <div class="account" id="account">
+      <button class="account-btn" onclick="toggleAccount(event)">
+        <span class="account-avatar" id="account-avatar">J</span>
+        <span id="account-name">Jiani</span>
+        <span class="account-chevron">▾</span>
+      </button>
+      <div class="account-menu">
+        <div class="account-menu-label">Switch Account</div>
+        <div class="account-item active" data-name="Jiani" data-initial="J" onclick="selectAccount(this)"><span class="dot"></span>Jiani</div>
+        <div class="account-item" data-name="Guest" data-initial="G" onclick="selectAccount(this)"><span class="dot"></span>Guest</div>
+        <div class="account-sep"></div>
+        <div class="account-item" onclick="toggleAccount()">Sign out</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="hero">
+    <h1>Your races</h1>
+    <p>Pick up a race in progress or revisit a past one — each has its own live-wired replay, auto-detected key moments, and What-If simulator.</p>
+  </div>
+
+  <div class="push-card" id="push-card">
+    <div class="body">
+      <div class="title">Race notifications</div>
+      <div class="sub setup-row">One-time setup — after this, notifications work even with no tab open, for every future race.</div>
+      <div class="status-line" id="push-status-line">Notifications enabled — you're set for every future race.</div>
+    </div>
+    <div class="setup-row" style="display:flex; gap:8px; align-items:center;">
+      <select id="push-driver-select"></select>
+      <button id="push-enable-btn" onclick="enablePush()">Enable notifications</button>
+    </div>
+  </div>
+
+  <div class="grid-head"><span class="chip"></span><h2>All Sessions</h2><span class="count" id="session-count"></span></div>
+  <div class="race-grid" id="race-grid">
+    <div class="empty-state">Loading races...</div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// Cosmetic only -- there is no backend auth here (single-user local/demo
+// project). This just mirrors the account-switcher UI real racing sites
+// have, persisted in localStorage so a refresh doesn't reset it.
+function toggleAccount(ev) {
+  if (ev) ev.stopPropagation();
+  $('account').classList.toggle('open');
+}
+function selectAccount(el) {
+  document.querySelectorAll('.account-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  $('account-name').textContent = el.dataset.name;
+  $('account-avatar').textContent = el.dataset.initial;
+  localStorage.setItem('f1-account-name', el.dataset.name);
+  localStorage.setItem('f1-account-initial', el.dataset.initial);
+  $('account').classList.remove('open');
+}
+document.addEventListener('click', () => $('account').classList.remove('open'));
+(function restoreAccount() {
+  const name = localStorage.getItem('f1-account-name');
+  if (!name) return;
+  const item = [...document.querySelectorAll('.account-item[data-name]')].find(i => i.dataset.name === name);
+  if (item) selectAccount(item);
+})();
+
+// ---------------- one-time push-notification setup ----------------
+// This is the ONE thing that can't be automated away -- browsers require a
+// real user gesture in a real tab to grant notification permission, no way
+// around that for any site. But it only needs doing once, ever: the
+// favorite-driver preference stored here is global (not per-race, matches
+// frontend/index.html's PREFS_DRIVER_KEY), so every future detected race
+// works with zero further action -- the backend compares its own copy of
+// this preference (POSTed to /push/subscribe) against notification_worthy
+// events on its own 5-minute refresh loop, no tab needs to be open at all.
+const PUSH_DRIVER_NAMES = {
+  NOR: 'NORRIS', PIA: 'PIASTRI', HAM: 'HAMILTON', LEC: 'LECLERC', VER: 'VERSTAPPEN',
+  PER: 'PEREZ', ANT: 'ANTONELLI', RUS: 'RUSSELL', ALO: 'ALONSO', STR: 'STROLL',
+  GAS: 'GASLY', COL: 'COLAPINTO', ALB: 'ALBON', SAI: 'SAINZ', HAD: 'HADJAR',
+  LAW: 'LAWSON', HUL: 'HULKENBERG', BOR: 'BORTOLETO', OCO: 'OCON', BEA: 'BEARMAN',
+  BOT: 'BOTTAS', LIN: 'LINDBLAD',
+};
+
+function populatePushDriverSelect() {
+  const sel = $('push-driver-select');
+  const codes = Object.keys(PUSH_DRIVER_NAMES).sort((a, b) => PUSH_DRIVER_NAMES[a].localeCompare(PUSH_DRIVER_NAMES[b]));
+  sel.innerHTML = codes.map(c => `<option value="${c}">${PUSH_DRIVER_NAMES[c]}</option>`).join('');
+  const existing = localStorage.getItem('f1-fav-driver');
+  if (existing) sel.value = existing;
+}
+populatePushDriverSelect();
+
+function urlBase64ToUint8Array(base64) {
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function enablePush() {
+  const btn = $('push-enable-btn');
+  btn.disabled = true;
+  btn.textContent = 'Enabling...';
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      throw new Error('This browser doesn\'t support push notifications');
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') throw new Error('Permission denied');
+    const registration = await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    const { key } = await (await fetch('/push/vapid-public-key')).json();
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key),
+    });
+    const driver = $('push-driver-select').value;
+    const res = await fetch('/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: subscription.toJSON(), favorite_driver: driver }),
+    });
+    if (!res.ok) throw new Error('Server rejected the subscription');
+    localStorage.setItem('f1-fav-driver', driver);
+    localStorage.setItem('f1-push-enabled', '1');
+    $('push-card').classList.add('enabled');
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Enable notifications';
+    alert('Could not enable notifications: ' + e.message);
+  }
+}
+
+if (localStorage.getItem('f1-push-enabled') === '1' && Notification.permission === 'granted') {
+  $('push-card').classList.add('enabled');
+}
+
+function fmtDate(ms) {
+  if (ms == null) return '—';
+  const d = new Date(ms), pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function raceCard(s) {
+  const statusClass = s.status === 'active' ? 'live' : s.status === 'ended' ? 'ended' : 'idle';
+  const statusLabel = s.status === 'active' ? 'Live' : s.status === 'ended' ? 'Completed' : 'Idle';
+  return `
+    <a class="race-card ${statusClass}" href="/race?session=${encodeURIComponent(s.session_id)}">
+      <span class="status-badge ${statusClass}"><span class="dot"></span>${statusLabel}</span>
+      <div class="race-round">${s.round}</div>
+      <div class="race-name">${s.name}</div>
+      <div class="race-meta"><span>${fmtDate(s.start_ms)}</span></div>
+      <div class="race-cta">Open Dashboard →</div>
+    </a>`;
+}
+
+async function loadSessions() {
+  const grid = $('race-grid');
+  try {
+    const res = await fetch('/sessions');
+    if (!res.ok) throw new Error(res.statusText);
+    const { sessions } = await res.json();
+    $('session-count').textContent = sessions.length ? `${sessions.length} race${sessions.length === 1 ? '' : 's'}` : '';
+    grid.innerHTML = sessions.length
+      ? sessions.map(raceCard).join('')
+      : `<div class="empty-state">No races captured yet — start recording a live broadcast to see it here.</div>`;
+  } catch (e) {
+    grid.innerHTML = `<div class="empty-state">Error loading races: ${e.message}</div>`;
+  }
+}
+loadSessions();
+setInterval(loadSessions, 15000); // catches a newly-detected live race without a manual refresh
+</script>
+
+</body>
+</html>

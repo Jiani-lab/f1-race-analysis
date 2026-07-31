@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>方向对比 — 选一个</title>
+<style>
+  body { margin:0; padding:40px 20px; background:#0a0a0a; color:#fff; font-family:-apple-system,sans-serif; }
+  h1 { font-size:20px; margin:0 0 6px; }
+  .lead { color:#999; font-size:13px; margin-bottom:36px; }
+  .row { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; max-width:1200px; margin:0 auto 60px; }
+  @media (max-width:900px){ .row{grid-template-columns:1fr;} }
+  .col-head { text-align:center; margin-bottom:14px; }
+  .col-head .name { font-weight:800; font-size:15px; }
+  .col-head .tag { font-size:11.5px; color:#888; margin-top:2px; }
+  .stage { border-radius:14px; padding:24px 18px; min-height:420px; display:flex; flex-direction:column; gap:16px; align-items:center; justify-content:flex-start; }
+
+  /* ============ A: BROADCAST MOMENT ============ */
+  .stage-a { background: radial-gradient(circle at 50% 0%, #1a0505 0%, #050505 70%); border:1px solid #2a0a0a; overflow:hidden; position:relative; }
+  .a-flash {
+    width:100%; background:linear-gradient(90deg,#E10600,#ff3b2f 50%,#E10600); border-radius:10px; padding:14px 16px;
+    animation:a-slide .5s cubic-bezier(.16,1,.3,1); position:relative; overflow:hidden;
+  }
+  .a-flash::after { content:""; position:absolute; inset:0; background:repeating-linear-gradient(115deg,rgba(255,255,255,.12) 0 10px,transparent 10px 22px); animation:a-shine 3s linear infinite; }
+  @keyframes a-slide { from{ transform:translateX(-30px); opacity:0 } to{ transform:translateX(0); opacity:1 } }
+  @keyframes a-shine { from{ background-position:0 0 } to{ background-position:400px 0 } }
+  .a-flash .eyebrow { font:900 10.5px/1 -apple-system; letter-spacing:.16em; color:#ffe; opacity:.85; }
+  .a-flash .headline { font:900 22px/1.15 -apple-system; color:#fff; margin-top:6px; text-shadow:0 2px 8px rgba(0,0,0,.4); }
+  .a-flash .sub { font:700 12px -apple-system; color:#ffdcd8; margin-top:4px; }
+  .a-checker { position:absolute; top:0; right:0; width:70px; height:70px; opacity:.15;
+    background-image: repeating-conic-gradient(#fff 0% 25%, transparent 0% 50%); background-size:14px 14px; }
+  .a-driver { width:100%; background:#111; border:1px solid #2a2a2a; border-radius:12px; padding:16px; margin-top:auto; position:relative; }
+  .a-driver .badge { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#3671C6,#1a3a6b); display:flex; align-items:center; justify-content:center; font:900 18px -apple-system; float:left; margin-right:12px; border:2px solid #4a8ae0; }
+  .a-driver .name { font:900 17px -apple-system; }
+  .a-driver .team { font:700 10.5px -apple-system; color:#7fa8e8; text-transform:uppercase; letter-spacing:.06em; }
+  .a-driver .gap { font:900 26px "SF Mono",monospace; margin-top:14px; color:#3671C6; clear:both; }
+  .a-driver .gap-lbl { font:700 9px monospace; color:#666; letter-spacing:.1em; text-transform:uppercase; }
+
+  /* ============ B: HIGHLIGHT REEL ============ */
+  .stage-b { background:linear-gradient(160deg,#1a1030,#0d0818); border:1px solid #2a1f45; }
+  .b-card { width:100%; background:linear-gradient(135deg,#ff5e5e,#ff2d78); border-radius:20px; padding:20px; box-shadow:0 8px 20px rgba(0,0,0,.4); animation:b-pop .45s cubic-bezier(.16,1,.3,1); }
+  @keyframes b-pop { from{ transform:scale(.85); opacity:0 } to{ transform:scale(1); opacity:1 } }
+  .b-card .emoji { font-size:30px; }
+  .b-card .headline { font:900 19px/1.2 -apple-system; color:#fff; margin-top:8px; }
+  .b-card .sub { font:600 12.5px -apple-system; color:rgba(255,255,255,.85); margin-top:6px; }
+  .b-driver { width:100%; background:#211a35; border-radius:20px; padding:18px; margin-top:auto; text-align:center; }
+  .b-avatar { width:64px; height:64px; border-radius:50%; margin:0 auto 10px; background:linear-gradient(135deg,#7c5cff,#ff5eae); display:flex; align-items:center; justify-content:center; font:900 22px -apple-system; box-shadow:0 0 0 4px rgba(124,92,255,.2); }
+  .b-driver .name { font:800 16px -apple-system; }
+  .b-driver .team { font:600 11.5px -apple-system; color:#a99ee0; margin-top:2px; }
+  .b-pill { display:inline-block; margin-top:12px; background:rgba(255,255,255,.1); border-radius:20px; padding:6px 14px; font:800 13px -apple-system; }
+  .b-pill b { color:#ff8fc0; }
+
+  /* ============ C: ENHANCED TERMINAL ============ */
+  .stage-c { background:#0d0d0d; border:1px solid rgba(255,255,255,.08); position:relative; }
+  .c-flash { width:100%; background:#161010; border:1px solid rgba(225,6,0,.4); border-radius:8px; padding:14px 16px; position:relative; }
+  .c-flash .tag { display:inline-flex; align-items:center; gap:5px; font:800 9.5px monospace; color:#ff4a3d; letter-spacing:.1em; }
+  .c-flash .tag .dot { width:6px; height:6px; border-radius:50%; background:#ff4a3d; animation:c-pulse 1.2s ease-in-out infinite; }
+  @keyframes c-pulse { 0%,100%{ opacity:1 } 50%{ opacity:.3 } }
+  .c-flash .headline { font:800 17px/1.3 -apple-system; color:#fff; margin-top:8px; }
+  .c-flash .sub { font:500 12px monospace; color:#888; margin-top:5px; }
+  .c-driver { width:100%; background:#131313; border:1px solid rgba(255,255,255,.08); border-radius:10px; padding:16px; margin-top:auto; }
+  .c-driver .top { display:flex; align-items:center; gap:10px; }
+  .c-helmet { width:34px; height:34px; border-radius:6px; background:#3671C6; display:flex; align-items:center; justify-content:center; font:900 13px monospace; }
+  .c-driver .name { font:800 16px -apple-system; }
+  .c-driver .team { font:600 10px monospace; color:#5a8fd6; text-transform:uppercase; }
+  .c-driver .gap { font:800 24px monospace; margin-top:12px; color:#fff; }
+  .c-driver .gap-lbl { font:700 9px monospace; color:#666; letter-spacing:.08em; }
+  .c-driver .spark { width:100%; height:24px; margin-top:8px; }
+
+</style>
+</head>
+<body>
+<h1>三个方向对比 — 同一个瞬间，三种呈现</h1>
+<div class="lead">内容都一样（VER 第1圈 T1 连超两台法拉利 + VER 车手卡），只是风格不同。看完选一个，或者告诉我"混合A的xx和C的xx"。</div>
+
+<div class="row">
+  <div>
+    <div class="col-head"><div class="name">A · 广播花字</div><div class="tag">转播即时特效感，最戏剧化</div></div>
+    <div class="stage stage-a">
+      <div class="a-checker"></div>
+      <div class="a-flash">
+        <div class="eyebrow">⚡ OVERTAKE · LAP 1 · T1</div>
+        <div class="headline">VERSTAPPEN 连超两台法拉利！</div>
+        <div class="sub">P5 → P3　冲刺进弯直接双超</div>
+      </div>
+      <div class="a-driver">
+        <div class="badge">VER</div>
+        <div class="name">Max Verstappen</div>
+        <div class="team">Red Bull Racing #1</div>
+        <div class="gap">+1.400s</div>
+        <div class="gap-lbl">GAP TO LEADER</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="col-head"><div class="name">B · 精彩集锦</div><div class="tag">运动App/短视频感，最活泼</div></div>
+    <div class="stage stage-b">
+      <div class="b-card">
+        <div class="emoji">🔥</div>
+        <div class="headline">维斯塔潘一个弯超两台法拉利！</div>
+        <div class="sub">起步秀了一把肌肉，直接从 P5 冲上 P3</div>
+      </div>
+      <div class="b-driver">
+        <div class="b-avatar">VER</div>
+        <div class="name">Max Verstappen</div>
+        <div class="team">Red Bull Racing</div>
+        <div class="b-pill">落后领跑 <b>+1.4s</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="col-head"><div class="name">C · 强化版终端</div><div class="tag">保留现在的底子，加动效和重点</div></div>
+    <div class="stage stage-c">
+      <div class="c-flash">
+        <span class="tag"><span class="dot"></span>LIVE OVERTAKE</span>
+        <div class="headline">VER T1 连超两台法拉利，P5→P3</div>
+        <div class="sub">LAP 1 · vision + audio 双源确认</div>
+      </div>
+      <div class="c-driver">
+        <div class="top">
+          <div class="c-helmet">VER</div>
+          <div>
+            <div class="name">VERSTAPPEN</div>
+            <div class="team">RED BULL RACING #1</div>
+          </div>
+        </div>
+        <div class="gap">+1.400s</div>
+        <div class="gap-lbl">GAP TO LEADER · LAP 7</div>
+        <svg class="spark" viewBox="0 0 240 24"><path d="M3,18 L50,14 L98,18 L146,6 L194,20 L237,4" fill="none" stroke="#3671C6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

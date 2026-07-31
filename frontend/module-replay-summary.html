@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>补看/总结 可视化 — 3个方案</title>
+<style>
+  :root {
+    --track: #050506; --surface: #101013; --hairline: rgba(255,255,255,0.08);
+    --ink: #f5f5f3; --ink-dim: #9c9c9f; --ink-faint: #616164;
+    --f1-red: #E10600; --amber: #f5a623; --green: #17c964;
+    --mono: "SF Mono","IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans: -apple-system,"Segoe UI",sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:40px 20px 100px; background:var(--track); color:var(--ink); font-family:var(--sans); }
+  h1 { font-size:19px; margin:0 0 6px; }
+  .lead { color:var(--ink-dim); font-size:12.5px; margin-bottom:8px; max-width:720px; line-height:1.6; }
+  .ref { color:var(--ink-faint); font-size:11px; margin-bottom:36px; max-width:720px; font-family:var(--mono); }
+  .block { max-width:760px; margin:0 auto 56px; background:var(--surface); border:1px solid var(--hairline); border-radius:14px; padding:22px 24px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .block-head .n { font:900 11.5px var(--mono); color:var(--f1-red); background:rgba(225,6,0,.14); padding:3px 9px; border-radius:5px; }
+  .block-head .name { font:800 15px var(--sans); }
+  .block-head .tag { font:600 11px var(--sans); color:var(--ink-dim); }
+  .block-sub { font:500 11px var(--mono); color:var(--ink-faint); margin-bottom:16px; }
+  button.play { background:var(--f1-red); color:#fff; border:none; padding:7px 14px; border-radius:7px; font:800 11.5px var(--sans); cursor:pointer; margin-bottom:14px; }
+  button.play:hover { background:#ff2a1f; }
+  svg { width:100%; height:auto; display:block; overflow:visible; }
+  .evt-strip { display:flex; gap:6px; flex-wrap:wrap; margin-top:14px; }
+  .evt-chip { font:700 9.5px var(--mono); padding:3px 8px; border-radius:20px; background:rgba(255,255,255,.05); color:var(--ink-dim); border:1px solid var(--hairline); white-space:nowrap; }
+  .evt-chip.active { background:rgba(225,6,0,.16); color:#ff6a5f; border-color:rgba(225,6,0,.4); }
+</style>
+</head>
+<body>
+<h1>补看 / 赛后总结 — 可视化替代文字，3个方案</h1>
+<div class="lead">全部用真实数据驱动（第9-70圈，来自 /session/strategy-trend 真实排名推算 + /session/events 真实检测事件），拖动或点播放能看到车手真实的名次变化——不是编的动画。</div>
+<div class="ref">参考真实业界形态：F1 官方转播 Battle Track、RaceFans 赛后 Lap Chart（名次-圈数折线图，P1在最上方，超车=线交叉，进站=下探后回升）——不是"人口柱状图竞速"那种通用动画，赛车圈数图本来就是折线</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">01</span><span class="name">真实 Lap Chart</span><span class="tag">业界标准形态，最专业</span></div>
+  <div class="block-sub">名次-圈数折线图 · P1在最上方 · 线交叉=超车 · 下探=进站</div>
+  <button class="play" onclick="playChart('c1')">▶ 播放回放</button>
+  <svg id="c1" viewBox="0 0 720 320"></svg>
+  <div class="evt-strip" id="c1-evts"></div>
+</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">02</span><span class="name">差距强度图</span><span class="tag">位置图看不出的"缠斗感"，更能体现真实battle</span></div>
+  <div class="block-sub">与头名差距-圈数折线图（越靠近0越接近头名，比纯名次更能看出苦追/掉队的幅度）· 真实OCR在部分圈次没读到差距数字，线断开是真的没数据，不是bug</div>
+  <button class="play" onclick="playChart('c2')">▶ 播放回放</button>
+  <svg id="c2" viewBox="0 0 720 320"></svg>
+  <div class="evt-strip" id="c2-evts"></div>
+</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">03</span><span class="name">赛道位置条</span><span class="tag">最像游戏/最少文字，车手图标真实滑动超车</span></div>
+  <div class="block-sub">横向赛道位置带，车手芯片按真实名次左右滑动，最贴近你说的"车动态超车"</div>
+  <button class="play" onclick="playTrack()">▶ 播放回放</button>
+  <div id="c3-track" style="margin-top:8px;"></div>
+  <div class="evt-strip" id="c3-evts"></div>
+</div>
+
+<script>
+// ---- real data: laps 15-70, positions for 7 real drivers (from real /session/strategy-trend, computed via the same rank inference the dashboard uses) ----
+const LAPS = [15,17,18,20,25,30,37,40,44,50,57,60,65,70];
+const DRIVERS = {
+  NOR: { pos: [2,2,2,2,2,2,1,1,1,1,1,1,1,1], color:'#FF8000', gap:[0.8,null,13.25,0.75,0.55,1.3,null,3.7,1.5,null,null,null,null,null] },
+  PIA: { pos: [1,1,1,1,1,1,13,14,14,14,null,null,null,null], color:'#ffb066', gap:[null,21.15,12.3,12.5,null,null,7.4,null,5.8,5.1,2.4,null,null,null] },
+  ANT: { pos: [4,4,4,4,4,4,11,10,10,10,11,11,7,7], color:'#27F4D2', gap:[8.6,8.1,6.0,null,null,null,6.35,null,null,5.2,6.95,7.7,18.55,4.3] },
+  BOR: { pos: [14,14,14,14,14,14,5,2,2,2,6,6,8,8], color:'#B02A30', gap:[40.3,42.65,35.9,null,null,null,2.05,null,null,null,3.9,null,null,null] },
+  ALO: { pos: [17,17,17,17,17,17,2,3,3,3,12,7,13,13], color:'#229971', gap:[42.25,46.5,40.6,null,null,null,0.3,null,null,null,8.9,2.35,null,10.8] },
+  LEC: { pos: [3,3,3,3,3,3,7,4,4,4,2,12,9,9], color:'#E8002D', gap:[1.05,28.4,19.8,2.7,0.8,null,2.95,null,null,null,0.5,7.6,24.0,2.45] },
+  HAM: { pos: [8,8,8,8,8,8,8,7,7,7,8,3,3,3], color:'#B6BABD', gap:[24.1,23.5,14.3,1.2,1.9,null,3.2,null,null,null,4.55,0.5,19.05,1.2] },
+};
+const EVENTS = [
+  { lap: 17, code:'NOR', text:'诺里斯进站，让出领跑位置', importance: 82 },
+  { lap: 18, code:'ANT', text:'安托内利成为实际领跑者', importance: 88 },
+  { lap: 37, code:'NOR', text:'NOR从PIA手中夺得领跑位置', importance: 82 },
+  { lap: 57, code:'PIA', text:'皮亚斯特里退赛', importance: 85 },
+];
+
+function chartFrame(svgId, useGap) {
+  const svg = document.getElementById(svgId);
+  const W=720,H=320,padL=34,padR=100,padT=16,padB=30;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const xPos = i => padL + (i/(LAPS.length-1))*plotW;
+  const maxPos = 18;
+  const yPosRank = p => padT + ((p-1)/(maxPos-1))*plotH;
+  const maxGap = 46;
+  const yPosGap = g => padT + (g/maxGap)*plotH;
+  let svgHtml = '';
+  // gridlines + axis
+  for (let i=0;i<LAPS.length;i++) { if (i%2===0) svgHtml += `<text x="${xPos(i)}" y="${H-8}" font-size="8" fill="#616164" text-anchor="middle" font-family="monospace">L${LAPS[i]}</text>`; }
+  if (!useGap) { [1,5,10,15].forEach(p => { svgHtml += `<text x="${padL-6}" y="${yPosRank(p)+3}" font-size="8" fill="#616164" text-anchor="end" font-family="monospace">P${p}</text>`; svgHtml += `<line x1="${padL}" x2="${W-padR}" y1="${yPosRank(p)}" y2="${yPosRank(p)}" stroke="#1a1a1a"/>`; }); }
+  else { [0,10,20,30,40].forEach(g => { svgHtml += `<text x="${padL-6}" y="${yPosGap(g)+3}" font-size="8" fill="#616164" text-anchor="end" font-family="monospace">${g}s</text>`; svgHtml += `<line x1="${padL}" x2="${W-padR}" y1="${yPosGap(g)}" y2="${yPosGap(g)}" stroke="#1a1a1a"/>`; }); }
+  return { svg, W,H,padL,padR,padT,padB,plotW,plotH,xPos, yPos: useGap?yPosGap:yPosRank, base: svgHtml };
+}
+
+function drawChart(svgId, useGap, upTo) {
+  const f = chartFrame(svgId, useGap);
+  let html = f.base;
+  Object.entries(DRIVERS).forEach(([code, d]) => {
+    const series = useGap ? d.gap : d.pos;
+    let path = '', drawing = false, dots = '';
+    for (let i=0;i<=upTo;i++) {
+      const v = series[i];
+      if (v == null) { drawing = false; continue; }
+      const x = f.xPos(i), y = f.yPos(v);
+      path += (drawing?'L':'M') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+      drawing = true;
+      if (i===upTo) dots += `<circle cx="${x}" cy="${y}" r="4" fill="${d.color}" stroke="#050506" stroke-width="1.5"/>`;
+    }
+    html += `<path d="${path}" fill="none" stroke="${d.color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>`;
+    html += dots;
+    // label at current position
+    const lastIdx = upTo, v = series[lastIdx];
+    if (v != null) html += `<text x="${f.xPos(lastIdx)+8}" y="${f.yPos(v)+3}" font-size="10" font-weight="800" fill="${d.color}" font-family="monospace">${code}</text>`;
+  });
+  f.svg.innerHTML = html;
+}
+
+function renderEvts(containerId, upToLap) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = EVENTS.map(e => `<span class="evt-chip${e.lap<=upToLap?' active':''}">L${e.lap} ${e.code} · ${e.text}</span>`).join('');
+}
+
+let timers = {};
+function playChart(svgId) {
+  clearInterval(timers[svgId]);
+  const useGap = svgId==='c2';
+  let i = 0;
+  drawChart(svgId, useGap, 0);
+  renderEvts(svgId+'-evts', LAPS[0]);
+  timers[svgId] = setInterval(() => {
+    i++;
+    if (i >= LAPS.length) { clearInterval(timers[svgId]); return; }
+    drawChart(svgId, useGap, i);
+    renderEvts(svgId+'-evts', LAPS[i]);
+  }, 500);
+}
+drawChart('c1', false, LAPS.length-1); renderEvts('c1-evts', 70);
+drawChart('c2', true, LAPS.length-1); renderEvts('c2-evts', 70);
+
+// ---- variant 3: horizontal track strip ----
+function renderTrackFrame(upTo) {
+  const el = document.getElementById('c3-track');
+  const codes = Object.keys(DRIVERS);
+  const ranked = codes.map(c => ({c, p: DRIVERS[c].pos[upTo]})).filter(d=>d.p!=null).sort((a,b)=>a.p-b.p);
+  const maxP = 18;
+  el.innerHTML = `<div style="position:relative;height:${ranked.length*34+10}px;background:#0a0a0c;border-radius:10px;border:1px solid #1a1a1a;padding:8px 0;">` +
+    ranked.map((d,i) => {
+      const color = DRIVERS[d.c].color;
+      const leftPct = ((d.p-1)/(maxP-1))*88 + 2;
+      return `<div style="position:absolute;top:${i*34+8}px;left:${leftPct}%;transition:left .45s cubic-bezier(.16,1,.3,1),top .45s;display:flex;align-items:center;gap:6px;">
+        <div style="width:28px;height:22px;border-radius:6px;background:${color};display:flex;align-items:center;justify-content:center;font:900 10px monospace;color:#050506;">${d.c}</div>
+        <div style="font:800 9px monospace;color:#616164;">P${d.p}</div>
+      </div>`;
+    }).join('') + `</div>`;
+}
+function playTrack() {
+  clearInterval(timers.track);
+  let i = 0;
+  renderTrackFrame(0); renderEvts('c3-evts', LAPS[0]);
+  timers.track = setInterval(() => {
+    i++;
+    if (i >= LAPS.length) { clearInterval(timers.track); return; }
+    renderTrackFrame(i); renderEvts('c3-evts', LAPS[i]);
+  }, 550);
+}
+renderTrackFrame(LAPS.length-1); renderEvts('c3-evts', 70);
+</script>
+</body>
+</html>

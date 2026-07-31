@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>图表 — 3个方案</title>
+<style>
+  body { margin:0; padding:40px 20px 100px; background:#050505; color:#fff; font-family:-apple-system,sans-serif; }
+  h1 { font-size:19px; margin:0 0 6px; }
+  .lead { color:#888; font-size:11.5px; margin-bottom:36px; max-width:680px; line-height:1.6; }
+  .block { max-width:720px; margin:0 auto 50px; background:#0f0f0f; border:1px solid #262626; border-radius:14px; padding:20px 22px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; margin-bottom:16px; }
+  .block-head .n { font:900 11.5px monospace; color:#E10600; background:rgba(225,6,0,.14); padding:3px 9px; border-radius:5px; }
+  .block-head .name { font:800 15px -apple-system; }
+  .block-head .tag { font:600 11.5px -apple-system; color:#888; }
+  .chart-svg { width:100%; height:auto; display:block; overflow:visible; }
+  .verdict { margin-top:14px; font:800 15px -apple-system; }
+  .verdict .sub { display:block; font:600 11.5px monospace; color:#888; margin-top:4px; }
+  .legend { display:flex; gap:16px; margin-top:12px; font:700 9px monospace; letter-spacing:.06em; color:#888; }
+  .legend span { display:inline-flex; align-items:center; gap:5px; }
+  .sw { width:12px; height:2.5px; border-radius:1px; display:inline-block; }
+</style>
+</head>
+<body>
+<h1>图表 — 3个"预测/趋势"方案</h1>
+<div class="lead">同一组真实数据：HAM 对 VER 的身位差在4圈里的走势（L3=0 · L5=-0.799 HAM领先 · L6=+0.479 VER领先 · L7=-0.53 HAM领先）。诚实地说，这个数据本身就很不稳定，"预测"应该是如实标出"拉锯、方向不明"，而不是硬编一个假趋势。</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">01</span><span class="name">趋势+不确定区间</span><span class="tag">带波动区间阴影，诚实表达"不确定"</span></div>
+  <svg class="chart-svg" viewBox="0 0 660 200">
+    <line x1="0" y1="100" x2="660" y2="100" stroke="#333" stroke-width="1" stroke-dasharray="3 3" />
+    <path d="M40,100 L220,178 L400,58 L580,140" fill="none" stroke="#666" stroke-width="1" stroke-dasharray="2 4" />
+    <path d="M40,60 Q310,60 400,20 L580,80" fill="none" stroke="none" />
+    <polygon points="40,70 220,148 400,28 580,110 580,170 400,88 220,208 40,130" fill="rgba(255,255,255,.05)" />
+    <path d="M40,100 L220,178 L400,58 L580,140" fill="none" stroke="#17c964" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="40" cy="100" r="4.5" fill="#17c964" stroke="#0f0f0f" stroke-width="2" /><text x="40" y="120" font-size="9" fill="#666" text-anchor="middle" font-family="monospace">L3</text>
+    <circle cx="220" cy="178" r="4.5" fill="#17c964" stroke="#0f0f0f" stroke-width="2" /><text x="220" y="196" font-size="9" fill="#17c964" text-anchor="middle" font-family="monospace">L5</text>
+    <circle cx="400" cy="58" r="4.5" fill="#3671C6" stroke="#0f0f0f" stroke-width="2" /><text x="400" y="42" font-size="9" fill="#3671C6" text-anchor="middle" font-family="monospace">L6</text>
+    <circle cx="580" cy="140" r="4.5" fill="#17c964" stroke="#0f0f0f" stroke-width="2" /><text x="580" y="158" font-size="9" fill="#17c964" text-anchor="middle" font-family="monospace">L7</text>
+    <text x="655" y="30" font-size="9" fill="#555" text-anchor="end" font-family="monospace">HAM领先</text>
+    <text x="655" y="185" font-size="9" fill="#555" text-anchor="end" font-family="monospace">VER领先</text>
+  </svg>
+  <div class="verdict">⚠️ 拉锯战，无法预测方向<span class="sub">4圈内正负摆动1.3s · 灰色区间=历史波动范围</span></div>
+</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">02</span><span class="name">势力范围背景</span><span class="tag">背景色块区分"谁的地盘"，最直观</span></div>
+  <svg class="chart-svg" viewBox="0 0 660 200">
+    <rect x="40" y="20" width="540" height="80" fill="rgba(23,201,100,.08)" />
+    <rect x="40" y="100" width="540" height="80" fill="rgba(54,113,198,.08)" />
+    <line x1="40" y1="100" x2="580" y2="100" stroke="#333" stroke-width="1" stroke-dasharray="3 3" />
+    <text x="46" y="34" font-size="9" fill="#17c964" font-family="monospace" font-weight="800">HAM 领先区</text>
+    <text x="46" y="172" font-size="9" fill="#3671C6" font-family="monospace" font-weight="800">VER 领先区</text>
+    <path d="M40,100 L220,178 L400,58 L580,140" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="40" cy="100" r="4.5" fill="#fff" /><circle cx="220" cy="178" r="4.5" fill="#fff" />
+    <circle cx="400" cy="58" r="4.5" fill="#fff" /><circle cx="580" cy="140" r="4.5" fill="#fff" />
+    <text x="40" y="118" font-size="9" fill="#888" text-anchor="middle" font-family="monospace">L3</text>
+    <text x="220" y="196" font-size="9" fill="#888" text-anchor="middle" font-family="monospace">L5</text>
+    <text x="400" y="42" font-size="9" fill="#888" text-anchor="middle" font-family="monospace">L6</text>
+    <text x="580" y="158" font-size="9" fill="#888" text-anchor="middle" font-family="monospace">L7</text>
+  </svg>
+  <div class="verdict">📍 4圈里换了3次"地盘"<span class="sub">白线在两个色块间反复穿越 = 官方名次没变，实际身位一直在换手</span></div>
+</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">03</span><span class="name">正负差值柱状图</span><span class="tag">每圈一根柱子，最像交易软件，最数据感</span></div>
+  <svg class="chart-svg" viewBox="0 0 660 200">
+    <line x1="40" y1="100" x2="580" y2="100" stroke="#333" stroke-width="1" stroke-dasharray="3 3" />
+    <circle cx="88" cy="100" r="4" fill="#666" /><text x="88" y="120" font-size="9" fill="#666" text-anchor="middle" font-family="monospace">L3 · 0.00</text>
+    <rect x="220" y="30" width="46" height="70" fill="#17c964" rx="3" /><text x="243" y="120" font-size="9" fill="#17c964" text-anchor="middle" font-family="monospace">L5 · -0.80</text>
+    <rect x="364" y="100" width="46" height="42" fill="#3671C6" rx="3" /><text x="387" y="160" font-size="9" fill="#3671C6" text-anchor="middle" font-family="monospace">L6 · +0.48</text>
+    <rect x="508" y="53" width="46" height="47" fill="#17c964" rx="3" /><text x="531" y="120" font-size="9" fill="#17c964" text-anchor="middle" font-family="monospace">L7 · -0.53</text>
+    <text x="655" y="30" font-size="9" fill="#555" text-anchor="end" font-family="monospace">HAM领先</text>
+    <text x="655" y="185" font-size="9" fill="#555" text-anchor="end" font-family="monospace">VER领先</text>
+  </svg>
+  <div class="legend"><span><i class="sw" style="background:#17c964"></i>HAM领先该圈</span><span><i class="sw" style="background:#3671C6"></i>VER领先该圈</span></div>
+  <div class="verdict">🥊 正负交替，典型拉锯战形态<span class="sub">柱子高度=身位差大小，颜色=谁领先</span></div>
+</div>
+
+</body>
+</html>

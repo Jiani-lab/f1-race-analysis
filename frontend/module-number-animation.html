@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>数字动画 — 3个方案</title>
+<style>
+  body { margin:0; padding:40px 20px 100px; background:#050505; color:#fff; font-family:-apple-system,sans-serif; }
+  h1 { font-size:19px; margin:0 0 6px; }
+  .lead { color:#888; font-size:12.5px; margin-bottom:36px; }
+  .block { max-width:560px; margin:0 auto 50px; background:#0f0f0f; border:1px solid #262626; border-radius:14px; padding:22px 26px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; margin-bottom:18px; }
+  .block-head .n { font:900 12px monospace; color:#E10600; background:rgba(225,6,0,.14); padding:3px 9px; border-radius:5px; }
+  .block-head .name { font:800 14px -apple-system; }
+  .block-head .tag { font:600 11.5px -apple-system; color:#888; }
+  .demo-row { display:flex; align-items:center; justify-content:space-between; margin-top:6px; }
+  .num-display { font:900 40px monospace; color:#3671C6; min-width:160px; }
+  .num-lbl { font:700 9.5px monospace; color:#666; letter-spacing:.1em; margin-top:4px; }
+  button { background:#1a1a1a; border:1px solid #333; color:#fff; padding:10px 18px; border-radius:8px; font:800 12.5px -apple-system; cursor:pointer; }
+  button:hover { background:#252525; }
+
+  /* 1: odometer roll */
+  .odo { display:inline-flex; overflow:hidden; }
+  .odo-digit { width:26px; height:44px; overflow:hidden; position:relative; }
+  .odo-digit .col { display:flex; flex-direction:column; transition: transform .5s cubic-bezier(.16,1,.3,1); }
+  .odo-digit .col span { height:44px; display:flex; align-items:center; justify-content:center; }
+
+  /* 2: count-up tween handled by JS via requestAnimationFrame, no special CSS */
+  .flash-up { animation: flashg .6s ease-out; }
+  @keyframes flashg { 0%{ color:#17c964 } 100%{ color:#3671C6 } }
+
+  /* 3: highlight pulse + arrow chip */
+  .arrow-chip { display:inline-flex; align-items:center; gap:4px; font:800 13px monospace; color:#17c964; background:rgba(23,201,100,.12); padding:3px 9px; border-radius:6px; margin-left:10px; opacity:0; transform:translateY(4px); transition:all .25s; }
+  .arrow-chip.show { opacity:1; transform:translateY(0); }
+  .pulse-num { transition: color .15s; }
+  .pulse-num.hit { animation: pulseScale .3s ease-out; }
+  @keyframes pulseScale { 0%{ transform:scale(1.15) } 100%{ transform:scale(1) } }
+</style>
+</head>
+<body>
+<h1>数字变化动画 — 3个方案</h1>
+<div class="lead">都是"差距从 +0.870s 变成新值"这个场景。每个卡片右下角点按钮，实际看动画效果（截图看不出动画，得点）。</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">01</span><span class="name">机械字轮翻滚</span><span class="tag">老式计分牌/里程表感，最有"实体感"</span></div>
+  <div class="demo-row">
+    <div>
+      <div class="odo" id="odo"></div>
+      <div class="num-lbl">GAP TO LEADER</div>
+    </div>
+    <button onclick="rollOdo()">触发更新</button>
+  </div>
+</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">02</span><span class="name">数字滚动 Tween</span><span class="tag">从旧值平滑滚到新值，变化时短暂变绿，最"仪表盘"</span></div>
+  <div class="demo-row">
+    <div>
+      <div class="num-display" id="tween">0.870</div>
+      <div class="num-lbl">GAP TO LEADER (S)</div>
+    </div>
+    <button onclick="tweenNum()">触发更新</button>
+  </div>
+</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">03</span><span class="name">脉冲+方向徽章</span><span class="tag">数字瞬间跳变但放大回弹，旁边弹出涨跌箭头，最"游戏感"</span></div>
+  <div class="demo-row">
+    <div>
+      <span class="num-display pulse-num" id="pulseNum">0.870</span><span class="arrow-chip" id="chip">▲ 0.13</span>
+      <div class="num-lbl">GAP TO LEADER (S)</div>
+    </div>
+    <button onclick="pulseUpdate()">触发更新</button>
+  </div>
+</div>
+
+<script>
+// 1. odometer
+const seq = ['0','.','8','7','0', '0','.','7','4','0'];
+function buildOdo(str) {
+  const el = document.getElementById('odo');
+  el.innerHTML = '';
+  [...str].forEach(ch => {
+    const digit = document.createElement('div');
+    digit.className = 'odo-digit';
+    const col = document.createElement('div');
+    col.className = 'col';
+    col.dataset.target = ch;
+    const chars = ch === '.' ? ['.'] : ['0','1','2','3','4','5','6','7','8','9'];
+    chars.forEach(c => { const s = document.createElement('span'); s.textContent = c; col.appendChild(s); });
+    col.style.transform = 'translateY(0)';
+    digit.appendChild(col);
+    el.appendChild(digit);
+  });
+}
+buildOdo('0.870');
+function rollOdo() {
+  const cols = document.querySelectorAll('#odo .col');
+  const target = '0.740';
+  [...target].forEach((ch, i) => {
+    const col = cols[i];
+    if (ch === '.') return;
+    const idx = parseInt(ch, 10);
+    col.style.transform = `translateY(-${idx * 44}px)`;
+  });
+  setTimeout(() => buildOdo('0.740'), 550);
+}
+
+// 2. tween
+let tweenVal = 0.870;
+function tweenNum() {
+  const el = document.getElementById('tween');
+  const from = tweenVal, to = 0.740;
+  const dur = 500, start = performance.now();
+  el.classList.add('flash-up');
+  function step(now) {
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const v = from + (to - from) * eased;
+    el.textContent = v.toFixed(3);
+    if (t < 1) requestAnimationFrame(step); else { tweenVal = to; setTimeout(()=>el.classList.remove('flash-up'), 300); }
+  }
+  requestAnimationFrame(step);
+}
+
+// 3. pulse
+function pulseUpdate() {
+  const num = document.getElementById('pulseNum');
+  const chip = document.getElementById('chip');
+  num.textContent = '0.740';
+  num.classList.remove('hit'); void num.offsetWidth; num.classList.add('hit');
+  chip.textContent = '▼ 0.13';
+  chip.style.color = '#17c964';
+  chip.classList.add('show');
+  setTimeout(() => chip.classList.remove('show'), 1600);
+}
+</script>
+</body>
+</html>

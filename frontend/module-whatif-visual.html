@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>What-If 可视化 — 3个方案</title>
+<style>
+  :root {
+    --track: #050506; --surface: #101013; --hairline: rgba(255,255,255,0.08);
+    --ink: #f5f5f3; --ink-dim: #9c9c9f; --ink-faint: #616164;
+    --f1-red: #E10600; --amber: #f5a623; --green: #17c964;
+    --mono: "SF Mono","IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans: -apple-system,"Segoe UI",sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:40px 20px 100px; background:var(--track); color:var(--ink); font-family:var(--sans); }
+  h1 { font-size:19px; margin:0 0 6px; }
+  .lead { color:var(--ink-dim); font-size:12.5px; margin-bottom:8px; max-width:720px; line-height:1.6; }
+  .ref { color:var(--ink-faint); font-size:11px; margin-bottom:36px; max-width:720px; font-family:var(--mono); }
+  .block { max-width:760px; margin:0 auto 56px; background:var(--surface); border:1px solid var(--hairline); border-radius:14px; padding:22px 24px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .block-head .n { font:900 11.5px var(--mono); color:var(--f1-red); background:rgba(225,6,0,.14); padding:3px 9px; border-radius:5px; }
+  .block-head .name { font:800 15px var(--sans); }
+  .block-head .tag { font:600 11px var(--sans); color:var(--ink-dim); }
+  .block-sub { font:500 11px var(--mono); color:var(--ink-faint); margin-bottom:16px; }
+  .q { font:700 14px var(--sans); color:var(--ink); margin-bottom:14px; padding:10px 12px; background:rgba(255,255,255,.04); border-radius:8px; }
+  svg { width:100%; height:auto; display:block; overflow:visible; }
+  .placeholder-tag { display:inline-block; font:700 8.5px var(--mono); color:var(--amber); background:rgba(245,166,35,.12); padding:2px 7px; border-radius:4px; margin-left:6px; }
+
+  /* variant 2: scenario panel */
+  .scenario { display:flex; align-items:center; gap:12px; padding:10px 0; }
+  .scenario .icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex:0 0 auto; }
+  .scenario .body { flex:1; min-width:0; }
+  .scenario .name { font:800 13px var(--sans); }
+  .scenario .desc { font:500 11px var(--sans); color:var(--ink-dim); margin-top:2px; }
+  .scenario .bar-bg { height:8px; background:rgba(255,255,255,.06); border-radius:4px; overflow:hidden; margin-top:6px; }
+  .scenario .bar-fill { height:100%; border-radius:4px; }
+  .scenario .pct { font:900 18px var(--mono); flex:0 0 auto; width:52px; text-align:right; }
+
+  /* variant 3: fork */
+  .fork-wrap { position:relative; padding:30px 10px 10px; }
+  .fork-real { text-align:center; margin-bottom:8px; }
+  .fork-branches { display:flex; gap:16px; margin-top:8px; }
+  .fork-branch { flex:1; border-radius:10px; padding:16px; text-align:center; }
+  .fork-branch.real { background:rgba(23,201,100,.08); border:1px solid rgba(23,201,100,.3); }
+  .fork-branch.hyp { background:rgba(245,166,35,.06); border:1px dashed rgba(245,166,35,.4); }
+  .fork-branch .lbl { font:800 9px var(--mono); letter-spacing:.08em; color:var(--ink-faint); }
+  .fork-branch .big { font:900 30px var(--mono); margin-top:8px; }
+  .fork-branch .sub { font:600 11px var(--sans); color:var(--ink-dim); margin-top:4px; }
+</style>
+</head>
+<body>
+<h1>What-If 反事实推演 — 可视化替代文字，3个方案</h1>
+<div class="lead">真实发生的部分（分叉点之前）全部来自真实数据；分叉点之后的"假设路径"数字是<b>示意占位</b>，实际接入时由 <code>/session/whatif</code> 真实调用 claude -p 生成，不是我编的最终文案——这里先定视觉形态。</div>
+<div class="ref">参考真实业界形态：体育胜率图的"实际 vs 反事实"分叉标注、金融 fan chart（英格兰银行式，实线到当前+阴影楔形代表不确定的未来路径）</div>
+
+<div class="q">如果皮亚斯特里（PIA）没有在第57圈退赛，节奏会不会不一样？</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">01</span><span class="name">Fan Chart 分叉路径</span><span class="tag">金融/体育胜率图的标准做法，最专业</span></div>
+  <div class="block-sub">实线=真实差距曲线（到第57圈退赛为止） · 虚线+阴影=假设路径 <span class="placeholder-tag">占位示意</span></div>
+  <svg viewBox="0 0 720 260" id="fan"></svg>
+</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">02</span><span class="name">剧本概率面板</span><span class="tag">已验证过的方向（milestone0阶段你确认喜欢过），更文字友好</span></div>
+  <div class="block-sub">每条剧本一根概率条，图标+大数字，一行小字说明 <span class="placeholder-tag">概率数字占位示意</span></div>
+  <div class="scenario">
+    <div class="icon" style="background:rgba(225,6,0,.14);">🚧</div>
+    <div class="body"><div class="name">剧本 A：底盘已受损，退赛难避免</div><div class="desc">路肩损坏是硬件问题，不换胎策略也保不住</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:55%;background:var(--f1-red)"></div></div></div>
+    <div class="pct">55%</div>
+  </div>
+  <div class="scenario">
+    <div class="icon" style="background:rgba(245,166,35,.14);">⚠️</div>
+    <div class="body"><div class="name">剧本 B：撑到终点，但名次靠后</div><div class="desc">带伤跑完，损失大量圈速，掉出积分区</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:30%;background:var(--amber)"></div></div></div>
+    <div class="pct">30%</div>
+  </div>
+  <div class="scenario">
+    <div class="icon" style="background:rgba(23,201,100,.14);">🏁</div>
+    <div class="body"><div class="name">剧本 C：提前进站及时止损，追回名次</div><div class="desc">损坏程度较轻，及时诊断能保住前十</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:15%;background:var(--green)"></div></div></div>
+    <div class="pct">15%</div>
+  </div>
+</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">03</span><span class="name">分叉路口</span><span class="tag">最少文字，最图形化，一眼看懂"两条路"</span></div>
+  <div class="block-sub">真实结局 vs 假设结局，大数字对比 <span class="placeholder-tag">假设结局数字占位示意</span></div>
+  <div class="fork-wrap">
+    <svg viewBox="0 0 720 60" style="margin-bottom:6px;">
+      <line x1="20" y1="30" x2="360" y2="30" stroke="#17c964" stroke-width="3"/>
+      <circle cx="360" cy="30" r="6" fill="#f5a623"/>
+      <text x="360" y="14" font-size="9" fill="#f5a623" text-anchor="middle" font-family="monospace" font-weight="800">分叉点 · LAP 57</text>
+    </svg>
+    <div class="fork-branches">
+      <div class="fork-branch real">
+        <div class="lbl">✅ 真实发生</div>
+        <div class="big" style="color:var(--green)">DNF</div>
+        <div class="sub">第57圈退赛，麦克拉伦本有1-2局面变成NOR单独登顶</div>
+      </div>
+      <div class="fork-branch hyp">
+        <div class="lbl">💭 假设未退赛</div>
+        <div class="big" style="color:var(--amber)">P8~P12</div>
+        <div class="sub">带伤降速跑完，大概率掉出争冠序列（占位示意）</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ns = 'http://www.w3.org/2000/svg';
+const el = (t,a) => { const e=document.createElementNS(ns,t); for(const k in a) e.setAttribute(k,a[k]); return e; };
+
+// real PIA gap-to-leader up to retirement (lap 57), then illustrative dashed hypothetical fan
+const realLaps = [15,17,18,20,25,37,44,50,57];
+const realGap =  [null,21.15,12.3,12.5,null,7.4,5.8,5.1,2.4];
+const hypLaps =  [57,60,65,70];
+const hypMid =   [2.4,8,14,20];   // illustrative center estimate
+const hypLo =    [2.4,5,7,9];
+const hypHi =    [2.4,12,22,32];
+
+function drawFan() {
+  const svg = document.getElementById('fan');
+  const W=720,H=260,padL=40,padR=20,padT=16,padB=30;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const allLaps = [...realLaps, ...hypLaps.slice(1)];
+  const xPos = lap => padL + ((lap-15)/(70-15))*plotW;
+  const maxG = 35;
+  const yPos = g => padT + (g/maxG)*plotH;
+  let html = '';
+  [0,10,20,30].forEach(g => { html += `<text x="${padL-6}" y="${yPos(g)+3}" font-size="8" fill="#616164" text-anchor="end" font-family="monospace">${g}s</text><line x1="${padL}" x2="${W-padR}" y1="${yPos(g)}" y2="${yPos(g)}" stroke="#1a1a1a"/>`; });
+  [15,25,37,50,57,65,70].forEach(l => { html += `<text x="${xPos(l)}" y="${H-8}" font-size="8" fill="#616164" text-anchor="middle" font-family="monospace">L${l}</text>`; });
+  // uncertainty wedge
+  let wedge = `M ${xPos(hypLaps[0])},${yPos(hypLo[0])} `;
+  hypLaps.forEach((l,i) => wedge += `L ${xPos(l)},${yPos(hypLo[i])} `);
+  for (let i=hypLaps.length-1;i>=0;i--) wedge += `L ${xPos(hypLaps[i])},${yPos(hypHi[i])} `;
+  wedge += 'Z';
+  html += `<path d="${wedge}" fill="rgba(245,166,35,0.14)" stroke="none"/>`;
+  // real solid line
+  let real = '', drawing=false;
+  realLaps.forEach((l,i) => { const v=realGap[i]; if (v==null) { drawing=false; return; } real += (drawing?'L':'M')+xPos(l)+','+yPos(v)+' '; drawing=true; });
+  html += `<path d="${real}" fill="none" stroke="#17c964" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  realLaps.forEach((l,i) => { if (realGap[i]!=null) html += `<circle cx="${xPos(l)}" cy="${yPos(realGap[i])}" r="3.5" fill="#17c964"/>`; });
+  // hypothetical dashed mid line
+  let hyp = '';
+  hypLaps.forEach((l,i) => hyp += (i===0?'M':'L')+xPos(l)+','+yPos(hypMid[i])+' ');
+  html += `<path d="${hyp}" fill="none" stroke="#f5a623" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round"/>`;
+  // fork marker
+  html += `<circle cx="${xPos(57)}" cy="${yPos(2.4)}" r="5" fill="#fff" stroke="#f5a623" stroke-width="2"/>`;
+  html += `<text x="${xPos(57)}" y="${padT-2}" font-size="9" fill="#f5a623" text-anchor="middle" font-family="monospace" font-weight="800">分叉点</text>`;
+  html += `<text x="${xPos(70)+8}" y="${yPos(hypMid[hypMid.length-1])}" font-size="10" fill="#f5a623" font-family="monospace" font-weight="800">假设</text>`;
+  html += `<text x="${xPos(57)-30}" y="${yPos(2.4)-10}" font-size="10" fill="#17c964" font-family="monospace" font-weight="800">真实(DNF)</text>`;
+  svg.innerHTML = html;
+}
+drawFan();
+</script>
+</body>
+</html>

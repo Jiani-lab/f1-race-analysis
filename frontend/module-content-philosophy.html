@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>内容方向 — 复述 vs 分析预测</title>
+<style>
+  body { margin:0; padding:40px 20px 100px; background:#050505; color:#fff; font-family:-apple-system,sans-serif; }
+  h1 { font-size:19px; margin:0 0 6px; }
+  .lead { color:#888; font-size:12.5px; margin-bottom:36px; max-width:640px; line-height:1.6; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:20px; max-width:920px; margin:0 auto 20px; }
+  @media (max-width:760px){ .row{grid-template-columns:1fr;} }
+  .col-lbl { font:800 11px monospace; letter-spacing:.1em; margin-bottom:10px; }
+  .col-lbl.bad { color:#666; }
+  .col-lbl.good { color:#17c964; }
+  .card { background:#0f0f0f; border:1px solid #262626; border-radius:14px; padding:20px; height:100%; }
+  .card.before { opacity:.7; }
+  .card.after {
+    position:relative; border:none; border-radius:0; padding:24px 22px 20px;
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.025) 0 1px, transparent 1px 13px),
+      linear-gradient(160deg,#0f1712,#0a0a0a 60%);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+  }
+  .card.after::before { content:""; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,#17c964,#17c964 60%,transparent); }
+  .card.after::after {
+    content:""; position:absolute; right:0; bottom:0; width:0; height:0;
+    border-style:solid; border-width:0 0 16px 16px; border-color:transparent transparent #17c964 transparent; opacity:.5;
+  }
+  .tag { display:inline-block; font:800 9.5px monospace; letter-spacing:.08em; padding:3px 8px; border-radius:5px; }
+  .tag.gray { background:#1c1c1c; color:#888; }
+  .tag.green { background:rgba(23,201,100,.16); color:#17c964; clip-path:polygon(6px 0,100% 0,100% 100%,0 100%,0 6px); padding:4px 10px 4px 8px; }
+  .headline { font:800 15px/1.4 -apple-system; margin-top:12px; }
+  .card.after .headline { font:800 16px/1.35 -apple-system; letter-spacing:-.01em; }
+  .num-row { display:flex; gap:20px; margin-top:14px; }
+  .num-row .m .v { font:900 22px monospace; color:#3671C6; }
+  .num-row .m .l { font:700 9px monospace; color:#666; letter-spacing:.06em; }
+  .card.after .num-row .m .v { color:#17c964; }
+  .card.after .verdict-line { clip-path:polygon(10px 0,100% 0,100% 100%,0 100%,0 10px); background:rgba(23,201,100,.1); border:1px solid rgba(23,201,100,.25); }
+  .body-text { font:500 13px/1.7 -apple-system; color:#ccc; margin-top:14px; }
+  .body-text b { color:#fff; }
+  .osc-chart { width:100%; height:auto; margin-top:16px; display:block; overflow:visible; }
+  .verdict-line { margin-top:12px; font:800 14px -apple-system; color:#fff; background:rgba(255,255,255,.05); border-radius:8px; padding:9px 12px; }
+  .why { max-width:920px; margin:30px auto 0; background:#0f0f0f; border:1px solid #262626; border-radius:12px; padding:18px 22px; font:500 13px/1.75 -apple-system; color:#bbb; }
+  .why b { color:#fff; }
+  .data-note { max-width:920px; margin:0 auto 30px; font:500 11.5px monospace; color:#555; }
+</style>
+</head>
+<body>
+<h1>内容方向：从"复述"改成"分析+预测"</h1>
+<div class="lead">同一张"VER vs HAM 差距"卡片，左边是现在在做的（把OCR数字倒腾一遍，直播画面上本来就有），右边是改过的（对两条真实数据序列做差值计算+波动性判断+跨流关联，直播画面和解说都不会直接告诉你这个）。数字是真实数据，不是编的。</div>
+
+<div class="row">
+  <div>
+    <div class="col-lbl bad">现在的版本 · 复述</div>
+    <div class="card before">
+      <span class="tag gray">BATTLE FOR P3</span>
+      <div class="headline">VER +1.400s ／ HAM +0.870s 落后领跑</div>
+      <div class="num-row">
+        <div class="m"><div class="v">+1.400</div><div class="l">VER GAP</div></div>
+        <div class="m"><div class="v">+0.870</div><div class="l">HAM GAP</div></div>
+      </div>
+      <div class="body-text">这两个数字，直播画面左上角的排位表本来就直接显示着。观众自己看一眼就知道，不需要打开我们的网站。</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="col-lbl good">改过的版本 · 分析+预测</div>
+    <div class="card after">
+      <span class="tag green">⚡ CONTESTED · P3 威胁等级：高</span>
+      <div class="headline">HAM 对 VER 的实际身位差在 5 圈内正负摆动 1.3 秒，不是稳定压制</div>
+      <div class="num-row">
+        <div class="m"><div class="v">±0.8s</div><div class="l">身位差波动</div></div>
+        <div class="m"><div class="v">2x</div><div class="l">换手次数</div></div>
+        <div class="m"><div class="v">🔧</div><div class="l">VER阻尼故障</div></div>
+      </div>
+      <svg class="osc-chart" viewBox="0 0 300 70">
+        <line x1="0" y1="35" x2="260" y2="35" stroke="#333" stroke-width="1" stroke-dasharray="3 3" />
+        <text x="262" y="14" font-size="8" fill="#555" font-family="monospace">HAM领先</text>
+        <text x="262" y="60" font-size="8" fill="#555" font-family="monospace">VER领先</text>
+        <g font-family="monospace" font-size="9" font-weight="800">
+          <circle cx="37" cy="35" r="3.5" fill="#666" />
+          <text x="37" y="48" fill="#666" text-anchor="middle">L3</text>
+          <rect x="84" y="10" width="34" height="25" fill="#17c964" rx="2" />
+          <text x="101" y="48" fill="#17c964" text-anchor="middle">L5</text>
+          <rect x="148" y="35" width="34" height="15" fill="#3671C6" rx="2" />
+          <text x="165" y="60" fill="#3671C6" text-anchor="middle">L6</text>
+          <rect x="212" y="18" width="34" height="17" fill="#17c964" rx="2" />
+          <text x="229" y="48" fill="#17c964" text-anchor="middle">L7</text>
+        </g>
+      </svg>
+      <div class="verdict-line">🥊 拉锯战，随时换手 · 盯紧下2圈</div>
+    </div>
+  </div>
+</div>
+
+<div class="why">
+  <b>右边卡片的"分析"藏在哪：</b>差值（HAM-VER身位差，画面没有现成数字）→ 波动性判断（这根柱状图，正负横跳=不稳定）→ 跨流关联（🔧图标=音频独有的阻尼故障信息）→ 一句话结论。呈现上只留了3个大数字+1张小图+1句话，没有段落。
+</div>
+<div class="data-note">真实数据：Lap3 差0 · Lap5 差-0.799(HAM领先) · Lap6 差+0.479(VER领先) · Lap7 差-0.53(HAM领先)</div>
+
+</body>
+</html>

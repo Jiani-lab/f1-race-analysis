@@ -1,0 +1,1285 @@
+<!--
+DIRECTION CONTRACT
+THESIS: The real, live-wired Phase-2 dashboard — same race-control visual language validated in milestone0-report.html (4 module choices: impact score card, momentum meter, impact timeline, territory-zone chart), now driven by fetch() against the actual local backend instead of hardcoded demo numbers.
+DATA: 2026 Hungarian GP, real capture 12:21–14:10 (102 min, 1208 vision + 1055 audio records, laps 9–70 OCR'd). Headline story is genuinely the biggest one in this data: PIA led from the start, NOR took P1 via an overcut around lap 40-44 (confirmed by real commentary "现在俩人是完成了位置上的替换" + "Overcut"), then PIA clawed back from 13.8s down to 0.8s by lap 69 — a real photo-finish. VER faded the whole race (3s → 15.3s). None of the milestone0 sample's VER/LEC/HAM numbers apply here — different recording, not reused.
+LIVE: status pill + catchup/summary/whatif genuinely call the running FastAPI backend (session race-1785212472206). Territory chart + momentum cards are computed client-side from a live fetch to /session/strategy-trend (the same diff logic proven in analysis, not re-hardcoded) — the part of the page provably re-renders itself from fresh data, not just decoration.
+FORM: same file, direct edit of the existing live-connected index.html — not concept-seeded, the brief (import the confirmed Phase-1 modules, wire real endpoints) was precise enough to shape directly.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>F1 Race Control — Live</title>
+<style>
+  :root {
+    --track:          #050506;
+    --surface:        #101013;
+    --surface-raised: #17171b;
+    --hairline:       rgba(255,255,255,0.08);
+    --hairline-strong: rgba(255,255,255,0.16);
+    --ink:            #f5f5f3;
+    --ink-dim:        #9c9c9f;
+    --ink-faint:      #616164;
+    --f1-red:         #E10600;
+    --f1-red-dim:     rgba(225,6,0,0.16);
+    --green:          #17c964;
+    --green-dim:      rgba(23,201,100,0.14);
+    --amber:          #f5a623;
+    --team-mcl:       #FF8000;   /* McLaren papaya — real livery, NOR/PIA */
+    --team-mcl-dim:   rgba(255,128,0,0.14);
+    --team-mcl2:      #ffb066;   /* teammate tint, same family */
+    --team-rb:        #3671C6;   /* Red Bull — VER */
+    --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { overflow-x: hidden; max-width: 100%; }
+  body {
+    margin: 0; padding: 0 0 60px; background: var(--track); color: var(--ink);
+    font-family: var(--sans);
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 14px);
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 0 18px; min-width: 0; }
+  a { color: inherit; }
+
+  /* ---------- masthead ---------- */
+  .back-home { display: inline-block; font: 700 11.5px/1 var(--mono); letter-spacing: 0.06em; color: var(--ink-faint); text-decoration: none; margin-bottom: 10px; }
+  .back-home:hover { color: var(--ink); }
+  .masthead { background: linear-gradient(180deg, #14100f 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 18px 18px 16px; }
+  .masthead-inner { max-width: 980px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .mh-flag { display: inline-flex; gap: 3px; margin-bottom: 8px; }
+  .mh-flag span { width: 16px; height: 11px; display: inline-block; }
+  .mh-flag span:nth-child(1) { background: #477050; }
+  .mh-flag span:nth-child(2) { background: #f5f5f3; }
+  .mh-flag span:nth-child(3) { background: #ce2939; }
+  .mh-round { font: 700 11.5px/1 var(--mono); letter-spacing: 0.14em; color: var(--f1-red); text-transform: uppercase; }
+  .mh-title { font: 800 21px/1.15 var(--sans); letter-spacing: -0.01em; margin: 3px 0 0; }
+  .mh-sub { font: 500 14.5px/1.4 var(--sans); color: var(--ink-dim); margin-top: 3px; }
+  .mh-sub code { font-family: var(--mono); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; }
+  .mh-lap { text-align: right; }
+  .mh-lap .lbl { font: 700 11.5px/1 var(--mono); letter-spacing: 0.14em; color: var(--ink-faint); text-transform: uppercase; }
+  .mh-lap .val { font: 800 40px/1 var(--mono); letter-spacing: -0.02em; color: var(--ink); margin-top: 4px; }
+  .mh-lap .val small { font-size: 18px; color: var(--ink-faint); font-weight: 600; }
+
+  /* ---------- live status pill ---------- */
+  .status-row { display: flex; align-items: center; gap: 10px; margin: 14px 0 4px; }
+  .status-pill { display: inline-flex; align-items: center; gap: 7px; font: 800 11.5px/1 var(--mono); letter-spacing: 0.08em; padding: 6px 12px; border-radius: 20px; text-transform: uppercase; }
+  .status-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .status-idle { background: rgba(255,255,255,0.06); color: var(--ink-faint); }
+  .status-idle .dot { background: var(--ink-faint); }
+  .status-active { background: var(--f1-red-dim); color: #ff6a5f; }
+  .status-active .dot { background: #ff6a5f; animation: pulse 1.1s ease-in-out infinite; }
+  .status-ended { background: var(--green-dim); color: var(--green); }
+  .status-ended .dot { background: var(--green); }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+  .status-note { font: 500 11.5px var(--mono); color: var(--ink-faint); }
+
+  /* ---------- replay bar ---------- */
+  .replay-bar { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 14px; margin: 4px 0 16px; flex-wrap: wrap; }
+  .replay-play { background: var(--f1-red); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font: 800 12.5px var(--sans); cursor: pointer; flex: 0 0 auto; }
+  .replay-play:hover { background: #ff2a1f; }
+  .replay-slider { flex: 1; min-width: 160px; accent-color: var(--f1-red); }
+  .replay-lap-readout { font: 800 15px/1 var(--mono); flex: 0 0 auto; min-width: 62px; }
+  .replay-lap-readout b { color: var(--f1-red); }
+  .replay-note { font: 600 11.5px var(--mono); color: var(--ink-faint); flex: 0 0 100%; order: 4; }
+  @media (min-width: 640px) { .replay-note { flex: 1 1 auto; order: 0; text-align: right; } }
+  .impact-placeholder { font: 600 14.5px/1.6 var(--sans); color: var(--ink-dim); padding: 6px 2px; }
+  .impact-placeholder b { color: var(--ink); }
+
+  /* ---------- data-source strip ---------- */
+  .strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--hairline); margin: 16px 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--hairline); }
+  @media (max-width: 640px) { .strip { grid-template-columns: repeat(2, 1fr); } }
+  .strip-cell { background: var(--surface); padding: 12px 14px; min-width: 0; }
+  .strip-cell .lbl { font: 700 11.5px/1 var(--mono); letter-spacing: 0.12em; color: var(--ink-faint); text-transform: uppercase; }
+  .strip-cell .val { font: 700 21px/1.2 var(--mono); color: var(--green); margin-top: 5px; }
+
+  /* ---------- section shell ---------- */
+  section { margin: 26px 0; }
+  .sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .sec-head .chip { width: 5px; height: 14px; background: var(--f1-red); border-radius: 1px; }
+  .sec-head h2 { font: 800 14.5px/1 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; margin: 0; }
+  .sec-head .note { font: 500 14.5px var(--sans); color: var(--ink-faint); }
+  .sec-head .refresh-btn { margin-left: auto; font: 700 11.5px var(--mono); letter-spacing: 0.04em; color: var(--ink-dim); background: rgba(255,255,255,0.06); border: 1px solid var(--hairline); padding: 4px 10px; border-radius: 20px; cursor: pointer; }
+  .sec-head .refresh-btn:hover { background: rgba(255,255,255,0.1); color: var(--ink); }
+  .sec-head .refresh-btn:disabled { opacity: .5; cursor: default; }
+
+  /* ---------- impact card ---------- */
+  .impact-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 16px; padding: 24px; display: flex; gap: 22px; align-items: center; }
+  @media (max-width: 620px) { .impact-card { flex-direction: column; align-items: flex-start; } }
+  .impact-score { flex: 0 0 auto; text-align: center; }
+  .impact-score .ring { width: 84px; height: 84px; border-radius: 50%; background: conic-gradient(var(--team-mcl) 0% 96%, #262626 96% 100%); display: flex; align-items: center; justify-content: center; position: relative; }
+  .impact-score .ring::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--surface); }
+  .impact-score .num { position: relative; font: 800 21px/1 var(--mono); }
+  .impact-score .lbl { font: 800 9px/1 var(--mono); color: var(--ink-faint); letter-spacing: 0.1em; margin-top: 6px; }
+  .impact-body { flex: 1; min-width: 0; }
+  .impact-award { display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(90deg, var(--team-mcl), #cc6600); font: 800 9.5px/1 var(--mono); letter-spacing: 0.1em; padding: 4px 10px; border-radius: 20px; color: #1a0f00; }
+  .impact-headline { font: 800 20px/1.3 var(--sans); margin-top: 10px; }
+  .impact-meta { display: flex; gap: 18px; margin-top: 12px; flex-wrap: wrap; }
+  .impact-meta .m .v { font: 800 15px/1 var(--mono); color: var(--team-mcl); }
+  .impact-meta .m .l { font: 700 9px/1 var(--mono); color: var(--ink-faint); letter-spacing: 0.08em; margin-top: 3px; }
+  .impact-quote { margin-top: 12px; font: 500 12.5px/1.6 var(--sans); color: var(--ink-dim); border-left: 2px solid var(--hairline-strong); padding-left: 10px; }
+
+  /* ---------- momentum battle grid ---------- */
+  .battle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 720px) { .battle-grid { grid-template-columns: 1fr; } }
+  .driver-card { position: relative; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px 16px 14px 18px; overflow: hidden; min-width: 0; }
+  /* team color set inline per-card via --card-color (any of the 11 real
+     2026-grid teams, not just the 2-3 hardcoded before) -- see
+     DRIVER_ROSTER/TEAM_COLORS in the script */
+  .driver-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--card-color, var(--ink-faint)); }
+  .driver-card .row-top { display: flex; align-items: center; justify-content: space-between; }
+  .driver-card .pos { font: 800 11.5px/1 var(--mono); color: var(--ink-faint); }
+  .driver-card .num { font: 800 11.5px/1 var(--mono); padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.08); }
+  .driver-card .code { font: 800 22px/1 var(--sans); letter-spacing: 0.01em; margin-top: 8px; }
+  .driver-card .team { font: 600 11.5px/1 var(--sans); color: var(--ink-dim); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .driver-card.retired { opacity: 0.72; }
+  .driver-card.retired .momentum-meter { filter: grayscale(1); opacity: 0.5; }
+  .driver-card.retired .pos { color: var(--f1-red); }
+  .momentum-meter { margin-top: 18px; height: 10px; border-radius: 6px; background: linear-gradient(90deg, var(--f1-red), #333 48%, #333 52%, var(--green)); position: relative; }
+  .momentum-needle { position: absolute; top: -4px; width: 3px; height: 18px; background: #fff; border-radius: 2px; transition: left .6s cubic-bezier(.16,1,.3,1); }
+  .momentum-labels { display: flex; justify-content: space-between; margin-top: 6px; font: 700 9px/1 var(--mono); color: var(--ink-faint); letter-spacing: 0.06em; }
+  .momentum-verdict { margin-top: 14px; font: 800 14.5px/1.35 var(--sans); }
+  .momentum-sub { font: 600 11.5px/1.5 var(--mono); color: var(--ink-dim); margin-top: 6px; }
+
+  /* ---------- position ticker ---------- */
+  .ticker { display: flex; flex-direction: column; gap: 6px; }
+  .tick-row { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px; padding: 8px 12px; font-size: 14.5px; min-width: 0; }
+  .tick-lap { font: 700 11.5px var(--mono); color: var(--f1-red); background: var(--f1-red-dim); padding: 2px 7px; border-radius: 4px; flex: 0 0 auto; }
+  .tick-code { font: 800 11.5px var(--mono); background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; flex: 0 0 auto; }
+  .tick-arrow { color: var(--ink-faint); flex: 0 0 auto; }
+  .tick-arrow.up { color: var(--green); }
+  .tick-arrow.down { color: var(--f1-red); }
+  .tick-desc { color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+  /* ---------- impact timeline (race control events) ---------- */
+  .timeline { position: relative; padding-left: 26px; }
+  .timeline::before { content: ""; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(180deg, var(--team-mcl), var(--f1-red), var(--ink-faint)); }
+  .tl-node { position: relative; margin-bottom: 20px; }
+  .tl-node:last-child { margin-bottom: 0; }
+  .tl-dot { position: absolute; left: -26px; top: 2px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 2px solid var(--track); }
+  .tl-lap { font: 800 9px/1 var(--mono); color: var(--ink-faint); }
+  .tl-fact { font: 700 15px/1.4 var(--sans); margin-top: 3px; }
+  .tl-insight { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; font: 600 11.5px/1.5 var(--sans); color: var(--green); background: var(--green-dim); padding: 7px 10px; border-radius: 6px; }
+  .tl-insight.uncertain { color: var(--amber); background: rgba(245,166,35,0.1); }
+  .tl-src { font: 500 10.5px var(--mono); color: var(--ink-faint); margin-top: 4px; }
+
+  /* ---------- territory chart ---------- */
+  .chart-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px; }
+  .chart-wrap { position: relative; }
+  svg.chart { width: 100%; height: 280px; display: block; overflow: visible; }
+  .axis-label { fill: var(--ink-faint); font-size: 11px; font-family: var(--mono); }
+  .crosshair { stroke: var(--hairline-strong); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
+  .chart-verdict { margin-top: 12px; padding: 10px 12px; background: rgba(255,255,255,0.04); border-radius: 8px; font: 800 14.5px/1.5 var(--sans); }
+  .chart-verdict .sub { display: block; font: 600 11.5px/1.4 var(--mono); color: var(--ink-faint); margin-top: 4px; font-weight: 600; }
+  .legend { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font: 700 11.5px var(--mono); color: var(--ink-dim); }
+  .legend-swatch { width: 14px; height: 8px; border-radius: 2px; }
+  .tooltip { position: absolute; pointer-events: none; opacity: 0; transition: opacity .1s; background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 8px; padding: 8px 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); white-space: nowrap; font-family: var(--mono); }
+  details.table-view summary { cursor: pointer; font: 600 14.5px var(--sans); color: var(--ink-faint); margin-top: 12px; }
+  table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 10px; font: 500 13px var(--mono); }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--hairline); }
+  th { color: var(--ink-faint); font-weight: 700; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.06em; }
+  td.num { text-align: right; }
+
+  /* ---------- what-if (live) ---------- */
+  .whatif-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px; }
+  .whatif-caveat { font: 600 11.5px var(--mono); color: var(--amber); margin-top: 2px; letter-spacing: 0.02em; }
+  .whatif-form { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .whatif-form input { flex: 1; min-width: 220px; background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 10px 12px; border-radius: 8px; font: 500 14.5px var(--sans); }
+  .whatif-form button { background: var(--f1-red); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font: 800 12.5px var(--sans); cursor: pointer; }
+  .whatif-form button:disabled { opacity: .5; cursor: default; }
+  .whatif-out { margin-top: 14px; font: 500 14px/1.75 var(--sans); color: var(--ink-dim); white-space: pre-wrap; }
+  .whatif-out:empty::before { content: 'Click the button above to generate a live simulation from real race data.'; color: var(--ink-faint); font-style: italic; }
+
+  /* ---------- scenario panel (What-If, real probabilities from claude -p JSON) ---------- */
+  .scenario-row { margin-top: 14px; }
+  .scenario { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
+  .scenario .icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex: 0 0 auto; }
+  .scenario .body { flex: 1; min-width: 0; }
+  .scenario .name { font: 800 12.5px var(--sans); }
+  .scenario .desc { font: 500 11px var(--sans); color: var(--ink-dim); margin-top: 2px; }
+  .scenario .bar-bg { height: 7px; background: rgba(255,255,255,.06); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .scenario .bar-fill { height: 100%; border-radius: 4px; }
+  .scenario .pct { font: 900 17px var(--mono); flex: 0 0 auto; width: 48px; text-align: right; }
+  .verdict { margin-top: 14px; padding: 10px 12px; background: var(--f1-red-dim); border: 1px solid rgba(225,6,0,0.35); border-radius: 8px; font: 600 13.5px/1.6 var(--sans); }
+  details.full-reasoning summary { cursor: pointer; font: 700 12px var(--mono); letter-spacing: 0.04em; color: var(--f1-red); margin-top: 14px; text-transform: uppercase; }
+  .full-reasoning .body { font: 400 13.5px/1.7 var(--sans); color: var(--ink-dim); white-space: pre-wrap; margin-top: 8px; border-top: 1px solid var(--hairline); padding-top: 8px; }
+
+  /* ---------- catchup / summary: real lap chart (replaces plain text) ---------- */
+  .lap-chart-svg { width: 100%; height: auto; display: block; overflow: visible; margin-top: 10px; }
+  .evt-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .evt-chip { font: 700 9.5px var(--mono); padding: 3px 8px; border-radius: 20px; background: rgba(255,255,255,.05); color: var(--ink-dim); border: 1px solid var(--hairline); white-space: nowrap; }
+  .lap-chart-empty { font: 500 13px var(--sans); color: var(--ink-faint); font-style: italic; padding: 20px 0; text-align: center; }
+
+  /* ---------- catchup / summary (live) ---------- */
+  .live-out { margin-top: 10px; font: 500 14.5px/1.8 var(--sans); color: var(--ink-dim); white-space: pre-wrap; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px 14px; min-height: 20px; }
+  .live-out:empty { display: none; }
+
+  /* ---------- raw log ---------- */
+  details.raw-log summary { cursor: pointer; font: 700 14.5px var(--mono); letter-spacing: 0.04em; color: var(--ink-faint); text-transform: uppercase; }
+  .log-list { max-height: 320px; overflow-y: auto; border: 1px solid var(--hairline); border-radius: 8px; margin-top: 10px; }
+  .log-row { padding: 6px 12px; border-bottom: 1px solid var(--hairline); font-size: 13px; display: flex; gap: 10px; font-family: var(--mono); }
+  .log-row:last-child { border-bottom: none; }
+  .log-row .tag { flex: 0 0 42px; font-weight: 800; font-size: 10.5px; text-transform: uppercase; }
+  .log-row.vision .tag { color: var(--team-rb); }
+  .log-row.audio .tag { color: var(--f1-red); }
+  .log-row .txt { flex: 1 1 auto; min-width: 0; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--sans); }
+  .log-row .time { flex: 0 0 58px; color: var(--ink-faint); }
+
+  /* ---------- pre-race onboarding modal ---------- */
+  .onboard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.72); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .onboard-overlay.hidden { display: none; }
+  .onboard-card { background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 16px; padding: 26px; max-width: 440px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .onboard-eyebrow { font: 800 10.5px/1 var(--mono); letter-spacing: 0.12em; color: var(--f1-red); text-transform: uppercase; }
+  .onboard-title { font: 800 19px/1.3 var(--sans); margin-top: 8px; }
+  .onboard-sub { font: 500 13px/1.5 var(--sans); color: var(--ink-dim); margin-top: 6px; }
+  .onboard-field { margin-top: 18px; }
+  .onboard-field label { font: 700 11px/1 var(--mono); color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 8px; }
+  .onboard-select, .onboard-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 10px 12px; border-radius: 8px; font: 500 14px var(--sans); }
+  .onboard-options { display: flex; flex-direction: column; gap: 8px; }
+  .onboard-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: 8px; cursor: pointer; font: 600 13.5px var(--sans); }
+  .onboard-option:hover { background: rgba(255,255,255,0.04); }
+  .onboard-option.selected { border-color: var(--f1-red); background: var(--f1-red-dim); }
+  .onboard-input.other-input { margin-top: 10px; }
+  .onboard-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; gap: 10px; }
+  .onboard-skip { background: none; border: none; color: var(--ink-faint); font: 600 12.5px var(--sans); cursor: pointer; padding: 6px 0; }
+  .onboard-skip:hover { color: var(--ink-dim); }
+  .onboard-next, .onboard-submit { background: var(--f1-red); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font: 800 12.5px var(--sans); cursor: pointer; }
+  .onboard-next:hover, .onboard-submit:hover { background: #ff2a1f; }
+  .onboard-loading { font: 500 13px var(--sans); color: var(--ink-faint); font-style: italic; padding: 10px 0; }
+
+  /* ---------- personalized notification badge (minimal, no OS push) ---------- */
+  .notif-badge { display: none; align-items: center; gap: 6px; font: 800 11.5px/1 var(--mono); color: var(--ink-dim); background: rgba(255,255,255,0.06); border: 1px solid var(--hairline-strong); padding: 6px 12px; border-radius: 20px; cursor: pointer; margin-left: auto; position: relative; }
+  .notif-badge.visible { display: inline-flex; }
+  .notif-badge:hover { background: rgba(255,255,255,0.1); }
+  .notif-panel { position: absolute; top: calc(100% + 8px); right: 0; width: 320px; max-width: calc(100vw - 40px); background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 10px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,0.5); display: none; z-index: 50; text-align: left; cursor: default; }
+  .notif-badge.open .notif-panel { display: block; }
+  .notif-item { padding: 10px; border-radius: 8px; }
+  .notif-item + .notif-item { margin-top: 2px; border-top: 1px solid var(--hairline); padding-top: 12px; }
+  .notif-item .lap-tag { font: 700 9.5px/1 var(--mono); color: var(--f1-red); text-transform: uppercase; margin-bottom: 4px; display: block; letter-spacing: 0.04em; }
+  .notif-item .hook { font: 600 13px/1.5 var(--sans); color: var(--ink); }
+  .notif-run-btn { margin-top: 8px; background: var(--f1-red-dim); color: #ff6a5f; border: 1px solid rgba(225,6,0,0.35); padding: 6px 10px; border-radius: 6px; font: 700 11px var(--sans); cursor: pointer; }
+  .notif-run-btn:hover { background: rgba(225,6,0,0.28); }
+  .notif-run-btn:disabled { opacity: .6; cursor: default; }
+  .notif-run-result { margin-top: 8px; font: 600 12.5px/1.5 var(--sans); color: var(--green); }
+</style>
+</head>
+<body>
+
+<div class="onboard-overlay hidden" id="onboard-overlay">
+  <div class="onboard-card">
+    <div id="onboard-step-driver">
+      <div class="onboard-eyebrow">Before we start</div>
+      <div class="onboard-title">Who are you rooting for?</div>
+      <div class="onboard-sub">We'll only ping you for moments that matter to your answers here -- rare, and never a repeat of what's already on screen.</div>
+      <div class="onboard-field">
+        <label>Favorite driver</label>
+        <select class="onboard-select" id="onboard-driver-select"></select>
+      </div>
+      <div class="onboard-actions">
+        <button class="onboard-skip" onclick="skipOnboarding()">Skip</button>
+        <button class="onboard-next" onclick="onboardNextStep()">Next →</button>
+      </div>
+    </div>
+    <div id="onboard-step-interest" style="display:none">
+      <div class="onboard-eyebrow">One more thing</div>
+      <div class="onboard-title">What are you most interested in this race?</div>
+      <div class="onboard-field">
+        <div class="onboard-options" id="onboard-interest-options">
+          <div class="onboard-loading">Loading race context...</div>
+        </div>
+        <input type="text" class="onboard-input other-input" id="onboard-interest-other" placeholder="Or type your own..." />
+      </div>
+      <div class="onboard-actions">
+        <button class="onboard-skip" onclick="skipOnboarding()">Skip</button>
+        <button class="onboard-submit" onclick="submitOnboarding()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <a class="back-home" href="/">← All Races</a>
+      <div class="mh-flag"><span></span><span></span><span></span></div>
+      <div class="mh-round" id="mh-round">ROUND · LIVE-WIRED DASHBOARD</div>
+      <div class="mh-title" id="mh-title">F1 RACE</div>
+      <div class="mh-sub" id="mh-sub">Loading...</div>
+    </div>
+    <div class="mh-lap">
+      <div class="lbl">Lap</div>
+      <div class="val">70<small>/70</small></div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="status-row">
+    <span class="status-pill status-idle" id="status-pill"><span class="dot"></span><span id="status-text">Connecting...</span></span>
+    <span class="status-note" id="status-note"></span>
+    <div class="notif-badge" id="notif-badge" onclick="toggleNotifPanel(event)">
+      🔔 <span id="notif-count">0</span>
+      <div class="notif-panel" id="notif-panel"></div>
+    </div>
+  </div>
+
+  <div class="replay-bar">
+    <button class="replay-play" id="replay-play" onclick="togglePlay()">▶ Play</button>
+    <input type="range" class="replay-slider" id="replay-slider" min="9" max="70" value="70" oninput="onSliderInput(this.value)" />
+    <span class="replay-lap-readout">LAP <b id="replay-lap-num">70</b>/<span id="replay-total-laps">70</span></span>
+    <span class="replay-note" id="replay-note">Showing final race state</span>
+  </div>
+
+  <div class="strip" id="strip"></div>
+
+  <section>
+    <div class="sec-head"><span class="chip"></span><h2 id="impact-head">Current Situation</h2><span class="note" id="impact-note">Live</span></div>
+    <div class="impact-card" id="impact"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="chip"></span><h2>Current Battles · Momentum</h2><span class="note" id="battle-note">Live</span></div>
+    <div class="battle-grid" id="battle"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="chip"></span><h2>Position Changes</h2><span class="note">Live</span></div>
+    <div class="ticker" id="ticker"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="chip"></span><h2>Race Control</h2><span class="note">Live</span></div>
+    <div class="timeline" id="timeline"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <span class="chip"></span><h2>Lead Battle · Track Position</h2><span class="note" id="chart-note">Live</span>
+      <button class="refresh-btn" id="chart-refresh" onclick="loadChart()">↻ Refresh</button>
+    </div>
+    <div class="chart-card">
+      <div class="chart-wrap">
+        <svg class="chart" id="chart" viewBox="0 0 900 280" preserveAspectRatio="none"></svg>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="chart-verdict" id="chart-verdict"></div>
+      <details class="table-view">
+        <summary>▸ Table view (every data point)</summary>
+        <table id="trend-table"></table>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="chip"></span><h2>Catch-Up / Race Summary</h2><span class="note">Real position data</span></div>
+    <div class="whatif-card">
+      <div class="whatif-form">
+        <button onclick="doCatchup()" id="btn-catchup">What just happened (last 15 laps)</button>
+        <button onclick="doSummary()" id="btn-summary">Generate race summary (full race)</button>
+      </div>
+      <svg class="lap-chart-svg" id="catchup-chart" viewBox="0 0 720 260"></svg>
+      <div class="evt-strip" id="catchup-evts"></div>
+      <details class="full-reasoning">
+        <summary>▸ Show written summary</summary>
+        <div class="body" id="catchup-summary-text"></div>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="chip"></span><h2>What-If</h2><span class="note">Live simulation</span></div>
+    <div class="whatif-card">
+      <div class="whatif-caveat">⚠ Speculative, not a certain outcome · based on real race data, may take a few minutes to generate</div>
+      <div class="whatif-form">
+        <input type="text" id="whatif-input" placeholder="e.g. What if a driver hadn't pitted mid-race — would the result change?" />
+        <button onclick="doWhatIf()" id="btn-whatif">Simulate</button>
+      </div>
+      <div class="scenario-row" id="whatif-scenarios"></div>
+      <div class="verdict" id="whatif-verdict"></div>
+      <details class="full-reasoning">
+        <summary>▸ Show full reasoning</summary>
+        <div class="body" id="whatif-reasoning-text"></div>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <details class="raw-log">
+      <summary id="raw-log-summary">▸ Raw commentary log (click to load)</summary>
+      <div class="log-list" id="log-list"></div>
+    </details>
+  </section>
+</main>
+
+<script>
+// Which race this tab shows -- read once from ?session=<id> in the URL
+// (set by the homepage's race cards). Falls back to whatever the backend's
+// single live/most-recent session is when absent, same as before per-race
+// dashboards existed, so a bare /race URL (or a bookmark from before this
+// change) still just works.
+const SESSION_ID = new URLSearchParams(location.search).get('session');
+
+async function api(path, opts) {
+  if (SESSION_ID) path += (path.includes('?') ? '&' : '?') + 'session_id=' + encodeURIComponent(SESSION_ID);
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
+}
+const $ = id => document.getElementById(id);
+const ns = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+
+// ---------------- static curated real content ----------------
+// Sourced from session race-1785212472206: strategy_trend.json (deterministic
+// OCR gap extraction, laps 9-70) cross-referenced with real audio quotes.
+// These are hand-verified highlights (same pattern as milestone0-report.html) —
+// the chart and momentum numbers are recomputed live from strategy-trend in
+// renderForLap() below, this is just the curated narrative layer, gated by
+// startLap so replay only shows what would honestly be known by that lap.
+
+// Corrected after a real bug: an earlier hand-curated cut of this content
+// had PIA "closing to 0.8s by lap 69" as the headline story, built on three
+// bogus post-retirement data points (GAP_RE misreading the results screen).
+// All content in this section now comes from the real /session/events
+// endpoint (retrieval.py's deterministic detectors + analysis.py's LLM
+// phrasing pass) instead of being hand-picked per race -- see allEvents
+// below, populated in loadChart().
+const EVENT_TYPE_META = {
+  retirement:      { icon: '❌', color: 'var(--ink-faint)', label: 'Retired' },
+  lead_change:     { icon: '⏱', color: 'var(--f1-red)',     label: 'Lead Change' },
+  vsc:             { icon: '🟡', color: 'var(--amber)',      label: 'VSC' },
+  safety_car:      { icon: '🚨', color: 'var(--amber)',      label: 'Safety Car' },
+  race_control:    { icon: '🚩', color: 'var(--f1-red)',     label: 'Race Control' },
+  pit_stop:        { icon: '🔧', color: 'var(--team-rb)',    label: 'Pit Stop' },
+  penalty_mention: { icon: '📻', color: 'var(--ink-dim)',    label: 'Penalty Mentioned' },
+  team_radio:      { icon: '🎙', color: 'var(--ink-dim)',    label: 'Team Radio' },
+};
+let allEvents = []; // fetched from /session/events in loadChart()
+
+// ---------------- replay engine ----------------
+// The whole point: every section below is a pure function of `currentLap`,
+// computed only from real data with lap <= currentLap (no lookahead). Moving
+// the slider genuinely changes what's on screen -- this isn't a hardcoded
+// final snapshot with a live-fetch veneer on top.
+let cutoffs = [];       // [{lap, timestamp, vision_count, audio_count, estimated}], real lap range only
+let trendPoints = [];   // raw /session/strategy-trend points
+let retirements = {};   // { code: firstOutLap }, fetched from /session/retirements -- generic, not hardcoded per driver
+let totalLaps = null;   // fetched from /session/race-meta -- this race's actual distance, not assumed 70
+let sessionStartMs = null;
+let currentLap = 70;
+let playing = false;
+let playTimer = null;
+
+function median(arr) { const s = [...arr].sort((a,b)=>a-b); const m = Math.floor(s.length/2); return s.length%2 ? s[m] : (s[m-1]+s[m])/2; }
+
+function seriesUpToLap(lap) {
+  // Just the raw per-driver, per-lap gap readings, filtered to lap <=
+  // currentLap -- generic across all 22 known drivers now, not hardcoded to
+  // NOR/PIA/VER. rankAtLap/featuredDuel (above) turn this into an actual
+  // ranking and a featured 2-driver duel; relativePairRows/absoluteRowsFor
+  // turn a driver pair or single driver's slice of this into chart rows.
+  const byDriver = {};
+  trendPoints.forEach(p => { if (p.lap > lap) return; Object.entries(p.gaps).forEach(([code, val]) => {
+    (byDriver[code] = byDriver[code] || {})[p.lap] = (byDriver[code][p.lap] || []).concat(val);
+  }); });
+  return { byDriver };
+}
+
+// The old NOR/PIA-specific "stop the chart once PIA retires" guard,
+// generalized: once EITHER of the featured duel's two drivers has retired,
+// don't keep drawing a relative-diff line against a car that isn't racing
+// anymore (same principle, not hardcoded to one driver).
+function duelRowsUpToLap(byDriver, duel, lap) {
+  if (!duel) return [];
+  const rows = relativePairRows(byDriver, duel.a, duel.b, lap);
+  return rows.filter(r => {
+    if (retirements[duel.a] != null && r.lap > retirements[duel.a]) return false;
+    if (retirements[duel.b] != null && r.lap > retirements[duel.b]) return false;
+    if (Math.abs(r.diff) > 20) return false; // documented OCR-noise exclusion, see retrieval.py
+    return true;
+  });
+}
+
+// Generic version of the VER-only absolute-gap rows above, for whichever
+// driver the battle grid's third slot picks (ANT/HAM), not just VER.
+function absoluteRowsFor(byDriver, code, lap) {
+  const series = byDriver[code] || {};
+  return Object.keys(series)
+    .map(Number)
+    .filter(l => l <= lap)
+    .sort((a, b) => a - b)
+    .map(l => ({ lap: l, gap: median(series[l]) }));
+}
+
+// Season-wide static roster (all 22 known codes from retrieval.py's
+// KNOWN_DRIVER_CODES + SURNAME_TO_CODE), NOT a per-race hand-pick -- same
+// kind of reference table as that whitelist itself. Replaces the old
+// DRIVER_META, which only ever covered 3 drivers because the battle grid's
+// 3rd slot used to be hand-picked per lap-threshold instead of computed.
+const DRIVER_ROSTER = {
+  NOR: { name: 'NORRIS',     team: 'MCLAREN',          num: '4'  },
+  PIA: { name: 'PIASTRI',    team: 'MCLAREN',          num: '81' },
+  HAM: { name: 'HAMILTON',   team: 'FERRARI',          num: '44' },
+  LEC: { name: 'LECLERC',    team: 'FERRARI',          num: '16' },
+  VER: { name: 'VERSTAPPEN', team: 'RED BULL RACING',  num: '1'  },
+  PER: { name: 'PEREZ',      team: 'RED BULL RACING',  num: '11' },
+  ANT: { name: 'ANTONELLI',  team: 'MERCEDES-AMG',     num: '12' },
+  RUS: { name: 'RUSSELL',    team: 'MERCEDES-AMG',     num: '63' },
+  ALO: { name: 'ALONSO',     team: 'ASTON MARTIN',     num: '14' },
+  STR: { name: 'STROLL',     team: 'ASTON MARTIN',     num: '18' },
+  GAS: { name: 'GASLY',      team: 'ALPINE',           num: '10' },
+  COL: { name: 'COLAPINTO',  team: 'ALPINE',           num: '43' },
+  ALB: { name: 'ALBON',      team: 'WILLIAMS',         num: '23' },
+  SAI: { name: 'SAINZ',      team: 'WILLIAMS',         num: '55' },
+  HAD: { name: 'HADJAR',     team: 'RACING BULLS',     num: '6'  },
+  LAW: { name: 'LAWSON',     team: 'RACING BULLS',     num: '30' },
+  HUL: { name: 'HULKENBERG', team: 'AUDI',             num: '27' },
+  BOR: { name: 'BORTOLETO',  team: 'AUDI',             num: '5'  },
+  OCO: { name: 'OCON',       team: 'HAAS',             num: '31' },
+  BEA: { name: 'BEARMAN',    team: 'HAAS',             num: '87' },
+  BOT: { name: 'BOTTAS',     team: 'CADILLAC',         num: '77' },
+  LIN: { name: 'LINDBLAD',   team: 'CADILLAC',         num: '32' },
+};
+const TEAM_COLORS = {
+  'MCLAREN': '#FF8000', 'FERRARI': '#E8002D', 'RED BULL RACING': '#3671C6',
+  'MERCEDES-AMG': '#27F4D2', 'ASTON MARTIN': '#229971', 'ALPINE': '#FF87BC',
+  'WILLIAMS': '#64C4FF', 'RACING BULLS': '#6692FF', 'AUDI': '#B02A30',
+  'HAAS': '#B6BABD', 'CADILLAC': '#FFC72C',
+};
+
+// Real per-lap ranking, replacing the old fixed NOR/PIA/VER + hand-picked
+// pickThirdCard rotation. Same implicit-leader inference validated in
+// retrieval.detect_lead_changes (whoever has no gap reading is the
+// reference everyone else is measured against), but with a REAL finding
+// from building that detector applied here too: over half this session's
+// laps have too few drivers captured to trust at all (a narrower broadcast
+// widget, not most of the field vanishing), and even a "well-covered" lap
+// can still have a single stray missing row that looks exactly like a
+// leader. So: only trust a lap's ranking when enough drivers are visible,
+// and hold the last trustworthy ranking forward otherwise, exactly like
+// the backend's WELL_COVERED_MIN_DRIVERS + persistence approach (the user
+// explicitly chose this "hold forward" behavior over showing gaps).
+const RANK_WELL_COVERED_MIN = 15;
+
+// Pure function of `lap` (plus the fixed trendPoints/retirements globals) --
+// deliberately NOT dependent on having been called for earlier laps first.
+// Real bug caught building this: an earlier version held the last-good
+// ranking forward in a variable that only accumulated across sequential
+// calls, so jumping straight to a sparse lap via the URL/slider (skipping
+// the earlier laps that would have built up that history) had nothing to
+// hold forward and fell through to a broken best-effort read on ~5 of 22
+// drivers -- produced a bogus P1 (a backmarker who happened to be the sole
+// "missing" driver in that tiny sample). Fixed by scanning backward from
+// the target lap for the most recent well-covered lap and ranking THAT
+// lap's data directly, independent of call order.
+function rankAtLap(lap) {
+  const active = Object.keys(DRIVER_ROSTER).filter(c => retirements[c] == null || lap < retirements[c]);
+  const byCodeByLap = {};
+  active.forEach(code => { byCodeByLap[code] = {}; });
+  trendPoints.forEach(p => {
+    if (p.lap > lap) return;
+    Object.entries(p.gaps).forEach(([code, val]) => {
+      if (!byCodeByLap[code]) return; // not active (retired or unknown code)
+      (byCodeByLap[code][p.lap] = byCodeByLap[code][p.lap] || []).push(val);
+    });
+  });
+  const candidateLaps = [...new Set(trendPoints.map(p => p.lap))].filter(l => l <= lap).sort((a, b) => b - a);
+  for (const l of candidateLaps) {
+    const seen = active.filter(c => byCodeByLap[c][l]);
+    if (seen.length < RANK_WELL_COVERED_MIN) continue; // sparse frame, scan further back
+    const missing = active.filter(c => !seen.includes(c));
+    const withGap = seen.map(code => ({ code, gap: median(byCodeByLap[code][l]) }));
+    withGap.sort((a, b) => a.gap - b.gap);
+    if (missing.length === 1) return [{ code: missing[0], gap: 0 }, ...withGap];
+    if (missing.length === 0) return withGap; // no clear leader row this lap, still a valid ranking of the rest
+    // missing.length > 1 on an otherwise well-covered lap is genuinely
+    // ambiguous (more than one candidate leader) -- keep scanning backward
+  }
+  return []; // no well-covered lap found at or before this point yet
+}
+
+// Featured 2-driver duel for the territory chart: whichever adjacent pair
+// in the current ranking is closest together, not always P1-vs-P2 -- reuses
+// relativePairRows/momentumRelative/verdictRelative unchanged (see below),
+// those never hardcoded any driver code.
+function featuredDuel(lap) {
+  const ranked = rankAtLap(lap);
+  if (ranked.length < 2) return null;
+  let best = null;
+  for (let i = 1; i < ranked.length; i++) {
+    const d = Math.abs(ranked[i].gap - ranked[i - 1].gap);
+    if (!best || d < best.d) best = { a: ranked[i - 1].code, b: ranked[i].code, d };
+  }
+  return best;
+}
+
+// HAM's real late-race story is the P4 fight with LEC (real: 5s penalty,
+// net 0.5s win), not HAM's gap to the race leader miles up the road --
+// absoluteRowsFor would show a "falling behind" read that's technically
+// true but tells the wrong battle. Generic two-driver relative diff, same
+// shape as the NOR/PIA one but without PIA's retirement-specific handling.
+function relativePairRows(byDriver, codeFavored, codeRival, lap) {
+  const a = byDriver[codeFavored] || {}, b = byDriver[codeRival] || {};
+  const laps = [...new Set([...Object.keys(a), ...Object.keys(b)])].map(Number).filter(l => l <= lap).sort((x,y)=>x-y);
+  return laps.map(l => {
+    const av = a[l] ? median(a[l]) : undefined, bv = b[l] ? median(b[l]) : undefined;
+    if (av === undefined || bv === undefined) return null;
+    return { lap: l, a: av, b: bv, diff: bv - av }; // >0 = favored (codeFavored) ahead
+  }).filter(Boolean);
+}
+
+// ---- rule-based momentum (no LLM -- must be instant while scrubbing) ----
+function momentumRelative(relRows, favorSign) {
+  if (!relRows.length) return null;
+  const last = relRows[relRows.length - 1].diff;
+  const prev = relRows[Math.max(0, relRows.length - 5)].diff;
+  const trend = (last - prev) * favorSign;
+  return { leadingMe: last * favorSign > 0, trend, gapNow: Math.abs(last) };
+}
+function momentumAbsolute(verRows) {
+  if (!verRows.length) return null;
+  const last = verRows[verRows.length - 1].gap;
+  const prev = verRows[Math.max(0, verRows.length - 5)].gap;
+  return { trend: prev - last, gapNow: last }; // trend>0 = closing (good)
+}
+function needleFromTrend(trend) { return Math.max(5, Math.min(95, 50 + trend * 6)); }
+function verdictRelative(m, rivalCode) {
+  if (!m) return { verdict: '⏳ No data yet', sub: 'No readings captured for this stretch yet (this race has data from Lap 9)' };
+  const g = m.gapNow.toFixed(2) + 's';
+  if (m.leadingMe) {
+    if (m.trend > 0.15) return { verdict: '🏆 Lead is growing', sub: `Ahead of ${rivalCode} by ${g}, gap still widening` };
+    if (m.trend < -0.15) return { verdict: '⚠️ Lead is shrinking', sub: `Ahead of ${rivalCode} by ${g}, but gap is closing` };
+    return { verdict: '🔒 Holding the lead', sub: `Ahead of ${rivalCode} by ${g}, no major change` };
+  }
+  if (m.trend > 0.15) return { verdict: '🔥 Closing in', sub: `Behind ${rivalCode} by ${g}, gap is closing` };
+  if (m.trend < -0.15) return { verdict: '📉 Falling further back', sub: `Behind ${rivalCode} by ${g}, still widening` };
+  return { verdict: '➖ Gap holding steady', sub: `Behind ${rivalCode} by ${g}` };
+}
+function verdictAbsolute(m, code) {
+  if (!m) return { verdict: '⏳ No data yet', sub: `No gap readings captured for ${code || 'this driver'} yet` };
+  const g = m.gapNow.toFixed(2) + 's';
+  if (m.trend > 0.15) return { verdict: '🔥 Closing on the lead group', sub: `${g} off the lead, and closing` };
+  if (m.trend < -0.15) return { verdict: '📉 Dropping off the lead group', sub: `${g} off the lead, and falling further back` };
+  return { verdict: '➖ Gap holding steady', sub: `${g} off the lead` };
+}
+
+function renderForLap(lap) {
+  currentLap = lap;
+  const cutoff = cutoffs.find(c => c.lap === lap) || cutoffs[cutoffs.length - 1];
+  const { byDriver } = seriesUpToLap(lap);
+  const duel = featuredDuel(lap);
+  const duelRows = duelRowsUpToLap(byDriver, duel, lap);
+
+  // masthead + replay bar
+  document.querySelector('.mh-lap .val').innerHTML = `${lap}<small>/${totalLaps}</small>`;
+  $('replay-lap-num').textContent = lap;
+  $('replay-slider').value = lap;
+  $('replay-note').textContent = lap >= totalLaps ? 'Showing final race state' : `Replaying Lap ${lap} — no information from later laps`;
+  history.replaceState(null, '', lap === totalLaps ? location.pathname : `?lap=${lap}`);
+
+  // strip: real cumulative counts up to this lap's cutoff
+  if (cutoff) {
+    const minutes = sessionStartMs != null ? ((cutoff.timestamp - sessionStartMs) / 60000).toFixed(1) : '—';
+    $('strip').innerHTML = [
+      [String(cutoff.vision_count), 'FRAMES CAPTURED'],
+      [String(cutoff.audio_count), 'AUDIO CLIPS'],
+      [minutes, 'MIN RECORDED'],
+      [`9→${lap}`, 'LAP RANGE'],
+    ].map(([v,l]) => `<div class="strip-cell"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
+  }
+
+  // events visible so far, from the real /session/events fetch -- not
+  // hardcoded per-race content anymore. importance is LLM-assigned per
+  // event during phrasing (analysis.get_phrased_events).
+  const visibleEvents = allEvents.filter(e => lap >= e.lap);
+
+  // impact card: highest-importance event revealed so far, else a
+  // live-computed placeholder from the current featured duel.
+  const im = $('impact');
+  const topEvent = visibleEvents.length ? visibleEvents.reduce((a, b) => (b.importance > a.importance ? b : a)) : null;
+  if (topEvent) {
+    $('impact-head').textContent = `Lap ${topEvent.lap} Highlight`;
+    im.innerHTML = `
+      <div class="impact-score"><div class="ring" style="background:conic-gradient(var(--f1-red) 0% ${topEvent.importance}%, #262626 ${topEvent.importance}% 100%)"><span class="num">${topEvent.importance}</span></div><div class="lbl">IMPORTANCE</div></div>
+      <div class="impact-body">
+        <span class="impact-award">${EVENT_TYPE_META[topEvent.type]?.icon || '⚡'} ${EVENT_TYPE_META[topEvent.type]?.label || topEvent.type}</span>
+        <div class="impact-headline">${topEvent.headline}${topEvent.uncertain ? ' <span class="uncertain">⚠</span>' : ''}</div>
+        <div class="impact-meta">
+          <div class="m"><div class="v">${topEvent.lap}${topEvent.end_lap ? '–' + topEvent.end_lap : ''}</div><div class="l">LAP</div></div>
+          <div class="m"><div class="v">${(topEvent.drivers || []).join('/') || '—'}</div><div class="l">DRIVER</div></div>
+        </div>
+        <div class="impact-quote">${topEvent.insight}</div>
+      </div>`;
+  } else {
+    $('impact-head').textContent = 'Current Situation';
+    const last = duelRows[duelRows.length - 1];
+    im.innerHTML = (last && duel)
+      ? `<div class="impact-placeholder">🏁 Currently leading: <b>${last.diff >= 0 ? duel.a : duel.b}</b>, ahead by <b>${Math.abs(last.diff).toFixed(2)}s</b> · no major moments yet</div>`
+      : `<div class="impact-placeholder">⏳ No comparable data yet at Lap ${lap}</div>`;
+  }
+
+  // ticker: compact subset of event types, chronological
+  const tickerTypes = new Set(['pit_stop', 'lead_change', 'retirement']);
+  const visibleTicker = visibleEvents.filter(e => tickerTypes.has(e.type)).sort((a, b) => a.lap - b.lap);
+  $('ticker').innerHTML = visibleTicker.length ? visibleTicker.map(e => `
+    <div class="tick-row">
+      <span class="tick-lap">L${e.lap}</span><span class="tick-code">${(e.drivers || [])[0] || '—'}</span>
+      <span class="tick-arrow ${e.type === 'retirement' ? 'down' : 'up'}">${e.type === 'retirement' ? '▼' : '▲'}</span>
+      <span class="tick-desc">${e.headline}</span>
+    </div>`).join('') : `<div class="tick-row"><span class="tick-desc">No position changes yet</span></div>`;
+
+  // race control timeline: every visible event, chronological
+  const visibleTl = [...visibleEvents].sort((a, b) => a.lap - b.lap);
+  $('timeline').innerHTML = visibleTl.length ? visibleTl.map(e => {
+    const meta = EVENT_TYPE_META[e.type] || { icon: '⚡', color: 'var(--ink-faint)' };
+    return `
+    <div class="tl-node">
+      <div class="tl-dot" style="background:${meta.color}">${meta.icon}</div>
+      <div class="tl-lap">LAP ${e.lap}${e.end_lap ? '–' + e.end_lap : ''}</div><div class="tl-fact">${e.headline}</div>
+      <div class="tl-insight${e.uncertain ? ' uncertain' : ''}">${e.uncertain ? '⚠' : '⚡'} ${e.insight}</div>
+      ${e.uncertain ? '<div class="tl-src">Unconfirmed</div>' : ''}
+    </div>`;
+  }).join('') : `<div class="tl-node"><div class="tl-fact">No confirmed events yet</div></div>`;
+
+  // momentum cards: real top-3 ranking (rankAtLap), not fixed drivers
+  const wrap = $('battle');
+  wrap.innerHTML = '';
+  const top3 = rankAtLap(lap).slice(0, 3);
+  const cards = top3.map((entry, i) => {
+    const code = entry.code;
+    const meta = DRIVER_ROSTER[code] || { name: code, team: '—', num: '—' };
+    const rows = absoluteRowsFor(byDriver, code, lap);
+    const m = momentumAbsolute(rows);
+    return {
+      code, name: meta.name, team: meta.team, num: meta.num, color: TEAM_COLORS[meta.team],
+      pos: `P${i + 1}`, needle: m ? needleFromTrend(m.trend) : 50, ...verdictAbsolute(m, code),
+    };
+  });
+  cards.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'driver-card';
+    card.style.setProperty('--card-color', c.color || 'var(--ink-faint)');
+    card.innerHTML = `
+      <div class="row-top"><span class="pos">${c.pos}</span><span class="num">#${c.num}</span></div>
+      <div class="code">${c.code}</div><div class="team">${c.team}</div>
+      <div class="momentum-meter"><div class="momentum-needle" style="left:${c.needle}%"></div></div>
+      <div class="momentum-labels"><span>Fading</span><span>Holding</span><span>Closing</span></div>
+      <div class="momentum-verdict">${c.verdict}</div>
+      <div class="momentum-sub">${c.sub}</div>`;
+    wrap.appendChild(card);
+  });
+  const battleNote = duel ? `${duel.a} vs ${duel.b} · closest battle` : 'Live';
+  const battleNoteEl = document.getElementById('battle-note');
+  if (battleNoteEl) battleNoteEl.textContent = battleNote;
+
+  renderTerritoryChart(duelRows, duel);
+  $('chart-note').textContent = duelRows.length
+    ? `Through Lap ${lap} · ${duelRows.length} laps of data`
+    : `Through Lap ${lap} · no comparable laps yet`;
+}
+
+function onSliderInput(v) { stopPlay(); renderForLap(Number(v)); }
+function togglePlay() { playing ? stopPlay() : startPlay(); }
+function startPlay() {
+  playing = true; $('replay-play').textContent = '⏸ Pause';
+  if (currentLap >= totalLaps) renderForLap(cutoffs[0].lap);
+  playTimer = setInterval(() => {
+    const next = currentLap + 1;
+    if (next > totalLaps) { stopPlay(); return; }
+    renderForLap(next);
+  }, 450);
+}
+function stopPlay() {
+  playing = false; $('replay-play').textContent = '▶ Play';
+  if (playTimer) { clearInterval(playTimer); playTimer = null; }
+}
+
+function formatSessionDateRange(startMs, endMs) {
+  if (startMs == null) return '';
+  const pad = n => String(n).padStart(2, '0');
+  const d = new Date(startMs);
+  const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const timeStr = ms => { const t = new Date(ms); return `${pad(t.getHours())}:${pad(t.getMinutes())}`; };
+  return endMs != null ? `${dateStr} ${timeStr(startMs)}–${timeStr(endMs)}` : `${dateStr} ${timeStr(startMs)}`;
+}
+
+async function loadSessionInfo() {
+  try {
+    const info = await api('/session/info');
+    $('mh-round').textContent = `${info.round} · RACE · LIVE-WIRED DASHBOARD`;
+    $('mh-title').textContent = info.name;
+    $('mh-sub').textContent = `Full race capture · ${formatSessionDateRange(info.start_ms, info.end_ms)} · bilibili.com`;
+    document.title = info.name + ' — F1 Race Control';
+  } catch (e) {
+    $('mh-sub').textContent = 'Error loading race info: ' + e.message;
+  }
+}
+
+async function loadChart() {
+  const btn = $('chart-refresh'); btn.disabled = true; btn.textContent = '↻ Loading...';
+  loadSessionInfo(); // not awaited -- masthead can settle independently of the chart data
+  try {
+    const [{ points }, { cutoffs: c }, meta, { retirements: r }] = await Promise.all([
+      api('/session/strategy-trend'),
+      api('/session/replay-cutoffs'),
+      api('/session/race-meta'),
+      api('/session/retirements'),
+    ]);
+    trendPoints = points;
+    cutoffs = c;
+    retirements = r;
+    totalLaps = meta.total_laps || (cutoffs.length ? cutoffs[cutoffs.length - 1].lap : 70);
+    document.querySelectorAll('.mh-lap small').forEach(el => el.textContent = '/' + totalLaps);
+    $('replay-total-laps').textContent = totalLaps;
+    if (cutoffs.length) {
+      $('replay-slider').min = cutoffs[0].lap;
+      $('replay-slider').max = totalLaps;
+    }
+    const urlLap = Number(new URLSearchParams(location.search).get('lap'));
+    const lo = cutoffs[0]?.lap ?? 1, hi = totalLaps;
+    const initialLap = (urlLap && urlLap >= lo && urlLap <= hi) ? urlLap : hi;
+    renderForLap(initialLap);
+  } catch (e) {
+    $('chart-note').textContent = 'Error: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = '↻ Refresh';
+  }
+  loadEvents(); // deliberately NOT awaited/blocking -- can take minutes cold
+               // (see analysis.EVENT_BATCH_SIZE comment), everything above
+               // already rendered from the fast endpoints by this point.
+}
+
+// /session/events can trigger real first-time generation (a few minutes on
+// a cold session, per the user's explicit choice -- "open and it generates
+// live" over "show nothing until the next background tick"). Split out of
+// loadChart() so a slow events fetch never blocks the rest of the
+// dashboard, which doesn't depend on it, from rendering immediately.
+async function loadEvents() {
+  const note = $('impact-note');
+  if (note) note.textContent = 'Loading key moments, may take a few minutes...';
+  try {
+    const { events } = await api('/session/events');
+    allEvents = events;
+  } catch (e) {
+    if (note) note.textContent = 'Error loading events: ' + e.message;
+    return;
+  }
+  if (note) note.textContent = 'Live';
+  renderForLap(currentLap); // refresh impact/ticker/timeline with real data
+}
+
+// ---------------- live: status polling ----------------
+async function refreshStatus() {
+  try {
+    const s = await api('/session/status');
+    const pill = $('status-pill'), text = $('status-text'), note = $('status-note');
+    pill.className = 'status-pill status-' + s.status;
+    text.textContent = s.status === 'idle' ? 'No live stream detected'
+      : s.status === 'active' ? 'Live · ' + s.session_id
+      : 'Ended · ' + s.session_id;
+    note.textContent = s.session_id ? `session ${s.session_id}${SESSION_ID && s.session_id === SESSION_ID ? ' (viewing this race)' : ''}` : '';
+    if (s.start_ms != null) sessionStartMs = s.start_ms;
+  } catch (e) {
+    $('status-text').textContent = 'Backend not responding';
+  }
+}
+// ---------------- pre-race onboarding: favorite driver + this race's interest ----------------
+// Entirely client-side (localStorage), same precedent as home.html's cosmetic
+// account switcher -- no backend user model exists to hang per-viewer state
+// off of, and doesn't need one for a single-viewer-per-browser preference.
+const PREFS_DRIVER_KEY = 'f1-fav-driver'; // global, a favorite driver doesn't change race to race
+function prefsInterestKey() { return 'f1-interest-' + (SESSION_ID || 'default'); }
+function prefsSkippedKey() { return 'f1-onboard-skipped-' + (SESSION_ID || 'default'); }
+
+function getFavoriteDriver() { return localStorage.getItem(PREFS_DRIVER_KEY) || ''; }
+function getInterest() { return localStorage.getItem(prefsInterestKey()) || ''; }
+
+function maybeShowOnboarding() {
+  if (getFavoriteDriver() && getInterest()) return; // both already answered for this race
+  if (localStorage.getItem(prefsSkippedKey())) return; // skipped once, don't nag every reload
+  populateDriverSelect();
+  $('onboard-overlay').classList.remove('hidden');
+}
+
+function populateDriverSelect() {
+  const sel = $('onboard-driver-select');
+  const codes = Object.keys(DRIVER_ROSTER).sort((a, b) => DRIVER_ROSTER[a].name.localeCompare(DRIVER_ROSTER[b].name));
+  sel.innerHTML = '<option value="">Select a driver...</option>' +
+    codes.map(c => `<option value="${c}">${DRIVER_ROSTER[c].name} (${DRIVER_ROSTER[c].team})</option>`).join('');
+  const existing = getFavoriteDriver();
+  if (existing) sel.value = existing;
+}
+
+let selectedInterestId = null, selectedInterestLabel = null;
+
+async function onboardNextStep() {
+  const driver = $('onboard-driver-select').value;
+  if (!driver) { $('onboard-driver-select').focus(); return; }
+  localStorage.setItem(PREFS_DRIVER_KEY, driver);
+  $('onboard-step-driver').style.display = 'none';
+  $('onboard-step-interest').style.display = '';
+  const optsEl = $('onboard-interest-options');
+  try {
+    const { options } = await api('/session/interest-options');
+    optsEl.innerHTML = options.map(o =>
+      `<div class="onboard-option" data-id="${o.id}" onclick="selectInterestOption(this, '${o.id.replace(/'/g, "\\'")}')">${o.label}</div>`
+    ).join('');
+  } catch (e) {
+    // Never block onboarding on this -- fall back to letting them just type their own.
+    optsEl.innerHTML = '';
+  }
+}
+
+function selectInterestOption(el, id) {
+  document.querySelectorAll('.onboard-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedInterestId = id;
+  selectedInterestLabel = el.textContent;
+  $('onboard-interest-other').value = '';
+}
+
+function submitOnboarding() {
+  const otherText = $('onboard-interest-other').value.trim();
+  const interest = otherText || selectedInterestLabel;
+  if (interest) localStorage.setItem(prefsInterestKey(), interest);
+  $('onboard-overlay').classList.add('hidden');
+}
+
+function skipOnboarding() {
+  localStorage.setItem(prefsSkippedKey(), '1');
+  $('onboard-overlay').classList.add('hidden');
+}
+
+$('onboard-interest-other').addEventListener('input', () => {
+  if ($('onboard-interest-other').value.trim()) {
+    document.querySelectorAll('.onboard-option').forEach(o => o.classList.remove('selected'));
+    selectedInterestId = null; selectedInterestLabel = null;
+  }
+});
+
+maybeShowOnboarding(); // synchronous localStorage check, doesn't wait on loadChart
+
+// ---------------- personalized notifications: light, rate-limited, badge-only ----------------
+// No OS Notification API, no permission prompt -- selected "Minimal Badge" over
+// the more interruptive options. Two independent restraint layers: the backend
+// only marks a small handful of events notification_worthy per race (see
+// EVENT_PHRASING_SYSTEM_NOTE), and this layer adds a cooldown + hard cap on
+// top so even a burst of qualifying events can't fire back-to-back.
+const NOTIF_COOLDOWN_MS = 8 * 60 * 1000;
+const NOTIF_MAX_PER_RACE = 6;
+function notifCountKey() { return 'f1-notif-count-' + (SESSION_ID || 'default'); }
+function notifLastFiredKey() { return 'f1-notif-last-' + (SESSION_ID || 'default'); }
+function notifSeenKeysKey() { return 'f1-notif-seen-' + (SESSION_ID || 'default'); }
+function eventKey(e) { return `${e.lap}|${e.type}|${(e.drivers || []).join(',')}`; }
+
+let firedNotifications = []; // this page load's fired list, newest first
+
+function getSeenEventKeys() {
+  try { return new Set(JSON.parse(localStorage.getItem(notifSeenKeysKey()) || '[]')); }
+  catch (e) { return new Set(); }
+}
+function markEventSeen(key) {
+  const seen = getSeenEventKeys();
+  seen.add(key);
+  localStorage.setItem(notifSeenKeysKey(), JSON.stringify([...seen]));
+}
+
+async function pollForNotifications() {
+  if (!SESSION_ID) return; // ambiguous default-session case, skip rather than guess
+  const favDriver = getFavoriteDriver();
+  if (!favDriver) return; // nothing to personalize against yet
+
+  let status;
+  try { status = await api('/session/status'); } catch (e) { return; }
+  // Only while THIS specific viewed race is the one currently showing on
+  // screen (live OR a rerun -- is_f1_live_now() doesn't distinguish either,
+  // see plan Phase 3) -- an ended/finished-viewing session never polls.
+  if (!(status.session_id === SESSION_ID && status.status === 'active')) return;
+
+  const countSoFar = Number(localStorage.getItem(notifCountKey()) || '0');
+  if (countSoFar >= NOTIF_MAX_PER_RACE) return;
+  const lastFired = Number(localStorage.getItem(notifLastFiredKey()) || '0');
+  if (Date.now() - lastFired < NOTIF_COOLDOWN_MS) return;
+
+  let events;
+  try {
+    const r = await api('/session/events');
+    events = r.events;
+    allEvents = events; // also keeps the dashboard's own panels fresh during live viewing
+  } catch (e) { return; }
+
+  const seen = getSeenEventKeys();
+  const candidates = events.filter(e =>
+    e.notification_worthy && e.notification_hook &&
+    (e.drivers || []).includes(favDriver) &&
+    !seen.has(eventKey(e))
+  );
+  if (!candidates.length) return;
+  candidates.sort((a, b) => b.importance - a.importance);
+  const chosen = candidates[0]; // only ever surface one per cooldown window, never queue the rest
+
+  markEventSeen(eventKey(chosen));
+  localStorage.setItem(notifLastFiredKey(), String(Date.now()));
+  localStorage.setItem(notifCountKey(), String(countSoFar + 1));
+
+  firedNotifications.unshift(chosen);
+  renderNotifBadge();
+}
+
+function renderNotifBadge() {
+  const badge = $('notif-badge');
+  if (!firedNotifications.length) { badge.classList.remove('visible'); return; }
+  badge.classList.add('visible');
+  $('notif-count').textContent = firedNotifications.length;
+  $('notif-panel').innerHTML = firedNotifications.map((e, i) => `
+    <div class="notif-item">
+      <span class="lap-tag">LAP ${e.lap} · ${(e.drivers || []).join('/')}</span>
+      <div class="hook">${e.notification_hook}</div>
+      ${e.suggested_whatif
+        ? `<button class="notif-run-btn" id="notif-run-btn-${i}" onclick="runSuggestedWhatif(${i}, event)">Run this assumption →</button><div class="notif-run-result" id="notif-run-result-${i}"></div>`
+        : ''}
+    </div>`).join('');
+}
+
+async function runSuggestedWhatif(i, ev) {
+  ev.stopPropagation();
+  const btn = $('notif-run-btn-' + i), resultEl = $('notif-run-result-' + i);
+  btn.disabled = true; btn.textContent = 'Running (may take a few minutes)...';
+  try {
+    // Reuses the existing /session/whatif pipeline unchanged -- only the
+    // display differs: verdict (one sentence), never the full reasoning text.
+    const result = await api('/session/whatif', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hypothesis: firedNotifications[i].suggested_whatif }),
+    });
+    resultEl.textContent = result.verdict || (result.text || '').slice(0, 140);
+    btn.style.display = 'none';
+  } catch (e) {
+    resultEl.textContent = 'Error: ' + e.message;
+    btn.disabled = false; btn.textContent = 'Run this assumption →';
+  }
+}
+
+function toggleNotifPanel(ev) {
+  ev.stopPropagation();
+  $('notif-badge').classList.toggle('open');
+}
+document.addEventListener('click', () => $('notif-badge').classList.remove('open'));
+
+setInterval(pollForNotifications, 60000);
+
+setInterval(refreshStatus, 15000);
+refreshStatus().then(loadChart);
+
+function renderTerritoryChart(rows, duel) {
+  const svg = $('chart');
+  svg.innerHTML = '';
+  if (!rows.length || !duel) {
+    $('legend').innerHTML = '';
+    $('chart-verdict').innerHTML = '⏳ No comparable battle yet';
+    $('trend-table').innerHTML = '';
+    return;
+  }
+  const codeA = duel.a, codeB = duel.b; // diff > 0 means codeB ahead (relativePairRows: b - a)
+  const colorA = TEAM_COLORS[DRIVER_ROSTER[codeA]?.team] || 'var(--ink-faint)';
+  const colorB = TEAM_COLORS[DRIVER_ROSTER[codeB]?.team] || 'var(--ink-dim)';
+  const W = 900, H = 280, padL = 44, padR = 16, padT = 16, padB = 28;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const allVals = rows.map(r => r.diff);
+  const yMax = Math.max(6, Math.ceil(Math.max(...allVals.map(Math.abs)) / 2) * 2);
+  const yMin = -yMax;
+  const xPos = i => padL + (i / (rows.length - 1)) * plotW;
+  const yPos = v => padT + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+  const zeroY = yPos(0);
+
+  svg.appendChild(el('rect', { x: padL, y: padT, width: plotW, height: zeroY - padT, fill: colorB, opacity: 0.14 }));
+  svg.appendChild(el('rect', { x: padL, y: zeroY, width: plotW, height: padT + plotH - zeroY, fill: colorA, opacity: 0.14 }));
+  const zt = el('text', { x: padL + 8, y: padT + 16, class: 'axis-label', fill: colorB, 'font-weight': 800 }); zt.textContent = `${codeB} ahead`; svg.appendChild(zt);
+  const zb = el('text', { x: padL + 8, y: padT + plotH - 8, class: 'axis-label', fill: colorA, 'font-weight': 800 }); zb.textContent = `${codeA} ahead`; svg.appendChild(zb);
+  svg.appendChild(el('line', { x1: padL, x2: W - padR, y1: zeroY, y2: zeroY, stroke: 'var(--hairline-strong)', 'stroke-width': 1, 'stroke-dasharray': '3 3' }));
+
+  const step = Math.max(1, Math.floor(rows.length / 14));
+  rows.forEach((r, i) => { if (i % step === 0 || i === rows.length - 1) {
+    const t = el('text', { x: xPos(i), y: H - 6, class: 'axis-label', 'text-anchor': 'middle' }); t.textContent = 'L' + r.lap; svg.appendChild(t);
+  }});
+
+  let d = '';
+  rows.forEach((r, i) => { d += (i === 0 ? 'M' : 'L') + xPos(i).toFixed(1) + ',' + yPos(r.diff).toFixed(1) + ' '; });
+  svg.appendChild(el('path', { d, fill: 'none', stroke: '#fff', 'stroke-width': 2.5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+  rows.forEach((r, i) => svg.appendChild(el('circle', { cx: xPos(i), cy: yPos(r.diff), r: 3.5, fill: '#fff' })));
+
+  const crosshair = el('line', { x1: 0, x2: 0, y1: padT, y2: padT + plotH, class: 'crosshair' });
+  svg.appendChild(crosshair);
+  const tooltip = $('tooltip');
+  svg.addEventListener('pointermove', ev => {
+    const rect = svg.getBoundingClientRect();
+    const mx = (ev.clientX - rect.left) * (W / rect.width);
+    let idx = 0, best = Infinity;
+    rows.forEach((r, i) => { const dist = Math.abs(xPos(i) - mx); if (dist < best) { best = dist; idx = i; } });
+    const r = rows[idx];
+    crosshair.setAttribute('x1', xPos(idx)); crosshair.setAttribute('x2', xPos(idx)); crosshair.style.opacity = 1;
+    tooltip.innerHTML = `<div style="font-weight:800">LAP ${r.lap}</div><div>${r.diff >= 0 ? codeB : codeA} ahead by ${Math.abs(r.diff).toFixed(2)}s</div>`;
+    tooltip.style.left = (ev.clientX - rect.left + 14) + 'px';
+    tooltip.style.top = (ev.clientY - rect.top - 10) + 'px';
+    tooltip.style.opacity = 1;
+  });
+  svg.addEventListener('pointerleave', () => { tooltip.style.opacity = 0; crosshair.style.opacity = 0; });
+
+  $('legend').innerHTML = `
+    <div class="legend-item"><span class="legend-swatch" style="background:${colorB}"></span>${codeB} ahead</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:${colorA}"></span>${codeA} ahead</div>
+  `;
+  const last = rows[rows.length - 1];
+  const aRetiredLap = retirements[codeA], bRetiredLap = retirements[codeB];
+  const justRetired = (aRetiredLap != null && last.lap >= aRetiredLap) ? codeA : (bRetiredLap != null && last.lap >= bRetiredLap) ? codeB : null;
+  $('chart-verdict').innerHTML = justRetired
+    ? `❌ Battle ended early — ${justRetired} retired on Lap ${retirements[justRetired]}<span class="sub">Last valid reading: ${last.diff >= 0 ? codeB : codeA} ahead by ${Math.abs(last.diff).toFixed(2)}s (Lap ${last.lap})</span>`
+    : `🏁 Battle ongoing<span class="sub">Latest reading: ${last.diff >= 0 ? codeB : codeA} ahead by ${Math.abs(last.diff).toFixed(2)}s (Lap ${last.lap})</span>`;
+
+  $('trend-table').innerHTML = `<tr><th>Lap</th><th>${codeA} gap</th><th>${codeB} gap</th><th>Diff</th></tr>` + rows.map(r =>
+    `<tr><td>${r.lap}</td><td class="num">${r.a.toFixed(2)}s</td><td class="num">${r.b.toFixed(2)}s</td><td class="num">${r.diff >= 0 ? codeB + ' +' : codeA + ' +'}${Math.abs(r.diff).toFixed(2)}s</td></tr>`
+  ).join('');
+}
+
+
+// ---------------- live: catchup / summary / whatif ----------------
+// ---------------- catchup/summary: real lap chart, not a text paragraph ----------------
+// Reuses rankAtLap (already computed for the momentum grid) across a lap
+// range instead of asking claude -p to describe it in prose -- real
+// position data plotted directly needs no LLM step at all. The LLM text
+// endpoints still run underneath (kept in the collapsed "Show written summary"), just
+// not the primary display anymore.
+function pickFeaturedDrivers(lapFrom, lapTo) {
+  const sampleLaps = [lapFrom, Math.round((lapFrom + lapTo) / 2), lapTo,
+    ...allEvents.filter(e => e.lap >= lapFrom && e.lap <= lapTo).map(e => e.lap)];
+  const picked = new Set();
+  sampleLaps.forEach(l => rankAtLap(l).slice(0, 3).forEach(d => picked.add(d.code)));
+  return [...picked].slice(0, 7);
+}
+
+function renderLapChart(lapFrom, lapTo) {
+  const svg = $('catchup-chart');
+  const codes = pickFeaturedDrivers(lapFrom, lapTo);
+  const rangeLaps = [];
+  for (let l = lapFrom; l <= lapTo; l++) rangeLaps.push(l);
+  if (!codes.length || rangeLaps.length < 2) {
+    svg.innerHTML = '';
+    $('catchup-evts').innerHTML = `<div class="lap-chart-empty">No comparable data in this lap range</div>`;
+    return;
+  }
+  const perDriverPos = {};
+  codes.forEach(c => { perDriverPos[c] = rangeLaps.map(l => { const r = rankAtLap(l); const idx = r.findIndex(d => d.code === c); return idx === -1 ? null : idx + 1; }); });
+  const W = 720, H = 260, padL = 34, padR = 34, padT = 16, padB = 26;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const xPos = i => padL + (rangeLaps.length > 1 ? (i / (rangeLaps.length - 1)) * plotW : 0);
+  const maxP = 20;
+  const yPos = p => padT + ((p - 1) / (maxP - 1)) * plotH;
+  let html = '';
+  [1, 5, 10, 15, 20].forEach(p => {
+    html += `<text x="${padL - 6}" y="${yPos(p) + 3}" font-size="8" fill="#616164" text-anchor="end" font-family="monospace">P${p}</text>`;
+    html += `<line x1="${padL}" x2="${W - padR}" y1="${yPos(p)}" y2="${yPos(p)}" stroke="#1a1a1a"/>`;
+  });
+  const step = Math.max(1, Math.round(rangeLaps.length / 10));
+  rangeLaps.forEach((l, i) => { if (i % step === 0 || i === rangeLaps.length - 1) html += `<text x="${xPos(i)}" y="${H - 6}" font-size="8" fill="#616164" text-anchor="middle" font-family="monospace">L${l}</text>`; });
+  codes.forEach(code => {
+    const color = TEAM_COLORS[DRIVER_ROSTER[code]?.team] || '#888';
+    const series = perDriverPos[code];
+    let path = '', drawing = false, lastX = null, lastY = null;
+    series.forEach((p, i) => {
+      if (p == null) { drawing = false; return; }
+      const x = xPos(i), y = yPos(p);
+      path += (drawing ? 'L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+      drawing = true; lastX = x; lastY = y;
+    });
+    html += `<path d="${path}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>`;
+    if (lastX != null) html += `<text x="${lastX + 6}" y="${lastY + 3}" font-size="9" font-weight="800" fill="${color}" font-family="monospace">${code}</text>`;
+  });
+  svg.innerHTML = html;
+  const rangeEvents = allEvents.filter(e => e.lap >= lapFrom && e.lap <= lapTo).sort((a, b) => b.importance - a.importance).slice(0, 8);
+  $('catchup-evts').innerHTML = rangeEvents.length
+    ? rangeEvents.map(e => `<span class="evt-chip">L${e.lap} ${(e.drivers||[])[0]||''} · ${e.headline}</span>`).join('')
+    : `<div class="lap-chart-empty">No detected events in this lap range</div>`;
+}
+
+async function doCatchup() {
+  const btn = $('btn-catchup'), textOut = $('catchup-summary-text');
+  btn.disabled = true;
+  const lo = cutoffs[0]?.lap ?? 9;
+  renderLapChart(Math.max(lo, currentLap - 15), currentLap);
+  textOut.textContent = 'Loading (may take a moment)...';
+  try { textOut.textContent = (await api('/session/catchup')).text; }
+  catch (e) { textOut.textContent = 'Error: ' + e.message; }
+  finally { btn.disabled = false; }
+}
+async function doSummary() {
+  const btn = $('btn-summary'), textOut = $('catchup-summary-text');
+  btn.disabled = true;
+  const lo = cutoffs[0]?.lap ?? 9;
+  renderLapChart(lo, totalLaps);
+  textOut.textContent = 'Generating (may take a moment)...';
+  try { textOut.textContent = (await api('/session/summary')).text; }
+  catch (e) { textOut.textContent = 'Error: ' + e.message; }
+  finally { btn.disabled = false; }
+}
+
+// ---------------- What-If: real scenario probabilities from claude -p JSON ----------------
+async function doWhatIf() {
+  const hypothesis = $('whatif-input').value;
+  const btn = $('btn-whatif');
+  const scenariosEl = $('whatif-scenarios'), verdictEl = $('whatif-verdict'), textOut = $('whatif-reasoning-text');
+  btn.disabled = true;
+  scenariosEl.innerHTML = ''; verdictEl.textContent = ''; textOut.textContent = '';
+  verdictEl.innerHTML = 'Running simulation (may take a few minutes)...';
+  try {
+    const result = await api('/session/whatif', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hypothesis }),
+    });
+    const scenarios = result.scenarios || [];
+    scenariosEl.innerHTML = scenarios.length ? scenarios.map(s => `
+      <div class="scenario">
+        <div class="icon" style="background:${s.color}22">${s.icon || '❓'}</div>
+        <div class="body">
+          <div class="name">${s.name}</div>
+          <div class="desc">${s.desc}</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:${s.probability}%;background:${s.color || '#888'}"></div></div>
+        </div>
+        <div class="pct">${s.probability}%</div>
+      </div>`).join('') : '';
+    verdictEl.textContent = result.verdict || '';
+    textOut.textContent = result.text || '';
+  } catch (e) {
+    verdictEl.textContent = 'Error: ' + e.message;
+  } finally { btn.disabled = false; }
+}
+
+// ---------------- raw log (lazy: only render when opened, log is large) ----------------
+let logLoaded = false;
+document.querySelector('.raw-log').addEventListener('toggle', async function () {
+  if (!this.open || logLoaded) return;
+  logLoaded = true;
+  const container = $('log-list');
+  container.textContent = 'Loading...';
+  try {
+    const res = await fetch(SESSION_ID ? `/session/timeline?session_id=${encodeURIComponent(SESSION_ID)}` : '/session/timeline');
+    const { events } = await res.json();
+    container.innerHTML = '';
+    events.slice(0, 500).forEach(r => {
+      const row = document.createElement('div');
+      row.className = 'log-row audio';
+      const t = new Date(r.timestamp).toLocaleTimeString('en-US', { hour12: false });
+      row.innerHTML = `<div class="tag">audio</div><div class="time">${t}</div><div class="txt"></div>`;
+      row.querySelector('.txt').textContent = r.text;
+      container.appendChild(row);
+    });
+    $('raw-log-summary').textContent = `▸ Raw commentary log (showing ${Math.min(500, events.length)} of ${events.length})`;
+  } catch (e) { container.textContent = 'Error: ' + e.message; }
+});
+</script>
+
+</body>
+</html>

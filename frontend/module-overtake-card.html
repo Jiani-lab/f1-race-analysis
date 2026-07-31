@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>超车事件卡 — 3个方案</title>
+<style>
+  body { margin:0; padding:40px 20px 100px; background:#050505; color:#fff; font-family:-apple-system,sans-serif; }
+  h1 { font-size:19px; margin:0 0 6px; }
+  .lead { color:#888; font-size:12.5px; margin-bottom:8px; }
+  .replay-btn { background:#E10600; color:#fff; border:none; padding:6px 14px; border-radius:6px; font:800 12px -apple-system; cursor:pointer; margin-bottom:40px; }
+  .block { max-width:720px; margin:0 auto 56px; }
+  .block-head { display:flex; align-items:baseline; gap:10px; margin-bottom:14px; }
+  .block-head .n { font:900 12px monospace; color:#E10600; background:rgba(225,6,0,.14); padding:3px 9px; border-radius:5px; }
+  .block-head .name { font:800 14px -apple-system; }
+  .block-head .tag { font:600 11.5px -apple-system; color:#888; }
+  hr { border:none; border-top:1px solid #1a1a1a; max-width:720px; margin:0 auto 56px; }
+
+  /* ============ 1: FULL-WIDTH HERO BANNER ============ */
+  .v1 { background:linear-gradient(100deg,#1a0000 0%,#0d0000 55%,#050505 100%); border:1px solid #3a0808; border-radius:14px; padding:26px 28px; position:relative; overflow:hidden; }
+  .v1::before { content:""; position:absolute; inset:0; background-image:repeating-conic-gradient(rgba(255,255,255,.05) 0% 25%, transparent 0% 50%); background-size:16px 16px; -webkit-mask-image:linear-gradient(100deg,#000 0%,transparent 40%); mask-image:linear-gradient(100deg,#000 0%,transparent 40%); }
+  .v1-tag { display:inline-flex; align-items:center; gap:7px; font:900 11px monospace; letter-spacing:.14em; color:#ff5449; position:relative; }
+  .v1-tag .dot { width:7px; height:7px; border-radius:50%; background:#ff5449; animation:v1pulse 1.1s ease-in-out infinite; }
+  @keyframes v1pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+  .v1-headline { font:900 32px/1.15 -apple-system; margin-top:12px; position:relative; letter-spacing:-.01em; }
+  .v1-headline b { color:#3671C6; }
+  .v1-flow { display:flex; align-items:center; gap:16px; margin-top:20px; position:relative; }
+  .v1-pos { font:900 30px monospace; color:#666; }
+  .v1-pos.now { color:#fff; }
+  .v1-arrow { font:900 22px monospace; color:#3671C6; }
+  .v1-sub { font:600 13px -apple-system; color:#bbb; margin-top:16px; position:relative; }
+
+  /* ============ 2: REPLAY GRAPHIC ============ */
+  .v2-wrap { clip-path: polygon(0 0, 100% 0, 100% 88%, 96% 100%, 0 100%); background:#0f0f0f; border:1px solid #262626; padding:22px 26px 30px; }
+  .v2-top { display:flex; justify-content:space-between; align-items:center; }
+  .v2-replay { display:inline-flex; align-items:center; gap:6px; background:#fff; color:#000; font:900 10.5px monospace; letter-spacing:.1em; padding:4px 10px; clip-path:polygon(6px 0,100% 0,100% 100%,0 100%,0 6px); }
+  .v2-lap { font:800 11px monospace; color:#666; }
+  .v2-headline { font:900 24px/1.2 -apple-system; margin-top:16px; }
+  .v2-badges { display:flex; align-items:center; gap:14px; margin-top:20px; }
+  .v2-badge { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .v2-badge .circle { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font:900 15px monospace; border:2px solid; }
+  .v2-badge .p { font:800 10px monospace; color:#666; }
+  .v2-vs { font:900 13px monospace; color:#444; }
+  .v2-track { margin-top:22px; height:3px; background:#262626; border-radius:2px; position:relative; overflow:hidden; }
+  .v2-track .prog { position:absolute; inset:0; width:14%; background:linear-gradient(90deg,transparent,#3671C6); border-radius:2px; animation:v2move 1.8s ease-in-out infinite; }
+  @keyframes v2move { 0%{left:-20%} 100%{left:100%} }
+  .v2-sub { font:600 11.5px monospace; color:#777; margin-top:10px; }
+
+  /* ============ 3: IMPACT SCORE CARD ============ */
+  .v3 { background:#0f0f0f; border:1px solid #262626; border-radius:16px; padding:26px; display:flex; gap:24px; align-items:center; }
+  .v3-score { flex:0 0 auto; text-align:center; }
+  .v3-score .ring { width:88px; height:88px; border-radius:50%; background:conic-gradient(#3671C6 0% 92%, #262626 92% 100%); display:flex; align-items:center; justify-content:center; position:relative; }
+  .v3-score .ring::before { content:""; position:absolute; inset:6px; border-radius:50%; background:#0f0f0f; }
+  .v3-score .num { position:relative; font:900 22px monospace; }
+  .v3-score .lbl { font:800 9px monospace; color:#666; letter-spacing:.1em; margin-top:6px; }
+  .v3-body { flex:1; min-width:0; }
+  .v3-award { display:inline-flex; align-items:center; gap:5px; background:linear-gradient(90deg,#3671C6,#2a5aa8); font:900 9.5px monospace; letter-spacing:.1em; padding:4px 10px; border-radius:20px; }
+  .v3-headline { font:900 21px/1.25 -apple-system; margin-top:10px; }
+  .v3-meta { display:flex; gap:16px; margin-top:12px; }
+  .v3-meta .m .v { font:800 15px monospace; color:#3671C6; }
+  .v3-meta .m .l { font:700 9px monospace; color:#666; letter-spacing:.08em; }
+</style>
+</head>
+<body>
+<h1>超车事件卡 — 3个"更大更炸"方案</h1>
+<div class="lead">内容都是同一个事件：VER 第1圈 T1 连超两台法拉利，P5→P3。样式在 Direction C 语言里做变化。</div>
+
+<div class="block">
+  <div class="block-head"><span class="n">01</span><span class="name">全宽横幅</span><span class="tag">像突发新闻banner，最强冲击力，占位最大</span></div>
+  <div class="v1">
+    <span class="v1-tag"><span class="dot"></span>LIVE · LAP 1 · TURN 1</span>
+    <div class="v1-headline">VERSTAPPEN 一个弯<b>连超两台法拉利</b></div>
+    <div class="v1-flow">
+      <span class="v1-pos">P5</span>
+      <span class="v1-arrow">➜➜</span>
+      <span class="v1-pos now">P3</span>
+    </div>
+    <div class="v1-sub">起步冲刺直接双超，法拉利瞬间被打乱阵脚</div>
+  </div>
+</div>
+
+<hr />
+
+<div class="block">
+  <div class="block-head"><span class="n">02</span><span class="name">回放图形</span><span class="tag">模拟转播"REPLAY"角标+进度条，最有转播感</span></div>
+  <div class="v2-wrap">
+    <div class="v2-top">
+      <span class="v2-replay">⟲ REPLAY</span>
+      <span class="v2-lap">LAP 1 / 70</span>
+    </div>
+    <div class="v2-headline">VER T1 连超两台法拉利</div>
+    <div class="v2-badges">
+      <div class="v2-badge"><div class="circle" style="background:rgba(54,113,198,.15);border-color:#3671C6;color:#3671C6">VER</div><div class="p">P5→P3</div></div>
+      <span class="v2-vs">OVERTAKES</span>
+      <div class="v2-badge"><div class="circle" style="background:rgba(232,0,45,.15);border-color:#E8002D;color:#E8002D">HAM</div><div class="p">P3→P4</div></div>
+      <div class="v2-badge"><div class="circle" style="background:rgba(255,106,122,.15);border-color:#FF6A7A;color:#FF6A7A">LEC</div><div class="p">P4→P5</div></div>
+    </div>
+    <div class="v2-track"><div class="prog"></div></div>
+    <div class="v2-sub">TURN 1 · 起步阶段</div>
+  </div>
+</div>
+
+<hr />
+
+<div class="block">
+  <div class="block-head"><span class="n">03</span><span class="name">影响力评分卡</span><span class="tag">游戏化打分+勋章感，最有"高光时刻"氛围</span></div>
+  <div class="v3">
+    <div class="v3-score">
+      <div class="ring"><span class="num">92</span></div>
+      <div class="lbl">IMPACT</div>
+    </div>
+    <div class="v3-body">
+      <span class="v3-award">🏆 LAP 1 最佳镜头</span>
+      <div class="v3-headline">VERSTAPPEN 一个弯连超两台法拉利</div>
+      <div class="v3-meta">
+        <div class="m"><div class="v">+2</div><div class="l">POSITIONS</div></div>
+        <div class="m"><div class="v">T1</div><div class="l">LOCATION</div></div>
+        <div class="m"><div class="v">P3</div><div class="l">NOW</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
