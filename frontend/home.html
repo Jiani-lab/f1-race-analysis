@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>F1 Race Control — Races</title>
 <style>
   :root {
@@ -9,48 +10,67 @@
     --surface:        #101013;
     --surface-raised: #17171b;
     --hairline:       rgba(255,255,255,0.08);
-    --hairline-strong: rgba(255,255,255,0.16);
+    --hairline-strong: rgba(255,255,255,0.18);
     --ink:            #f5f5f3;
     --ink-dim:        #9c9c9f;
     --ink-faint:      #616164;
     --f1-red:         #E10600;
+    --f1-red-bright:  #ff2a1f;
     --f1-red-dim:     rgba(225,6,0,0.16);
+    --f1-red-glow:    rgba(225,6,0,0.35);
     --green:          #17c964;
     --green-dim:      rgba(23,201,100,0.14);
-    --amber:          #f5a623;
     --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
     --sans: -apple-system, "Segoe UI", sans-serif;
+    --sans-display: "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   }
   * { box-sizing: border-box; }
   html, body { overflow-x: hidden; max-width: 100%; }
   body {
-    margin: 0; padding: 0 0 60px; background: var(--track); color: var(--ink);
+    margin: 0; padding: 0 0 72px; background: var(--track); color: var(--ink);
     font-family: var(--sans);
-    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 14px);
+    background-image:
+      radial-gradient(ellipse 900px 460px at 12% -8%, rgba(225,6,0,0.09), transparent 60%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.014) 0px, rgba(255,255,255,0.014) 1px, transparent 1px, transparent 64px);
   }
-  main { max-width: 1040px; margin: 0 auto; padding: 0 18px; min-width: 0; }
+  main { max-width: 1080px; margin: 0 auto; padding: 0 20px; min-width: 0; }
   a { color: inherit; }
+  button, select { font-family: inherit; }
+
+  :focus-visible { outline: 2px solid var(--f1-red-bright); outline-offset: 3px; border-radius: 4px; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
   /* ---------- masthead + account picker ---------- */
-  .masthead { background: linear-gradient(180deg, #14100f 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 18px 18px 16px; }
-  .masthead-inner { max-width: 1040px; margin: 0 auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .mh-flag { display: inline-flex; gap: 3px; margin-bottom: 8px; }
-  .mh-flag span { width: 16px; height: 11px; display: inline-block; }
-  .mh-flag span:nth-child(1) { background: #477050; }
-  .mh-flag span:nth-child(2) { background: #f5f5f3; }
-  .mh-flag span:nth-child(3) { background: #ce2939; }
-  .mh-round { font: 700 11.5px/1 var(--mono); letter-spacing: 0.14em; color: var(--f1-red); text-transform: uppercase; }
-  .mh-title { font: 800 24px/1.15 var(--sans); letter-spacing: -0.01em; margin: 3px 0 0; }
-  .mh-sub { font: 500 14.5px/1.4 var(--sans); color: var(--ink-dim); margin-top: 3px; }
+  .masthead { position: relative; background: linear-gradient(180deg, #170f0e 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 22px 20px 20px; overflow: hidden; }
+  .masthead::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.05;
+    background-image: repeating-conic-gradient(#fff 0% 25%, transparent 0% 50%);
+    background-size: 16px 16px; background-position: 0 0;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+  }
+  .masthead-inner { position: relative; max-width: 1080px; margin: 0 auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .mh-flag-icon { flex: 0 0 auto; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5)); }
+  .mh-flag-icon svg { display: block; animation: flag-wave 2.6s ease-in-out infinite; transform-origin: 4px 6px; }
+  @keyframes flag-wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
+  .mh-title-row { display: flex; align-items: center; gap: 12px; }
+  .mh-round { font: 700 11.5px/1 var(--mono); letter-spacing: 0.16em; color: var(--f1-red-bright); text-transform: uppercase; }
+  .mh-title { font: 800 clamp(24px, 4.4vw, 32px)/1.1 var(--sans-display); letter-spacing: -0.02em; margin: 5px 0 0; }
+  .mh-sub { font: 500 14.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 5px; max-width: 480px; }
 
   .account { position: relative; }
   .account-btn { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--hairline-strong); padding: 6px 12px 6px 6px; border-radius: 24px; cursor: pointer; color: var(--ink); font: 600 13px var(--sans); }
   .account-btn:hover { background: var(--surface-raised); }
   .account-avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--f1-red), #ff6a5f); display: flex; align-items: center; justify-content: center; font: 800 11px var(--mono); flex: 0 0 auto; }
-  .account-chevron { color: var(--ink-faint); font-size: 10px; transition: transform .15s; }
+  .account-chevron { color: var(--ink-faint); font-size: 10px; transition: transform .15s var(--ease-out); }
   .account.open .account-chevron { transform: rotate(180deg); }
-  .account-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 200px; background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 10px; padding: 6px; box-shadow: 0 12px 32px rgba(0,0,0,0.5); display: none; z-index: 10; }
-  .account.open .account-menu { display: block; }
+  .account-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 200px; background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 10px; padding: 6px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.6); display: none; z-index: 10; }
+  .account.open .account-menu { display: block; animation: rise .18s var(--ease-out); }
   .account-menu-label { font: 700 9.5px/1 var(--mono); letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; padding: 8px 10px 4px; }
   .account-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font: 600 13px var(--sans); }
   .account-item:hover { background: rgba(255,255,255,0.06); }
@@ -59,39 +79,39 @@
   .account-item.active .dot { background: var(--green); }
   .account-sep { height: 1px; background: var(--hairline); margin: 6px 4px; }
 
-  /* ---------- hero ---------- */
-  .hero { padding: 32px 0 22px; }
-  .hero h1 { font: 800 30px/1.2 var(--sans); margin: 0 0 8px; letter-spacing: -0.01em; }
-  .hero p { font: 500 15px/1.6 var(--sans); color: var(--ink-dim); margin: 0; max-width: 640px; }
+  /* ---------- hero intro ---------- */
+  .intro { padding: 34px 0 20px; }
+  .intro h1 { font: 800 clamp(26px, 4vw, 32px)/1.2 var(--sans-display); margin: 0 0 8px; letter-spacing: -0.015em; }
+  .intro p { font: 500 15px/1.6 var(--sans); color: var(--ink-dim); margin: 0; max-width: 620px; }
 
-  /* ---------- race grid ---------- */
-  .grid-head { display: flex; align-items: baseline; gap: 10px; margin: 30px 0 14px; }
-  .grid-head .chip { width: 5px; height: 14px; background: var(--f1-red); border-radius: 1px; }
-  .grid-head h2 { font: 800 13px/1 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; margin: 0; }
-  .grid-head .count { font: 600 13px var(--sans); color: var(--ink-faint); }
-
-  .race-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-  .race-card { display: block; text-decoration: none; background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 18px; transition: border-color .15s, transform .15s; position: relative; overflow: hidden; }
-  .race-card:hover { border-color: var(--hairline-strong); transform: translateY(-2px); }
-  .race-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--ink-faint); }
-  .race-card.live::before { background: var(--f1-red); }
-  .race-card.ended::before { background: var(--green); }
-  .status-badge { display: inline-flex; align-items: center; gap: 6px; font: 800 10px/1 var(--mono); letter-spacing: 0.1em; padding: 4px 9px; border-radius: 20px; text-transform: uppercase; }
-  .status-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
-  .status-badge.live { background: var(--f1-red-dim); color: #ff6a5f; }
-  .status-badge.live .dot { background: #ff6a5f; animation: pulse 1.1s ease-in-out infinite; }
-  .status-badge.ended { background: var(--green-dim); color: var(--green); }
-  .status-badge.ended .dot { background: var(--green); }
-  .status-badge.idle { background: rgba(255,255,255,0.06); color: var(--ink-faint); }
-  .status-badge.idle .dot { background: var(--ink-faint); }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
-  .race-round { font: 700 10.5px/1 var(--mono); letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; margin-top: 12px; }
-  .race-name { font: 800 16px/1.3 var(--sans); margin-top: 5px; }
-  .race-meta { font: 600 12px/1 var(--mono); color: var(--ink-faint); margin-top: 10px; display: flex; gap: 12px; flex-wrap: wrap; }
-  .race-cta { font: 700 11.5px/1 var(--mono); letter-spacing: 0.04em; color: var(--f1-red); margin-top: 14px; text-transform: uppercase; }
-  .race-card:hover .race-cta { color: #ff2a1f; }
-
-  .empty-state { font: 500 14.5px/1.7 var(--sans); color: var(--ink-faint); padding: 30px 4px; text-align: center; border: 1px dashed var(--hairline-strong); border-radius: 12px; }
+  /* ---------- live hero ---------- */
+  .live-hero {
+    position: relative; overflow: hidden; border-radius: 18px; margin: 26px 0 0;
+    background:
+      radial-gradient(ellipse 640px 300px at 85% -20%, rgba(225,6,0,0.4), transparent 60%),
+      linear-gradient(150deg, #1c0b0a 0%, #100708 55%, #0a0a0c 100%);
+    border: 1px solid rgba(225,6,0,0.3);
+    padding: 26px 28px 24px;
+    animation: rise .5s var(--ease-out) both;
+  }
+  .live-hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+    background-image: repeating-linear-gradient(100deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 46px);
+  }
+  .live-tag { position: relative; display: inline-flex; align-items: center; gap: 7px; font: 800 11px/1 var(--mono); letter-spacing: 0.14em; color: #fff; background: var(--f1-red); padding: 5px 11px 5px 9px; border-radius: 20px; text-transform: uppercase; }
+  .live-tag .dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: livepulse 1.3s var(--ease-out) infinite; }
+  @keyframes livepulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
+  .live-hero-round { position: relative; font: 700 11.5px/1 var(--mono); letter-spacing: 0.12em; color: #ff9c94; text-transform: uppercase; margin-top: 16px; }
+  .live-hero-name { position: relative; font: 800 clamp(24px, 4.6vw, 38px)/1.15 var(--sans-display); letter-spacing: -0.015em; margin-top: 6px; max-width: 760px; }
+  .live-hero-meta { position: relative; font: 600 13px/1 var(--mono); color: var(--ink-dim); margin-top: 14px; }
+  .live-hero-cta {
+    position: relative; display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
+    background: var(--f1-red); color: #fff; text-decoration: none; font: 800 13px var(--sans);
+    padding: 12px 20px; border-radius: 9px; transition: background .15s, transform .15s var(--ease-out);
+  }
+  .live-hero-cta .arrow { transition: transform .15s var(--ease-out); }
+  .live-hero-cta:hover { background: var(--f1-red-bright); transform: translateY(-1px); }
+  .live-hero-cta:hover .arrow { transform: translateX(3px); }
 
   /* ---------- one-time push-notification setup ---------- */
   .push-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 18px 20px; margin-top: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -99,13 +119,51 @@
   .push-card .title { font: 800 14px var(--sans); }
   .push-card .sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
   .push-card select { background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 8px 10px; border-radius: 8px; font: 500 13px var(--sans); }
-  .push-card button { background: var(--f1-red); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font: 800 12px var(--sans); cursor: pointer; white-space: nowrap; }
-  .push-card button:hover { background: #ff2a1f; }
+  .push-card button { background: var(--f1-red); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font: 800 12px var(--sans); cursor: pointer; white-space: nowrap; transition: background .15s; }
+  .push-card button:hover { background: var(--f1-red-bright); }
   .push-card button:disabled { opacity: .5; cursor: default; }
   .push-card.enabled { border-color: rgba(23,201,100,0.35); }
   .push-card .status-line { font: 700 12px var(--sans); color: var(--green); display: none; }
   .push-card.enabled .status-line { display: block; }
   .push-card.enabled .setup-row { display: none; }
+
+  /* ---------- sessions section ---------- */
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 38px 0 16px; }
+  .section-head h2 { font: 800 clamp(19px, 2.6vw, 22px)/1.2 var(--sans-display); letter-spacing: -0.01em; margin: 0; }
+  .section-head .count { font: 600 13px var(--sans); color: var(--ink-faint); margin-left: 8px; }
+
+  .year-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .year-tab {
+    font: 700 12px/1 var(--mono); letter-spacing: 0.03em; color: var(--ink-dim);
+    background: transparent; border: 1px solid var(--hairline-strong); padding: 7px 13px;
+    border-radius: 20px; cursor: pointer; transition: border-color .15s, color .15s, background .15s;
+  }
+  .year-tab:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .year-tab.active { background: var(--f1-red); border-color: var(--f1-red); color: #fff; }
+
+  .race-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .race-card {
+    display: block; text-decoration: none; background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: 14px; padding: 18px; transition: border-color .15s, transform .15s var(--ease-out), background .15s;
+    position: relative; overflow: hidden;
+    animation: rise .45s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 45ms);
+  }
+  .race-card:hover { border-color: var(--hairline-strong); transform: translateY(-3px); background: var(--surface-raised); }
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; font: 800 10px/1 var(--mono); letter-spacing: 0.1em; padding: 4px 9px; border-radius: 20px; text-transform: uppercase; }
+  .status-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .status-badge.ended { background: var(--green-dim); color: var(--green); }
+  .status-badge.ended .dot { background: var(--green); }
+  .status-badge.idle { background: rgba(255,255,255,0.06); color: var(--ink-faint); }
+  .status-badge.idle .dot { background: var(--ink-faint); }
+  .race-round { font: 700 10.5px/1 var(--mono); letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; margin-top: 13px; }
+  .race-name { font: 800 16.5px/1.3 var(--sans); margin-top: 6px; }
+  .race-meta { font: 600 12px/1 var(--mono); color: var(--ink-faint); margin-top: 11px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .race-cta { display: flex; align-items: center; gap: 6px; font: 700 11.5px/1 var(--mono); letter-spacing: 0.04em; color: var(--f1-red); margin-top: 15px; text-transform: uppercase; }
+  .race-cta .arrow { transition: transform .15s var(--ease-out); }
+  .race-card:hover .race-cta { color: var(--f1-red-bright); }
+  .race-card:hover .race-cta .arrow { transform: translateX(3px); }
+
+  .empty-state { font: 500 14.5px/1.7 var(--sans); color: var(--ink-faint); padding: 30px 4px; text-align: center; border: 1px dashed var(--hairline-strong); border-radius: 12px; }
 </style>
 </head>
 <body>
@@ -113,9 +171,22 @@
 <div class="masthead">
   <div class="masthead-inner">
     <div>
-      <div class="mh-flag"><span></span><span></span><span></span></div>
       <div class="mh-round">LIVE-WIRED DASHBOARD</div>
-      <div class="mh-title">F1 RACE CONTROL</div>
+      <div class="mh-title-row">
+        <span class="mh-flag-icon">
+          <svg width="34" height="40" viewBox="0 0 34 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="2" y="2" width="3" height="37" rx="1.5" fill="#9c9c9f"/>
+            <path d="M5 3 C 14 -1, 22 7, 31 3 L 31 21 C 22 25, 14 17, 5 21 Z" fill="#f5f5f3"/>
+            <g fill="#101013">
+              <rect x="5" y="3" width="4.3" height="4.5"/><rect x="13.6" y="2.4" width="4.3" height="4.5"/><rect x="22.2" y="3.6" width="4.3" height="4.5"/>
+              <rect x="9.3" y="7.5" width="4.3" height="4.5"/><rect x="17.9" y="6.9" width="4.3" height="4.5"/><rect x="26.5" y="8.1" width="4.3" height="4.5"/>
+              <rect x="5" y="12" width="4.3" height="4.5"/><rect x="13.6" y="11.4" width="4.3" height="4.5"/><rect x="22.2" y="12.6" width="4.3" height="4.5"/>
+              <rect x="9.3" y="16.5" width="4.3" height="4.5"/><rect x="17.9" y="15.9" width="4.3" height="4.5"/>
+            </g>
+          </svg>
+        </span>
+        <div class="mh-title">F1 RACE CONTROL</div>
+      </div>
       <div class="mh-sub">Real screen + audio capture, real recall, no scripted content</div>
     </div>
     <div class="account" id="account">
@@ -136,10 +207,12 @@
 </div>
 
 <main>
-  <div class="hero">
+  <div class="intro">
     <h1>Your races</h1>
     <p>Pick up a race in progress or revisit a past one — each has its own live-wired replay, auto-detected key moments, and What-If simulator.</p>
   </div>
+
+  <div id="live-hero-slot"></div>
 
   <div class="push-card" id="push-card">
     <div class="body">
@@ -153,7 +226,10 @@
     </div>
   </div>
 
-  <div class="grid-head"><span class="chip"></span><h2>All Sessions</h2><span class="count" id="session-count"></span></div>
+  <div class="section-head">
+    <div><h2 style="display:inline">Past Sessions</h2><span class="count" id="session-count"></span></div>
+    <div class="year-tabs" id="year-tabs"></div>
+  </div>
   <div class="race-grid" id="race-grid">
     <div class="empty-state">Loading races...</div>
   </div>
@@ -262,17 +338,61 @@ function fmtDate(ms) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function raceCard(s) {
-  const statusClass = s.status === 'active' ? 'live' : s.status === 'ended' ? 'ended' : 'idle';
-  const statusLabel = s.status === 'active' ? 'Live' : s.status === 'ended' ? 'Completed' : 'Idle';
+// ---------------- live hero ----------------
+function liveHero(s) {
+  if (!s) return '';
   return `
-    <a class="race-card ${statusClass}" href="/race?session=${encodeURIComponent(s.session_id)}">
+    <div class="live-hero">
+      <span class="live-tag"><span class="dot"></span>Live</span>
+      <div class="live-hero-round">${s.round}</div>
+      <div class="live-hero-name">${s.name}</div>
+      <div class="live-hero-meta">Capturing since ${fmtDate(s.start_ms)}</div>
+      <a class="live-hero-cta" href="/race?session=${encodeURIComponent(s.session_id)}">Open Live Dashboard <span class="arrow">→</span></a>
+    </div>`;
+}
+
+// ---------------- past-sessions grid + year filter ----------------
+let allPast = [];
+let activeYear = null;
+
+function yearOf(s) {
+  return s.start_ms ? new Date(s.start_ms).getFullYear() : null;
+}
+
+function raceCard(s, i) {
+  const statusClass = s.status === 'ended' ? 'ended' : 'idle';
+  const statusLabel = s.status === 'ended' ? 'Completed' : 'Idle';
+  return `
+    <a class="race-card" href="/race?session=${encodeURIComponent(s.session_id)}" style="--i:${i}">
       <span class="status-badge ${statusClass}"><span class="dot"></span>${statusLabel}</span>
       <div class="race-round">${s.round}</div>
       <div class="race-name">${s.name}</div>
       <div class="race-meta"><span>${fmtDate(s.start_ms)}</span></div>
-      <div class="race-cta">Open Dashboard →</div>
+      <div class="race-cta">Open Dashboard <span class="arrow">→</span></div>
     </a>`;
+}
+
+function renderYearTabs() {
+  const years = [...new Set(allPast.map(yearOf).filter(y => y != null))].sort((a, b) => b - a);
+  const tabs = $('year-tabs');
+  if (years.length <= 1) { tabs.innerHTML = ''; return; }
+  if (!years.includes(activeYear)) activeYear = years[0];
+  tabs.innerHTML = years.map(y =>
+    `<button class="year-tab ${y === activeYear ? 'active' : ''}" data-year="${y}">${y}</button>`
+  ).join('');
+  tabs.querySelectorAll('.year-tab').forEach(btn => {
+    btn.onclick = () => { activeYear = Number(btn.dataset.year); renderYearTabs(); renderGrid(); };
+  });
+}
+
+function renderGrid() {
+  const grid = $('race-grid');
+  const years = [...new Set(allPast.map(yearOf).filter(y => y != null))];
+  const visible = years.length <= 1 ? allPast : allPast.filter(s => yearOf(s) === activeYear);
+  $('session-count').textContent = visible.length ? `${visible.length} race${visible.length === 1 ? '' : 's'}` : '';
+  grid.innerHTML = visible.length
+    ? visible.map(raceCard).join('')
+    : `<div class="empty-state">No races captured yet — start recording a live broadcast to see it here.</div>`;
 }
 
 async function loadSessions() {
@@ -281,10 +401,11 @@ async function loadSessions() {
     const res = await fetch('/sessions');
     if (!res.ok) throw new Error(res.statusText);
     const { sessions } = await res.json();
-    $('session-count').textContent = sessions.length ? `${sessions.length} race${sessions.length === 1 ? '' : 's'}` : '';
-    grid.innerHTML = sessions.length
-      ? sessions.map(raceCard).join('')
-      : `<div class="empty-state">No races captured yet — start recording a live broadcast to see it here.</div>`;
+    const live = sessions.find(s => s.status === 'active');
+    $('live-hero-slot').innerHTML = liveHero(live);
+    allPast = sessions.filter(s => s.status !== 'active');
+    renderYearTabs();
+    renderGrid();
   } catch (e) {
     grid.innerHTML = `<div class="empty-state">Error loading races: ${e.message}</div>`;
   }
