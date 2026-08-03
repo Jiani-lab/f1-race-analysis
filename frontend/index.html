@@ -611,6 +611,7 @@ let trendPoints = [];   // raw /session/strategy-trend points
 let retirements = {};   // { code: firstOutLap }, fetched from /session/retirements -- generic, not hardcoded per driver
 let totalLaps = null;   // fetched from /session/race-meta -- this race's actual distance, not assumed 70
 let sessionStartMs = null;
+let isLiveNow = false;  // this VIEWED session specifically, not just "some race is live" -- set in loadChart()
 let currentLap = 70;
 let playing = false;
 let playTimer = null;
@@ -908,7 +909,17 @@ function renderForLap(lap) {
   document.querySelector('.mh-lap .val').innerHTML = `${lap}<small>/${totalLaps}</small>`;
   $('replay-lap-num').textContent = lap;
   $('replay-slider').value = lap;
-  $('replay-note').textContent = lap >= totalLaps ? 'Showing final race state' : `Replaying Lap ${lap} — no information from later laps`;
+  // Real bug found from a user report: a live race only 2 laps in showed
+  // "LAP 52/52 -- showing final race state" because this compared lap to
+  // totalLaps alone, which is true the instant total_laps gets OCR'd (the
+  // full race distance), long before the race has actually reached it.
+  // isLiveNow gates the "final state" message on the session actually
+  // having ended, not just the slider sitting at its max value -- a live
+  // race never claims to be showing the final state, no matter where the
+  // slider sits.
+  $('replay-note').textContent = isLiveNow
+    ? `Live — Lap ${lap}${lap < totalLaps ? ', no information from later laps' : ' (latest captured)'}`
+    : (lap >= totalLaps ? 'Showing final race state' : `Replaying Lap ${lap} — no information from later laps`);
   history.replaceState(null, '', lap === totalLaps ? location.pathname : `?lap=${lap}`);
 
   // strip: real cumulative counts up to this lap's cutoff
@@ -1133,15 +1144,20 @@ async function loadChart() {
   const btn = $('chart-refresh'); btn.disabled = true; btn.textContent = '↻ Loading...';
   loadSessionInfo(); // not awaited -- masthead can settle independently of the chart data
   try {
-    const [{ points }, { cutoffs: c }, meta, { retirements: r }] = await Promise.all([
+    const [{ points }, { cutoffs: c }, meta, { retirements: r }, status] = await Promise.all([
       api('/session/strategy-trend'),
       api('/session/replay-cutoffs'),
       api('/session/race-meta'),
       api('/session/retirements'),
+      api('/session/status').catch(() => null),
     ]);
     trendPoints = points;
     cutoffs = c;
     retirements = r;
+    // The session actually shown on screen right now, not just "some race
+    // somewhere is live" -- viewing an old ended race while a different one
+    // is currently live elsewhere must not be treated as live here.
+    isLiveNow = !!status && status.status === 'active' && (!SESSION_ID || status.session_id === SESSION_ID);
     totalLaps = meta.total_laps || (cutoffs.length ? cutoffs[cutoffs.length - 1].lap : 70);
     document.querySelectorAll('.mh-lap small').forEach(el => el.textContent = '/' + totalLaps);
     $('replay-total-laps').textContent = totalLaps;
@@ -1151,7 +1167,24 @@ async function loadChart() {
     }
     const urlLap = Number(new URLSearchParams(location.search).get('lap'));
     const lo = cutoffs[0]?.lap ?? 1, hi = totalLaps;
-    const initialLap = (urlLap && urlLap >= lo && urlLap <= hi) ? urlLap : hi;
+    // Real bug found from a user report: a live race only 2 laps into a
+    // 52-lap distance showed "LAP 52/52 -- final race state" on first load,
+    // because this always defaulted to the full race distance (`hi`)
+    // regardless of whether the race had actually finished. A still-live
+    // race should default to the latest lap actually captured so far, not
+    // a lap count that hasn't happened yet.
+    //
+    // Second bug caught verifying the first fix: cutoffs spans every lap up
+    // to totalLaps regardless (replay_cutoffs holds the timestamp forward
+    // for any lap not yet observed and marks it `estimated: true`), so
+    // cutoffs[cutoffs.length - 1] is ALWAYS the final lap, estimated or
+    // not -- checked against this exact live session and confirmed the last
+    // *real* entry was lap 8 while the array's last entry claimed lap 52.
+    // Must filter to non-estimated entries first.
+    const realCutoffs = cutoffs.filter(c => !c.estimated);
+    const latestCaptured = realCutoffs.length ? realCutoffs[realCutoffs.length - 1].lap : (cutoffs[0]?.lap ?? hi);
+    const defaultLap = isLiveNow ? latestCaptured : hi;
+    const initialLap = (urlLap && urlLap >= lo && urlLap <= hi) ? urlLap : defaultLap;
     renderForLap(initialLap);
   } catch (e) {
     $('chart-note').textContent = 'Error: ' + e.message;
