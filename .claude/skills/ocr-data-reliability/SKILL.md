@@ -25,17 +25,33 @@ rediscovered one user-reported bug at a time.
 
 ## Known failure modes, and the guard already built for each
 
-**1. Column-pairing can swap between frames within the same lap.**
-Real case: Lindblad and Lawson's gap-to-leader values swapped between OCR
-frames of lap 63 (`LIN~38s/LAW~0.2s` in half the frames, `LIN~0.7s/LAW~39.5s`
-in the other half) -- physically impossible for a real gap to swing 38s and
-back within one lap. A plain median across both clusters fabricated a fake
-near-tie. **Guard:** `reliableMedian()` in index.html rejects a lap's raw
-readings for a driver if `max - min > LAP_READING_MAX_SPREAD` (8s) before
-taking the median. Real close-battle jitter frame-to-frame is ~1-2s; a wider
-spread within one lap is itself the corruption signal, not a fast-changing
-gap. Apply this to ANY new code that aggregates multiple raw OCR readings
-for the same (entity, time-bucket) into one value.
+**1. Large within-lap spread can be a real event, not corruption -- don't
+average across it either way, and prefer re-verifying over guessing.**
+Original case: Lindblad and Lawson's gap values swung from ~0.2s to ~39s
+within lap 63's capture window, which read like a corrupted OCR pairing
+swap. Re-checked against Luci's `get_detail` (real per-block screen
+coordinates, not the flattened OCR text GAP_RE/_extract_columnar_gaps
+parse) and found the regex extraction had actually paired everything
+correctly all along -- both readings were real, just from before/after a
+real mid-lap event (almost certainly a pit stop). Correction for the
+record: don't assume a wide within-lap spread means corrupted pairing;
+it can be genuine. **Guards, in preference order:**
+(a) `correct_unreliable_frames()` in retrieval.py re-derives {driver: gap}
+for any lap with spread > `UNRELIABLE_SPREAD_THRESHOLD` (8s) straight from
+`get_detail`'s per-block `focusRect` coordinates, pairing driver-code and
+gap-value tokens by shared row (nearest-Y, restricted to the leaderboard's
+real X-range to avoid cross-matching sponsor-banner text -- a real bug
+caught building this: an ad fragment reading "PER" cross-matched a
+different driver's gap value purely on Y-proximity before the X-range
+restriction was added). This is a deterministic geometry fix, no LLM call,
+and it tells you what actually happened instead of just discarding the lap.
+(b) Where (a) isn't available or fails: `reliableMedian()` in index.html
+still rejects a lap's raw readings for a driver if `max - min` exceeds the
+same threshold before taking the median -- correct to do regardless of
+whether the cause is a pairing swap or a real transition, since averaging
+across either fabricates a value that represents neither state. Apply (a)
+first when building anything new that aggregates multiple raw OCR readings
+per (entity, time-bucket); fall back to (b) as the cheap safety net.
 
 **2. A missing row is not proof the corresponding entity is "the leader"
 (or otherwise structurally absent) -- it can just be a missed capture.**
@@ -105,9 +121,10 @@ that "it renders without errors" means "it's correct."
 
 ## Before shipping any new OCR-derived comparison, ranking, or chart
 
-- [ ] If aggregating multiple raw readings into one value: reject
-      high-spread single-bucket readings (pattern 1) rather than averaging
-      through them.
+- [ ] If aggregating multiple raw readings into one value: re-verify
+      high-spread single-bucket readings via get_detail's structured blocks
+      rather than averaging through them; only fall back to plain rejection
+      if re-verification isn't wired up yet (pattern 1).
 - [ ] If inferring something from absence (missing row = X): check whether
       a corroborating direct reading exists and disagrees (pattern 2).
 - [ ] If falling back on a generation/extraction failure: mark it
