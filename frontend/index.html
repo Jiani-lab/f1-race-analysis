@@ -43,16 +43,22 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   a { color: inherit; }
 
   /* ---------- masthead ---------- */
+  .mh-flag-icon { flex: 0 0 auto; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5)); }
+  .mh-flag-icon svg { display: block; animation: flag-wave 2.6s ease-in-out infinite; transform-origin: 4px 6px; }
+  @keyframes flag-wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
+  .mh-title-row { display: flex; align-items: center; gap: 12px; }
+  .masthead { position: relative; overflow: hidden; }
+  .masthead::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.05;
+    background-image: repeating-conic-gradient(#fff 0% 25%, transparent 0% 50%);
+    background-size: 16px 16px; background-position: 0 0;
+    mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+  }
   .back-home { display: inline-block; font: 700 11.5px/1 var(--mono); letter-spacing: 0.06em; color: var(--ink-faint); text-decoration: none; margin-bottom: 10px; }
   .back-home:hover { color: var(--ink); }
   .masthead { background: linear-gradient(180deg, #14100f 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 18px 18px 16px; }
   .masthead-inner { max-width: 980px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .mh-flag { display: inline-flex; gap: 3px; margin-bottom: 8px; }
-  .mh-flag span { width: 16px; height: 11px; display: inline-block; }
-  .mh-flag span:nth-child(1) { background: #477050; }
-  .mh-flag span:nth-child(2) { background: #f5f5f3; }
-  .mh-flag span:nth-child(3) { background: #ce2939; }
-  .mh-round { font: 700 11.5px/1 var(--mono); letter-spacing: 0.14em; color: var(--f1-red); text-transform: uppercase; }
+  .mh-round { font: 700 11.5px/1 var(--mono); letter-spacing: 0.14em; color: var(--f1-red); text-transform: uppercase; margin-bottom: 6px; }
   .mh-title { font: 800 21px/1.15 var(--sans); letter-spacing: -0.01em; margin: 3px 0 0; }
   .mh-sub { font: 500 14.5px/1.4 var(--sans); color: var(--ink-dim); margin-top: 3px; }
   .mh-sub code { font-family: var(--mono); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; }
@@ -102,6 +108,8 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .sec-head .refresh-btn { margin-left: auto; font: 700 11.5px var(--mono); letter-spacing: 0.04em; color: var(--ink-dim); background: rgba(255,255,255,0.06); border: 1px solid var(--hairline); padding: 4px 10px; border-radius: 20px; cursor: pointer; }
   .sec-head .refresh-btn:hover { background: rgba(255,255,255,0.1); color: var(--ink); }
   .sec-head .refresh-btn:disabled { opacity: .5; cursor: default; }
+  .flag-state { display: inline-flex; align-items: center; gap: 5px; font: 800 10px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; margin-left: auto; color: var(--flag-color, var(--green)); }
+  .flag-state svg { width: 12px; height: 14px; display: block; }
 
   /* ---------- impact card ---------- */
   .impact-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 16px; padding: 24px; display: flex; gap: 22px; align-items: center; }
@@ -113,6 +121,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .impact-score .lbl { font: 800 9px/1 var(--mono); color: var(--ink-faint); letter-spacing: 0.1em; margin-top: 6px; }
   .impact-body { flex: 1; min-width: 0; }
   .impact-award { display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(90deg, var(--team-mcl), #cc6600); font: 800 9.5px/1 var(--mono); letter-spacing: 0.1em; padding: 4px 10px; border-radius: 20px; color: #1a0f00; }
+  .impact-award svg { width: 12px; height: 12px; display: block; }
   .impact-headline { font: 800 20px/1.3 var(--sans); margin-top: 10px; }
   .impact-meta { display: flex; gap: 18px; margin-top: 12px; flex-wrap: wrap; }
   .impact-meta .m .v { font: 800 15px/1 var(--mono); color: var(--team-mcl); }
@@ -130,8 +139,12 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .driver-card .row-top { display: flex; align-items: center; justify-content: space-between; }
   .driver-card .pos { font: 800 11.5px/1 var(--mono); color: var(--ink-faint); }
   .driver-card .num { font: 800 11.5px/1 var(--mono); padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.08); }
-  .driver-card .code { font: 800 22px/1 var(--sans); letter-spacing: 0.01em; margin-top: 8px; }
+  .driver-card .card-id { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+  .driver-card .code { font: 800 22px/1 var(--sans); letter-spacing: 0.01em; }
   .driver-card .team { font: 600 11.5px/1 var(--sans); color: var(--ink-dim); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .helmet-badge { flex: 0 0 auto; width: 56px; height: 56px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); transition: transform .25s cubic-bezier(.16,1,.3,1); }
+  .driver-card:hover .helmet-badge { transform: rotate(-4deg) scale(1.06); }
+  .driver-card.retired .helmet-badge { filter: grayscale(1) drop-shadow(0 4px 10px rgba(0,0,0,0.4)); opacity: 0.6; }
   .driver-card.retired { opacity: 0.72; }
   .driver-card.retired .momentum-meter { filter: grayscale(1); opacity: 0.5; }
   .driver-card.retired .pos { color: var(--f1-red); }
@@ -146,17 +159,23 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .tick-row { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 8px; padding: 8px 12px; font-size: 14.5px; min-width: 0; }
   .tick-lap { font: 700 11.5px var(--mono); color: var(--f1-red); background: var(--f1-red-dim); padding: 2px 7px; border-radius: 4px; flex: 0 0 auto; }
   .tick-code { font: 800 11.5px var(--mono); background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; flex: 0 0 auto; }
-  .tick-arrow { color: var(--ink-faint); flex: 0 0 auto; }
-  .tick-arrow.up { color: var(--green); }
-  .tick-arrow.down { color: var(--f1-red); }
+  .tick-tag { font: 800 9.5px/1 var(--mono); letter-spacing: 0.06em; padding: 3px 7px; border-radius: 4px; flex: 0 0 auto; text-transform: uppercase; }
+  .tick-tag.gain { color: var(--green); background: var(--green-dim); }
+  .tick-tag.loss { color: var(--f1-red); background: var(--f1-red-dim); }
+  .tick-tag.neutral { color: var(--ink-dim); background: rgba(255,255,255,0.06); }
+  .ticker-older.collapsed { display: none; }
+  .ticker-toggle { align-self: flex-start; }
   .tick-desc { color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
   /* ---------- impact timeline (race control events) ---------- */
   .timeline { position: relative; padding-left: 26px; }
+  .timeline-older.collapsed { display: none; }
+  .timeline .timeline-toggle { display: block; margin-bottom: 20px; }
   .timeline::before { content: ""; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 2px; background: linear-gradient(180deg, var(--team-mcl), var(--f1-red), var(--ink-faint)); }
   .tl-node { position: relative; margin-bottom: 20px; }
   .tl-node:last-child { margin-bottom: 0; }
   .tl-dot { position: absolute; left: -26px; top: 2px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 2px solid var(--track); }
+  .tl-dot svg { width: 13px; height: 13px; display: block; }
   .tl-lap { font: 800 9px/1 var(--mono); color: var(--ink-faint); }
   .tl-fact { font: 700 15px/1.4 var(--sans); margin-top: 3px; }
   .tl-insight { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; font: 600 11.5px/1.5 var(--sans); color: var(--green); background: var(--green-dim); padding: 7px 10px; border-radius: 6px; }
@@ -302,9 +321,22 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   <div class="masthead-inner">
     <div>
       <a class="back-home" href="/">← All Races</a>
-      <div class="mh-flag"><span></span><span></span><span></span></div>
       <div class="mh-round" id="mh-round">ROUND · LIVE-WIRED DASHBOARD</div>
-      <div class="mh-title" id="mh-title">F1 RACE</div>
+      <div class="mh-title-row">
+        <span class="mh-flag-icon">
+          <svg width="34" height="40" viewBox="0 0 34 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="2" y="2" width="3" height="37" rx="1.5" fill="#9c9c9f"/>
+            <path d="M5 3 C 14 -1, 22 7, 31 3 L 31 21 C 22 25, 14 17, 5 21 Z" fill="#f5f5f3"/>
+            <g fill="#101013">
+              <rect x="5" y="3" width="4.3" height="4.5"/><rect x="13.6" y="2.4" width="4.3" height="4.5"/><rect x="22.2" y="3.6" width="4.3" height="4.5"/>
+              <rect x="9.3" y="7.5" width="4.3" height="4.5"/><rect x="17.9" y="6.9" width="4.3" height="4.5"/><rect x="26.5" y="8.1" width="4.3" height="4.5"/>
+              <rect x="5" y="12" width="4.3" height="4.5"/><rect x="13.6" y="11.4" width="4.3" height="4.5"/><rect x="22.2" y="12.6" width="4.3" height="4.5"/>
+              <rect x="9.3" y="16.5" width="4.3" height="4.5"/><rect x="17.9" y="15.9" width="4.3" height="4.5"/>
+            </g>
+          </svg>
+        </span>
+        <div class="mh-title" id="mh-title">F1 RACE</div>
+      </div>
       <div class="mh-sub" id="mh-sub">Loading...</div>
     </div>
     <div class="mh-lap">
@@ -334,7 +366,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   <div class="strip" id="strip"></div>
 
   <section>
-    <div class="sec-head"><span class="chip"></span><h2 id="impact-head">Current Situation</h2><span class="note" id="impact-note">Live</span></div>
+    <div class="sec-head"><span class="chip"></span><h2 id="impact-head">Current Situation</h2><span class="note" id="impact-note">Live</span><span class="flag-state" id="flag-state"></span></div>
     <div class="impact-card" id="impact"></div>
   </section>
 
@@ -449,17 +481,56 @@ const el = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (c
 // endpoint (retrieval.py's deterministic detectors + analysis.py's LLM
 // phrasing pass) instead of being hand-picked per race -- see allEvents
 // below, populated in loadChart().
-const EVENT_TYPE_META = {
-  retirement:      { icon: '❌', color: 'var(--ink-faint)', label: 'Retired' },
-  lead_change:     { icon: '⏱', color: 'var(--f1-red)',     label: 'Lead Change' },
-  vsc:             { icon: '🟡', color: 'var(--amber)',      label: 'VSC' },
-  safety_car:      { icon: '🚨', color: 'var(--amber)',      label: 'Safety Car' },
-  race_control:    { icon: '🚩', color: 'var(--f1-red)',     label: 'Race Control' },
-  pit_stop:        { icon: '🔧', color: 'var(--team-rb)',    label: 'Pit Stop' },
-  penalty_mention: { icon: '📻', color: 'var(--ink-dim)',    label: 'Penalty Mentioned' },
-  team_radio:      { icon: '🎙', color: 'var(--ink-dim)',    label: 'Team Radio' },
+// Original hand-authored SVG glyphs (same "illustration, not emoji" approach
+// as helmetSVG) -- one shape per detected event type, all `currentColor` so
+// the same markup works on the amber timeline dot AND the orange impact-award
+// badge, each context just sets its own text color to match its background.
+const EVENT_ICONS = {
+  retirement:      '<svg viewBox="0 0 20 20"><path d="M5 5 L15 15 M15 5 L5 15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg>',
+  lead_change:     '<svg viewBox="0 0 20 20"><path d="M10 3 L15 9 L11.5 9 L11.5 17 L8.5 17 L8.5 9 L5 9 Z" fill="currentColor"/></svg>',
+  vsc:             '<svg viewBox="0 0 20 20"><rect x="4" y="7" width="12" height="6" rx="3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 2"/><circle cx="10" cy="10" r="1.4" fill="currentColor"/></svg>',
+  safety_car:      '<svg viewBox="0 0 20 20"><rect x="4" y="7" width="12" height="6" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="7.5" cy="10" r="1.3" fill="currentColor"/><circle cx="12.5" cy="10" r="1.3" fill="currentColor"/><path d="M10 3 L10 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  race_control:    '<svg viewBox="0 0 20 20"><path d="M6 2 L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M6 3 C10 1.5, 13 5, 17 3 L17 9 C13 11, 10 7.5, 6 9 Z" fill="currentColor"/></svg>',
+  pit_stop:        '<svg viewBox="0 0 20 20"><path d="M10 3 L10 12 M6 9 L10 13 L14 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="15" width="12" height="2" rx="1" fill="currentColor"/></svg>',
+  penalty_mention: '<svg viewBox="0 0 20 20"><circle cx="10" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 7.5 L10 11 L13 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M8 2.5 L12 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  team_radio:      '<svg viewBox="0 0 20 20"><path d="M5 11 C5 6, 15 6, 15 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3.3" y="10" width="3.2" height="5" rx="1.4" fill="currentColor"/><rect x="13.5" y="10" width="3.2" height="5" rx="1.4" fill="currentColor"/></svg>',
 };
+const EVENT_TYPE_META = {
+  retirement:      { icon: EVENT_ICONS.retirement,      ink: '#f5f5f3', color: 'var(--ink-faint)', label: 'Retired' },
+  lead_change:     { icon: EVENT_ICONS.lead_change,      ink: '#fff',    color: 'var(--f1-red)',     label: 'Lead Change' },
+  vsc:             { icon: EVENT_ICONS.vsc,              ink: '#101014', color: 'var(--amber)',      label: 'VSC' },
+  safety_car:      { icon: EVENT_ICONS.safety_car,       ink: '#101014', color: 'var(--amber)',      label: 'Safety Car' },
+  race_control:    { icon: EVENT_ICONS.race_control,     ink: '#fff',    color: 'var(--f1-red)',     label: 'Race Control' },
+  pit_stop:        { icon: EVENT_ICONS.pit_stop,         ink: '#fff',    color: 'var(--team-rb)',    label: 'Pit Stop' },
+  penalty_mention: { icon: EVENT_ICONS.penalty_mention,  ink: '#f5f5f3', color: 'var(--ink-dim)',    label: 'Penalty Mentioned' },
+  team_radio:      { icon: EVENT_ICONS.team_radio,       ink: '#f5f5f3', color: 'var(--ink-dim)',    label: 'Team Radio' },
+};
+// Real detected race-state flag, computed per lap from allEvents -- not a
+// hardcoded "always green" decoration. Safety car / VSC read their real
+// [lap, end_lap] range from detect_safety_car_periods; a fresh race_control
+// callout (any type -- these aren't split into yellow/red at detection time,
+// see retrieval.py) shows caution for the lap it lands on plus the next one.
+function flagStateAt(events, lap) {
+  const active = e => e.lap <= lap && (e.end_lap ?? e.lap) >= lap;
+  if (events.some(e => e.type === 'safety_car' && active(e))) return { label: 'SAFETY CAR', color: 'var(--amber)' };
+  if (events.some(e => e.type === 'vsc' && active(e))) return { label: 'VSC', color: 'var(--amber)' };
+  if (events.some(e => e.type === 'race_control' && e.lap <= lap && lap - e.lap <= 1)) return { label: 'RACE CONTROL', color: 'var(--f1-red)' };
+  return { label: 'GREEN FLAG', color: 'var(--green)' };
+}
+const FLAG_ICON_SVG = '<svg viewBox="0 0 14 16"><path d="M2 1 L2 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2 2 C5 0.5, 7 3, 12 1.5 L12 8 C7 9.5, 5 7, 2 8.5 Z" fill="currentColor"/></svg>';
 let allEvents = []; // fetched from /session/events in loadChart()
+// A degraded event (analysis.py's LLM-phrasing-timed-out fallback) has no
+// real headline -- just the first 60 chars of raw OCR evidence, which can be
+// anything that was in that frame (desktop notification banners, a
+// streamer's watermark text, a misread leaderboard column). Never fit to
+// show as if it were a real moment; filter it out at the source so every
+// consumer (impact card, ticker, timeline) is clean automatically. Real
+// events are told to score importance 0-20 (not a bare 0) when genuinely
+// minor, so the `degraded` flag plus an importance==0 belt-and-suspenders
+// check (covers events cached before the flag existed) both agree in practice.
+function usableEvents(events) {
+  return (events || []).filter(e => !e.degraded && e.importance !== 0);
+}
 
 // ---------------- replay engine ----------------
 // The whole point: every section below is a pure function of `currentLap`,
@@ -476,6 +547,24 @@ let playing = false;
 let playTimer = null;
 
 function median(arr) { const s = [...arr].sort((a,b)=>a-b); const m = Math.floor(s.length/2); return s.length%2 ? s[m] : (s[m-1]+s[m])/2; }
+// Real bug found from a user-reported reading (LIN vs LAW showing a bogus
+// "0.00s" gap on lap 63): the columnar OCR pairing (retrieval.py's
+// _extract_columnar_gaps) occasionally swaps two adjacent drivers' gap
+// values between frames -- checked the raw strategy_trend.json for that
+// lap and found exactly that: 6 frames read LIN~38s/LAW~0.2s, the other 6
+// read LIN~0.7s/LAW~39.5s (each cluster internally tight, so this is a
+// swap, not real on-track movement -- a gap can't swing 38s and back within
+// one lap). A plain median of the combined 12 readings lands near the
+// midpoint for BOTH drivers, fabricating a fake near-tie. Since two cars
+// actually battling closely stay tight frame-to-frame (as both clusters
+// above individually do), a spread this wide within a single lap is itself
+// the tell -- drop the reading rather than average across a swap.
+const LAP_READING_MAX_SPREAD = 8; // seconds; real close-battle jitter is ~1-2s
+function reliableMedian(arr) {
+  if (!arr.length) return undefined;
+  if (Math.max(...arr) - Math.min(...arr) > LAP_READING_MAX_SPREAD) return undefined;
+  return median(arr);
+}
 
 function seriesUpToLap(lap) {
   // Just the raw per-driver, per-lap gap readings, filtered to lap <=
@@ -513,7 +602,8 @@ function absoluteRowsFor(byDriver, code, lap) {
     .map(Number)
     .filter(l => l <= lap)
     .sort((a, b) => a - b)
-    .map(l => ({ lap: l, gap: median(series[l]) }));
+    .map(l => ({ lap: l, gap: reliableMedian(series[l]) }))
+    .filter(r => r.gap !== undefined);
 }
 
 // Season-wide static roster (all 22 known codes from retrieval.py's
@@ -551,6 +641,43 @@ const TEAM_COLORS = {
   'WILLIAMS': '#64C4FF', 'RACING BULLS': '#6692FF', 'AUDI': '#B02A30',
   'HAAS': '#B6BABD', 'CADILLAC': '#FFC72C',
 };
+// Secondary livery accent per team, for the helmet-badge visor stripe --
+// approximate real accent colors (papaya/blue, Ferrari yellow, Aston lime,
+// etc), not exact paint codes. Purely decorative illustration, not a data
+// encoding, so approximation here doesn't cost anything the way it would
+// if this were driving a chart legend.
+const TEAM_ACCENTS = {
+  'MCLAREN': '#47C7FC', 'FERRARI': '#FFF200', 'RED BULL RACING': '#FFC906',
+  'MERCEDES-AMG': '#1a1a1a', 'ASTON MARTIN': '#CEDC00', 'ALPINE': '#0090FF',
+  'WILLIAMS': '#1a2f5c', 'RACING BULLS': '#1a1a2e', 'AUDI': '#ffffff',
+  'HAAS': '#ffffff', 'CADILLAC': '#1a1a1a',
+};
+
+// Original illustrated driver badge (side-profile helmet silhouette in team
+// livery colors) -- deliberately NOT a real driver photo. Real F1 driver
+// photos are other people's copyrighted likeness; this is an abstract,
+// original icon instead, the same approach fantasy-F1 apps use for this
+// exact reason. Small hand-authored SVG shapes (a dome, a visor band, a
+// chin guard, an accent stripe), not generative path data.
+function helmetSVG(teamColor, accentColor, size) {
+  const id = 'shell-' + teamColor.replace('#', '');
+  return `
+  <svg width="${size}" height="${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="${id}" x1="0" y1="0" x2="0.15" y2="1">
+        <stop offset="0%" stop-color="${teamColor}"/>
+        <stop offset="100%" stop-color="${teamColor}" stop-opacity="0.72"/>
+      </linearGradient>
+    </defs>
+    <path d="M 50 10 C 74 10, 90 28, 90 50 C 90 62, 85 72, 76 78 C 68 83, 58 85, 48 84 C 36 83, 25 78, 18 68 C 13 61, 12 53, 15 46 C 20 24, 34 10, 50 10 Z"
+          fill="url(#${id})" stroke="rgba(0,0,0,0.4)" stroke-width="1.5"/>
+    <path d="M 17 50 C 21 42, 33 37, 48 37 C 63 37, 76 43, 80 52 C 76 60, 63 65, 48 65 C 34 65, 22 59, 17 50 Z" fill="#101014"/>
+    <path d="M 24 45 C 34 40, 50 39, 64 43" stroke="rgba(255,255,255,0.32)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <path d="M 26 15 C 42 9, 62 10, 78 20" stroke="${accentColor}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.92"/>
+    <path d="M 18 68 C 24 76, 34 81, 45 83 L 42 90 C 29 87, 18 80, 11 70 Z" fill="${teamColor}" opacity="0.88"/>
+    <rect x="44" y="18" width="14" height="5" rx="2.5" fill="rgba(0,0,0,0.32)"/>
+  </svg>`;
+}
 
 // Real per-lap ranking, replacing the old fixed NOR/PIA/VER + hand-picked
 // pickThirdCard rotation. Same implicit-leader inference validated in
@@ -593,7 +720,7 @@ function rankAtLap(lap) {
     const seen = active.filter(c => byCodeByLap[c][l]);
     if (seen.length < RANK_WELL_COVERED_MIN) continue; // sparse frame, scan further back
     const missing = active.filter(c => !seen.includes(c));
-    const withGap = seen.map(code => ({ code, gap: median(byCodeByLap[code][l]) }));
+    const withGap = seen.map(code => ({ code, gap: reliableMedian(byCodeByLap[code][l]) })).filter(x => x.gap !== undefined);
     withGap.sort((a, b) => a.gap - b.gap);
     if (missing.length === 1) return [{ code: missing[0], gap: 0 }, ...withGap];
     if (missing.length === 0) return withGap; // no clear leader row this lap, still a valid ranking of the rest
@@ -607,15 +734,31 @@ function rankAtLap(lap) {
 // in the current ranking is closest together, not always P1-vs-P2 -- reuses
 // relativePairRows/momentumRelative/verdictRelative unchanged (see below),
 // those never hardcoded any driver code.
-function featuredDuel(lap) {
+//
+// Real gap found from a user report ("Through Lap 70 · 2 laps of data"
+// looked wrong): rankAtLap only ranks ONE snapshot lap (the most recent
+// well-covered one), so the smallest gap-diff in that single snapshot can
+// come from a pair with almost no shared history -- NOR barely has gap
+// readings at all (he's the implicit leader most of the race, so by
+// definition has no gap entry those laps), so a chance-close reading
+// against ALB at just 2 real overlapping laps got featured as "closest
+// battle" even though it's barely supported by data. Now prefers the
+// closest pair that has at least MIN_DUEL_DATAPOINTS of real shared
+// history, falling back to the closest snapshot pair only if nothing
+// qualifies (better than showing nothing).
+const MIN_DUEL_DATAPOINTS = 5;
+function featuredDuel(lap, byDriver) {
   const ranked = rankAtLap(lap);
   if (ranked.length < 2) return null;
-  let best = null;
+  const candidates = [];
   for (let i = 1; i < ranked.length; i++) {
     const d = Math.abs(ranked[i].gap - ranked[i - 1].gap);
-    if (!best || d < best.d) best = { a: ranked[i - 1].code, b: ranked[i].code, d };
+    candidates.push({ a: ranked[i - 1].code, b: ranked[i].code, d });
   }
-  return best;
+  candidates.sort((x, y) => x.d - y.d);
+  if (!byDriver) return candidates[0] || null;
+  const wellSupported = candidates.find(c => relativePairRows(byDriver, c.a, c.b, lap).length >= MIN_DUEL_DATAPOINTS);
+  return wellSupported || candidates[0] || null;
 }
 
 // HAM's real late-race story is the P4 fight with LEC (real: 5s penalty,
@@ -627,29 +770,46 @@ function relativePairRows(byDriver, codeFavored, codeRival, lap) {
   const a = byDriver[codeFavored] || {}, b = byDriver[codeRival] || {};
   const laps = [...new Set([...Object.keys(a), ...Object.keys(b)])].map(Number).filter(l => l <= lap).sort((x,y)=>x-y);
   return laps.map(l => {
-    const av = a[l] ? median(a[l]) : undefined, bv = b[l] ? median(b[l]) : undefined;
+    const av = a[l] ? reliableMedian(a[l]) : undefined, bv = b[l] ? reliableMedian(b[l]) : undefined;
     if (av === undefined || bv === undefined) return null;
     return { lap: l, a: av, b: bv, diff: bv - av }; // >0 = favored (codeFavored) ahead
   }).filter(Boolean);
 }
 
 // ---- rule-based momentum (no LLM -- must be instant while scrubbing) ----
-function momentumRelative(relRows, favorSign) {
+// Real bug found chasing the P1-card issue: the leader (ANT at one point)
+// showed "falling behind BOR" while ranked P1 -- ANT and BOR's last SHARED
+// reliable reading was from lap 32, but the card was being viewed at lap 35
+// where the real rank (from a more recent snapshot) already had ANT ahead.
+// relativePairRows/absoluteRowsFor can only report their last shared/own
+// datapoint, which may be several laps stale if one driver's gap readings
+// are sparse (leaders especially -- they often have none at all). Rather
+// than presenting a stale reading as if it reflects the current lap, treat
+// it as "no recent data" past this staleness window.
+const MAX_STALE_LAPS = 10;
+function momentumRelative(relRows, lap, favorSign) {
   if (!relRows.length) return null;
-  const last = relRows[relRows.length - 1].diff;
+  const lastRow = relRows[relRows.length - 1];
+  if (lap - lastRow.lap > MAX_STALE_LAPS) return null;
+  const last = lastRow.diff;
   const prev = relRows[Math.max(0, relRows.length - 5)].diff;
   const trend = (last - prev) * favorSign;
   return { leadingMe: last * favorSign > 0, trend, gapNow: Math.abs(last) };
 }
-function momentumAbsolute(verRows) {
+function momentumAbsolute(verRows, lap) {
   if (!verRows.length) return null;
-  const last = verRows[verRows.length - 1].gap;
+  const lastRow = verRows[verRows.length - 1];
+  if (lap - lastRow.lap > MAX_STALE_LAPS) return null;
+  const last = lastRow.gap;
   const prev = verRows[Math.max(0, verRows.length - 5)].gap;
   return { trend: prev - last, gapNow: last }; // trend>0 = closing (good)
 }
 function needleFromTrend(trend) { return Math.max(5, Math.min(95, 50 + trend * 6)); }
 function verdictRelative(m, rivalCode) {
-  if (!m) return { verdict: '⏳ No data yet', sub: 'No readings captured for this stretch yet (this race has data from Lap 9)' };
+  // null covers two different cases (never captured, or the last shared
+  // reading is more than MAX_STALE_LAPS old) -- worded to be honest about
+  // either without needing momentumRelative to distinguish them.
+  if (!m) return { verdict: '⏳ No recent data', sub: 'No readings close to this point in the race (this race has data from Lap 9)' };
   const g = m.gapNow.toFixed(2) + 's';
   if (m.leadingMe) {
     if (m.trend > 0.15) return { verdict: '🏆 Lead is growing', sub: `Ahead of ${rivalCode} by ${g}, gap still widening` };
@@ -661,7 +821,7 @@ function verdictRelative(m, rivalCode) {
   return { verdict: '➖ Gap holding steady', sub: `Behind ${rivalCode} by ${g}` };
 }
 function verdictAbsolute(m, code) {
-  if (!m) return { verdict: '⏳ No data yet', sub: `No gap readings captured for ${code || 'this driver'} yet` };
+  if (!m) return { verdict: '⏳ No recent data', sub: `No recent gap readings for ${code || 'this driver'}` };
   const g = m.gapNow.toFixed(2) + 's';
   if (m.trend > 0.15) return { verdict: '🔥 Closing on the lead group', sub: `${g} off the lead, and closing` };
   if (m.trend < -0.15) return { verdict: '📉 Dropping off the lead group', sub: `${g} off the lead, and falling further back` };
@@ -672,7 +832,7 @@ function renderForLap(lap) {
   currentLap = lap;
   const cutoff = cutoffs.find(c => c.lap === lap) || cutoffs[cutoffs.length - 1];
   const { byDriver } = seriesUpToLap(lap);
-  const duel = featuredDuel(lap);
+  const duel = featuredDuel(lap, byDriver);
   const duelRows = duelRowsUpToLap(byDriver, duel, lap);
 
   // masthead + replay bar
@@ -697,6 +857,10 @@ function renderForLap(lap) {
   // hardcoded per-race content anymore. importance is LLM-assigned per
   // event during phrasing (analysis.get_phrased_events).
   const visibleEvents = allEvents.filter(e => lap >= e.lap);
+
+  const fs = flagStateAt(visibleEvents, lap);
+  $('flag-state').style.setProperty('--flag-color', fs.color);
+  $('flag-state').innerHTML = `${FLAG_ICON_SVG}${fs.label}`;
 
   // impact card: highest-importance event revealed so far, else a
   // live-computed placeholder from the current featured duel.
@@ -723,28 +887,68 @@ function renderForLap(lap) {
       : `<div class="impact-placeholder">⏳ No comparable data yet at Lap ${lap}</div>`;
   }
 
-  // ticker: compact subset of event types, chronological
-  const tickerTypes = new Set(['pit_stop', 'lead_change', 'retirement']);
+  // ticker: compact subset of event types, chronological. Was previously a
+  // ▲/▼ arrow (same "up" arrow for both a pit stop and a lead change --
+  // user-reported as unreadable); replaced with an explicit English word
+  // tag naming what actually happened, one per real event type.
+  const TICK_TAG = {
+    retirement:  { text: 'OUT',        cls: 'loss' },
+    lead_change: { text: 'NEW LEADER', cls: 'gain' },
+    pit_stop:    { text: 'PIT STOP',   cls: 'neutral' },
+  };
+  const tickerTypes = new Set(Object.keys(TICK_TAG));
   const visibleTicker = visibleEvents.filter(e => tickerTypes.has(e.type)).sort((a, b) => a.lap - b.lap);
-  $('ticker').innerHTML = visibleTicker.length ? visibleTicker.map(e => `
+  const tickRowHtml = e => {
+    const tag = TICK_TAG[e.type] || { text: e.type, cls: 'neutral' };
+    return `
     <div class="tick-row">
       <span class="tick-lap">L${e.lap}</span><span class="tick-code">${(e.drivers || [])[0] || '—'}</span>
-      <span class="tick-arrow ${e.type === 'retirement' ? 'down' : 'up'}">${e.type === 'retirement' ? '▼' : '▲'}</span>
+      <span class="tick-tag ${tag.cls}">${tag.text}</span>
       <span class="tick-desc">${e.headline}</span>
-    </div>`).join('') : `<div class="tick-row"><span class="tick-desc">No position changes yet</span></div>`;
+    </div>`;
+  };
+  // Same problem as Race Control: a full race can produce 20+ pit stops.
+  // Always show the most recent TICKER_RECENT_COUNT, collapse the rest
+  // behind a toggle instead of hiding the whole section -- unlike Race
+  // Control, position changes are the kind of thing you want the latest
+  // few of at a glance without a click.
+  const TICKER_RECENT_COUNT = 5;
+  if (!visibleTicker.length) {
+    $('ticker').innerHTML = `<div class="tick-row"><span class="tick-desc">No position changes yet</span></div>`;
+  } else {
+    const older = visibleTicker.slice(0, -TICKER_RECENT_COUNT);
+    const recent = visibleTicker.slice(-TICKER_RECENT_COUNT);
+    const olderHtml = older.length ? `
+      <div class="ticker-older collapsed" id="ticker-older">${older.map(tickRowHtml).join('')}</div>
+      <button class="refresh-btn ticker-toggle" id="ticker-toggle" onclick="toggleTicker()">Show ${older.length} earlier</button>` : '';
+    $('ticker').innerHTML = olderHtml + recent.map(tickRowHtml).join('');
+  }
 
-  // race control timeline: every visible event, chronological
+  // race control timeline: every visible event, chronological. Same
+  // "recent N always visible, rest behind a toggle" pattern as the Position
+  // Changes ticker below -- a full race can produce 30+ of these.
   const visibleTl = [...visibleEvents].sort((a, b) => a.lap - b.lap);
-  $('timeline').innerHTML = visibleTl.length ? visibleTl.map(e => {
-    const meta = EVENT_TYPE_META[e.type] || { icon: '⚡', color: 'var(--ink-faint)' };
+  const tlNodeHtml = e => {
+    const meta = EVENT_TYPE_META[e.type] || { icon: EVENT_ICONS.race_control, ink: '#fff', color: 'var(--ink-faint)' };
     return `
     <div class="tl-node">
-      <div class="tl-dot" style="background:${meta.color}">${meta.icon}</div>
+      <div class="tl-dot" style="background:${meta.color};color:${meta.ink}">${meta.icon}</div>
       <div class="tl-lap">LAP ${e.lap}${e.end_lap ? '–' + e.end_lap : ''}</div><div class="tl-fact">${e.headline}</div>
       <div class="tl-insight${e.uncertain ? ' uncertain' : ''}">${e.uncertain ? '⚠' : '⚡'} ${e.insight}</div>
       ${e.uncertain ? '<div class="tl-src">Unconfirmed</div>' : ''}
     </div>`;
-  }).join('') : `<div class="tl-node"><div class="tl-fact">No confirmed events yet</div></div>`;
+  };
+  const TIMELINE_RECENT_COUNT = 5;
+  if (!visibleTl.length) {
+    $('timeline').innerHTML = `<div class="tl-node"><div class="tl-fact">No confirmed events yet</div></div>`;
+  } else {
+    const older = visibleTl.slice(0, -TIMELINE_RECENT_COUNT);
+    const recent = visibleTl.slice(-TIMELINE_RECENT_COUNT);
+    const olderHtml = older.length ? `
+      <div class="timeline-older collapsed" id="timeline-older">${older.map(tlNodeHtml).join('')}</div>
+      <button class="refresh-btn timeline-toggle" id="timeline-toggle" onclick="toggleTimeline()">Show ${older.length} earlier</button>` : '';
+    $('timeline').innerHTML = olderHtml + recent.map(tlNodeHtml).join('');
+  }
 
   // momentum cards: real top-3 ranking (rankAtLap), not fixed drivers
   const wrap = $('battle');
@@ -753,11 +957,44 @@ function renderForLap(lap) {
   const cards = top3.map((entry, i) => {
     const code = entry.code;
     const meta = DRIVER_ROSTER[code] || { name: code, team: '—', num: '—' };
-    const rows = absoluteRowsFor(byDriver, code, lap);
-    const m = momentumAbsolute(rows);
+    let m, verdictInfo;
+    if (i === 0) {
+      // Real bug found from a user report: "gap to the race leader" is
+      // meaningless for whoever the CURRENT leader is -- the leader has no
+      // gap reading BY DEFINITION (rankAtLap infers the leader as whoever
+      // has no gap entry), so absoluteRowsFor(code) for the actual leader
+      // only ever has rows from a stretch BEFORE they took the lead. Real
+      // case: NOR pitted and fell behind on lap 17, later retook the lead,
+      // and this card kept showing his stale lap-17-ish "falling further
+      // back" reading all the way to the end of the race, for the actual
+      // winner. The P1 card instead shows the gap back to P2 -- reuses the
+      // same relative-duel machinery the chart uses for this exact reason.
+      const rival = top3[1];
+      if (rival) {
+        const relRows = relativePairRows(byDriver, code, rival.code, lap);
+        m = momentumRelative(relRows, lap, +1);
+        // Second, deeper issue found chasing the above: rankAtLap can infer
+        // a leader from "the one row missing on an otherwise well-covered
+        // lap" (documented risk in rankAtLap's own comments -- a single
+        // stray missing OCR row reads exactly like a leader), which can
+        // disagree with this pairwise comparison if their own last shared
+        // reading predates that. Trust the rank for "who's leading" (it's
+        // already been through the well-covered-lap safeguard); don't show
+        // a same-card contradiction like "P1, falling behind P2".
+        verdictInfo = (m && !m.leadingMe)
+          ? { verdict: '🏆 Leading the race', sub: `Ranked ahead of ${rival.code}, but their last shared reading predates this` }
+          : verdictRelative(m, rival.code);
+      } else {
+        verdictInfo = { verdict: '🏆 Leading the race', sub: 'No comparable P2 data yet' };
+      }
+    } else {
+      const rows = absoluteRowsFor(byDriver, code, lap);
+      m = momentumAbsolute(rows, lap);
+      verdictInfo = verdictAbsolute(m, code);
+    }
     return {
       code, name: meta.name, team: meta.team, num: meta.num, color: TEAM_COLORS[meta.team],
-      pos: `P${i + 1}`, needle: m ? needleFromTrend(m.trend) : 50, ...verdictAbsolute(m, code),
+      pos: `P${i + 1}`, needle: m ? needleFromTrend(m.trend) : 50, ...verdictInfo,
     };
   });
   cards.forEach(c => {
@@ -766,7 +1003,10 @@ function renderForLap(lap) {
     card.style.setProperty('--card-color', c.color || 'var(--ink-faint)');
     card.innerHTML = `
       <div class="row-top"><span class="pos">${c.pos}</span><span class="num">#${c.num}</span></div>
-      <div class="code">${c.code}</div><div class="team">${c.team}</div>
+      <div class="card-id">
+        <div><div class="code">${c.code}</div><div class="team">${c.team}</div></div>
+        <div class="helmet-badge">${helmetSVG(c.color || '#616164', TEAM_ACCENTS[c.team] || '#ffffff', 56)}</div>
+      </div>
       <div class="momentum-meter"><div class="momentum-needle" style="left:${c.needle}%"></div></div>
       <div class="momentum-labels"><span>Fading</span><span>Holding</span><span>Closing</span></div>
       <div class="momentum-verdict">${c.verdict}</div>
@@ -864,7 +1104,7 @@ async function loadEvents() {
   if (note) note.textContent = 'Loading key moments, may take a few minutes...';
   try {
     const { events } = await api('/session/events');
-    allEvents = events;
+    allEvents = usableEvents(events);
   } catch (e) {
     if (note) note.textContent = 'Error loading events: ' + e.message;
     return;
@@ -1010,7 +1250,7 @@ async function pollForNotifications() {
   try {
     const r = await api('/session/events');
     events = r.events;
-    allEvents = events; // also keeps the dashboard's own panels fresh during live viewing
+    allEvents = usableEvents(events); // also keeps the dashboard's own panels fresh during live viewing
   } catch (e) { return; }
 
   const seen = getSeenEventKeys();
@@ -1065,6 +1305,22 @@ async function runSuggestedWhatif(i, ev) {
   }
 }
 
+function toggleTimeline() {
+  const older = $('timeline-older');
+  const btn = $('timeline-toggle');
+  if (!older || !btn) return;
+  const collapsed = older.classList.toggle('collapsed');
+  btn.textContent = collapsed ? `Show ${older.children.length} earlier` : 'Collapse';
+}
+
+function toggleTicker() {
+  const older = $('ticker-older');
+  const btn = $('ticker-toggle');
+  if (!older || !btn) return;
+  const collapsed = older.classList.toggle('collapsed');
+  btn.textContent = collapsed ? `Show ${older.children.length} earlier` : 'Collapse';
+}
+
 function toggleNotifPanel(ev) {
   ev.stopPropagation();
   $('notif-badge').classList.toggle('open');
@@ -1085,7 +1341,15 @@ function renderTerritoryChart(rows, duel) {
     $('trend-table').innerHTML = '';
     return;
   }
-  const codeA = duel.a, codeB = duel.b; // diff > 0 means codeB ahead (relativePairRows: b - a)
+  // Real bug found from a user report ("why does the chart show ALB in the
+  // lead, NOR won the race"): relativePairRows returns diff = bv - av
+  // (rival's gap-behind-leader minus favored's), documented there as ">0 =
+  // favored (codeFavored/duel.a) ahead" -- correct, smaller gap-behind-lead
+  // means further forward. This function's own regions/labels/tooltips had
+  // it backwards (top region + every "diff>=0 ?" ternary pointed at codeB),
+  // so whenever duel.a was genuinely ahead, the chart labeled duel.b as
+  // the leader instead. diff > 0 means codeA ahead.
+  const codeA = duel.a, codeB = duel.b;
   const colorA = TEAM_COLORS[DRIVER_ROSTER[codeA]?.team] || 'var(--ink-faint)';
   const colorB = TEAM_COLORS[DRIVER_ROSTER[codeB]?.team] || 'var(--ink-dim)';
   const W = 900, H = 280, padL = 44, padR = 16, padT = 16, padB = 28;
@@ -1097,10 +1361,31 @@ function renderTerritoryChart(rows, duel) {
   const yPos = v => padT + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
   const zeroY = yPos(0);
 
-  svg.appendChild(el('rect', { x: padL, y: padT, width: plotW, height: zeroY - padT, fill: colorB, opacity: 0.14 }));
-  svg.appendChild(el('rect', { x: padL, y: zeroY, width: plotW, height: padT + plotH - zeroY, fill: colorA, opacity: 0.14 }));
-  const zt = el('text', { x: padL + 8, y: padT + 16, class: 'axis-label', fill: colorB, 'font-weight': 800 }); zt.textContent = `${codeB} ahead`; svg.appendChild(zt);
-  const zb = el('text', { x: padL + 8, y: padT + plotH - 8, class: 'axis-label', fill: colorA, 'font-weight': 800 }); zb.textContent = `${codeA} ahead`; svg.appendChild(zb);
+  // Decorative-only track-outline watermark, purely illustrative (same
+  // approximation as TEAM_ACCENTS) -- sits behind the data, doesn't touch
+  // the plotted values or scale.
+  svg.appendChild(el('path', {
+    d: `M ${padL + 14},${padT + plotH - 24} C ${padL + 60},${padT + 14} ${padL + 140},${padT + plotH - 10} ${padL + 210},${padT + plotH * 0.5}
+        C ${padL + 270},${padT + 10} ${padL + 360},${padT + 8} ${padL + 420},${padT + plotH * 0.4}
+        C ${padL + 500},${padT + plotH - 14} ${padL + 560},${padT + plotH - 20} ${padL + 630},${padT + plotH * 0.35}
+        C ${padL + 700},${padT + 6} ${padL + plotW - 60},${padT + 10} ${padL + plotW - 10},${padT + plotH * 0.3}`,
+    fill: 'none', stroke: '#ffffff', 'stroke-width': 2, 'stroke-linecap': 'round', opacity: 0.08,
+  }));
+  const finishFlag = el('g', { transform: `translate(${W - padR - 17}, ${padT + 3})` });
+  finishFlag.innerHTML = `
+    <rect width="14" height="14" fill="#f5f5f3" opacity="0.55"/>
+    <g fill="#0a0a0c" opacity="0.55">
+      <rect x="0" y="0" width="3.5" height="3.5"/><rect x="7" y="0" width="3.5" height="3.5"/>
+      <rect x="3.5" y="3.5" width="3.5" height="3.5"/><rect x="10.5" y="3.5" width="3.5" height="3.5"/>
+      <rect x="0" y="7" width="3.5" height="3.5"/><rect x="7" y="7" width="3.5" height="3.5"/>
+      <rect x="3.5" y="10.5" width="3.5" height="3.5"/><rect x="10.5" y="10.5" width="3.5" height="3.5"/>
+    </g>`;
+  svg.appendChild(finishFlag);
+
+  svg.appendChild(el('rect', { x: padL, y: padT, width: plotW, height: zeroY - padT, fill: colorA, opacity: 0.14 }));
+  svg.appendChild(el('rect', { x: padL, y: zeroY, width: plotW, height: padT + plotH - zeroY, fill: colorB, opacity: 0.14 }));
+  const zt = el('text', { x: padL + 8, y: padT + 16, class: 'axis-label', fill: colorA, 'font-weight': 800 }); zt.textContent = `${codeA} ahead`; svg.appendChild(zt);
+  const zb = el('text', { x: padL + 8, y: padT + plotH - 8, class: 'axis-label', fill: colorB, 'font-weight': 800 }); zb.textContent = `${codeB} ahead`; svg.appendChild(zb);
   svg.appendChild(el('line', { x1: padL, x2: W - padR, y1: zeroY, y2: zeroY, stroke: 'var(--hairline-strong)', 'stroke-width': 1, 'stroke-dasharray': '3 3' }));
 
   const step = Math.max(1, Math.floor(rows.length / 14));
@@ -1123,7 +1408,7 @@ function renderTerritoryChart(rows, duel) {
     rows.forEach((r, i) => { const dist = Math.abs(xPos(i) - mx); if (dist < best) { best = dist; idx = i; } });
     const r = rows[idx];
     crosshair.setAttribute('x1', xPos(idx)); crosshair.setAttribute('x2', xPos(idx)); crosshair.style.opacity = 1;
-    tooltip.innerHTML = `<div style="font-weight:800">LAP ${r.lap}</div><div>${r.diff >= 0 ? codeB : codeA} ahead by ${Math.abs(r.diff).toFixed(2)}s</div>`;
+    tooltip.innerHTML = `<div style="font-weight:800">LAP ${r.lap}</div><div>${r.diff >= 0 ? codeA : codeB} ahead by ${Math.abs(r.diff).toFixed(2)}s</div>`;
     tooltip.style.left = (ev.clientX - rect.left + 14) + 'px';
     tooltip.style.top = (ev.clientY - rect.top - 10) + 'px';
     tooltip.style.opacity = 1;
@@ -1138,11 +1423,11 @@ function renderTerritoryChart(rows, duel) {
   const aRetiredLap = retirements[codeA], bRetiredLap = retirements[codeB];
   const justRetired = (aRetiredLap != null && last.lap >= aRetiredLap) ? codeA : (bRetiredLap != null && last.lap >= bRetiredLap) ? codeB : null;
   $('chart-verdict').innerHTML = justRetired
-    ? `❌ Battle ended early — ${justRetired} retired on Lap ${retirements[justRetired]}<span class="sub">Last valid reading: ${last.diff >= 0 ? codeB : codeA} ahead by ${Math.abs(last.diff).toFixed(2)}s (Lap ${last.lap})</span>`
-    : `🏁 Battle ongoing<span class="sub">Latest reading: ${last.diff >= 0 ? codeB : codeA} ahead by ${Math.abs(last.diff).toFixed(2)}s (Lap ${last.lap})</span>`;
+    ? `❌ Battle ended early — ${justRetired} retired on Lap ${retirements[justRetired]}<span class="sub">Last valid reading: ${last.diff >= 0 ? codeA : codeB} ahead by ${Math.abs(last.diff).toFixed(2)}s (Lap ${last.lap})</span>`
+    : `🏁 Battle ongoing<span class="sub">Latest reading: ${last.diff >= 0 ? codeA : codeB} ahead by ${Math.abs(last.diff).toFixed(2)}s (Lap ${last.lap})</span>`;
 
   $('trend-table').innerHTML = `<tr><th>Lap</th><th>${codeA} gap</th><th>${codeB} gap</th><th>Diff</th></tr>` + rows.map(r =>
-    `<tr><td>${r.lap}</td><td class="num">${r.a.toFixed(2)}s</td><td class="num">${r.b.toFixed(2)}s</td><td class="num">${r.diff >= 0 ? codeB + ' +' : codeA + ' +'}${Math.abs(r.diff).toFixed(2)}s</td></tr>`
+    `<tr><td>${r.lap}</td><td class="num">${r.a.toFixed(2)}s</td><td class="num">${r.b.toFixed(2)}s</td><td class="num">${r.diff >= 0 ? codeA + ' +' : codeB + ' +'}${Math.abs(r.diff).toFixed(2)}s</td></tr>`
   ).join('');
 }
 

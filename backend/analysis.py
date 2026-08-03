@@ -716,10 +716,20 @@ def _degraded_event(event: dict, reason: str) -> dict:
         "end_lap": event.get("end_lap"),
         "type": event["type"],
         "drivers": event.get("drivers", []),
+        # Raw OCR evidence, not LLM prose -- can contain whatever noise was in
+        # that frame (desktop notification banners, stream-watermark text,
+        # misread leaderboard columns). Never phrased, so never fit to show
+        # as a headline; kept only for debugging, not rendered by the
+        # frontend (see the `degraded` flag below and index.html's filter).
         "headline": event["evidence"][:60],
         "insight": reason,
         "uncertain": True,
         "importance": 0,
+        # Explicit "this generation failed" marker -- importance==0 alone
+        # already implies it (real events are told to score 0-20 minimum for
+        # low-significance-but-real, never a bare 0), but this is the
+        # unambiguous signal the frontend actually filters on.
+        "degraded": True,
         # A degraded event never clears the (much stricter) notification bar --
         # no write-up means no confident basis for interrupting anyone.
         "notification_worthy": False,
