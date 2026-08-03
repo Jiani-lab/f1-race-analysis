@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>F1 Race Control — Races</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;1,900&display=swap" rel="stylesheet">
 <style>
   :root {
     --track:          #050506;
@@ -22,7 +25,7 @@
     --green-dim:      rgba(23,201,100,0.14);
     --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
     --sans: -apple-system, "Segoe UI", sans-serif;
-    --sans-display: "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
+    --sans-display: "Saira Condensed", "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   }
   * { box-sizing: border-box; }
@@ -84,7 +87,7 @@
   @keyframes flag-wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
   .mh-title-row { display: flex; align-items: center; gap: 12px; }
   .mh-round { font: 700 11.5px/1 var(--mono); letter-spacing: 0.16em; color: var(--f1-red-bright); text-transform: uppercase; }
-  .mh-title { font: 800 clamp(24px, 4.4vw, 32px)/1.1 var(--sans-display); letter-spacing: -0.02em; margin: 5px 0 0; }
+  .mh-title { font: italic 900 clamp(24px, 4.4vw, 32px)/1.1 var(--sans-display); letter-spacing: -0.01em; margin: 5px 0 0; }
   .mh-sub { font: 500 14.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 5px; max-width: 480px; }
 
   .mh-actions { display: flex; align-items: center; gap: 10px; }
@@ -108,7 +111,7 @@
 
   /* ---------- hero intro ---------- */
   .intro { position: relative; padding: 34px 0 20px; }
-  .intro h1 { font: 800 clamp(26px, 4vw, 32px)/1.2 var(--sans-display); margin: 0 0 8px; letter-spacing: -0.015em; }
+  .intro h1 { font: italic 900 clamp(26px, 4vw, 32px)/1.2 var(--sans-display); margin: 0 0 8px; letter-spacing: -0.005em; }
   .intro p { font: 500 15px/1.6 var(--sans); color: var(--ink-dim); margin: 0; max-width: 620px; }
 
   /* ---------- live hero ---------- */
@@ -133,7 +136,7 @@
   .live-tag .dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: livepulse 1.3s var(--ease-out) infinite; }
   @keyframes livepulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
   .live-hero-round { position: relative; font: 700 11.5px/1 var(--mono); letter-spacing: 0.12em; color: #ff9c94; text-transform: uppercase; margin-top: 16px; display: flex; align-items: center; gap: 7px; }
-  .live-hero-name { position: relative; font: 800 clamp(24px, 4.6vw, 38px)/1.15 var(--sans-display); letter-spacing: -0.015em; margin-top: 6px; max-width: 760px; }
+  .live-hero-name { position: relative; font: italic 900 clamp(24px, 4.6vw, 38px)/1.15 var(--sans-display); letter-spacing: -0.005em; margin-top: 6px; max-width: 760px; }
   .live-hero-meta { position: relative; font: 600 13px/1 var(--mono); color: var(--ink-dim); margin-top: 14px; }
   .live-hero-cta {
     position: relative; display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
@@ -160,7 +163,7 @@
 
   /* ---------- sessions section ---------- */
   .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 38px 0 16px; }
-  .section-head h2 { font: 800 clamp(19px, 2.6vw, 22px)/1.2 var(--sans-display); letter-spacing: -0.01em; margin: 0; }
+  .section-head h2 { font: 700 clamp(19px, 2.6vw, 22px)/1.2 var(--sans-display); letter-spacing: -0.005em; margin: 0; }
   .section-head .count { font: 600 13px var(--sans); color: var(--ink-faint); margin-left: 8px; }
   .section-head-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
 

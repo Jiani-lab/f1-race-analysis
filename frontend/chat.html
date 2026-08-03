@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Ask — F1 Race Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;1,900&display=swap" rel="stylesheet">
 <style>
   :root {
     --track:          #050506;
@@ -19,7 +22,7 @@
     --f1-red-dim:     rgba(225,6,0,0.16);
     --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
     --sans: -apple-system, "Segoe UI", sans-serif;
-    --sans-display: "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
+    --sans-display: "Saira Condensed", "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   }
   * { box-sizing: border-box; }
@@ -46,7 +49,7 @@
   .mh-flag-icon { flex: 0 0 auto; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5)); }
   .mh-flag-icon svg { display: block; animation: flag-wave 2.6s ease-in-out infinite; transform-origin: 4px 6px; }
   @keyframes flag-wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
-  .mh-title { font: 800 20px/1.15 var(--sans-display); letter-spacing: -0.01em; }
+  .mh-title { font: italic 900 20px/1.15 var(--sans-display); letter-spacing: -0.005em; }
   .mh-sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
 
   .race-select { background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 9px 12px; border-radius: 9px; font: 600 13px var(--sans); min-width: 200px; }

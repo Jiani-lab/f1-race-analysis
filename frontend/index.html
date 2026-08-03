@@ -10,6 +10,9 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
 <head>
 <meta charset="utf-8" />
 <title>F1 Race Control — Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;1,900&display=swap" rel="stylesheet">
 <style>
   :root {
     --track:          #050506;
@@ -31,6 +34,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
     --team-rb:        #3671C6;   /* Red Bull — VER */
     --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
     --sans: -apple-system, "Segoe UI", sans-serif;
+    --sans-display: "Saira Condensed", "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
   }
   * { box-sizing: border-box; }
   html, body { overflow-x: hidden; max-width: 100%; }
@@ -59,7 +63,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .masthead { background: linear-gradient(180deg, #14100f 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 18px 18px 16px; }
   .masthead-inner { max-width: 980px; margin: 0 auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .mh-round { font: 700 11.5px/1 var(--mono); letter-spacing: 0.14em; color: var(--f1-red); text-transform: uppercase; margin-bottom: 6px; }
-  .mh-title { font: 800 21px/1.15 var(--sans); letter-spacing: -0.01em; margin: 3px 0 0; }
+  .mh-title { font: italic 900 22px/1.15 var(--sans-display); letter-spacing: -0.005em; margin: 3px 0 0; }
   .mh-sub { font: 500 14.5px/1.4 var(--sans); color: var(--ink-dim); margin-top: 3px; }
   .mh-sub code { font-family: var(--mono); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; }
   .mh-lap { text-align: right; }
@@ -103,7 +107,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   section { margin: 26px 0; }
   .sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
   .sec-head .chip { width: 5px; height: 14px; background: var(--f1-red); border-radius: 1px; }
-  .sec-head h2 { font: 800 14.5px/1 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; margin: 0; }
+  .sec-head h2 { font: 700 15.5px/1 var(--sans-display); letter-spacing: 0.03em; text-transform: uppercase; margin: 0; }
   .sec-head .note { font: 500 14.5px var(--sans); color: var(--ink-faint); }
   .sec-head .refresh-btn { margin-left: auto; font: 700 11.5px var(--mono); letter-spacing: 0.04em; color: var(--ink-dim); background: rgba(255,255,255,0.06); border: 1px solid var(--hairline); padding: 4px 10px; border-radius: 20px; cursor: pointer; }
   .sec-head .refresh-btn:hover { background: rgba(255,255,255,0.1); color: var(--ink); }
