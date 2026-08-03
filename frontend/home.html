@@ -47,6 +47,15 @@
 
   /* ---------- masthead + account picker ---------- */
   .masthead { position: relative; background: linear-gradient(180deg, #170f0e 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 22px 20px 20px; overflow: hidden; }
+  .masthead::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+    background-image:
+      linear-gradient(90deg, var(--track) 0%, rgba(5,5,6,0.8) 40%, rgba(5,5,6,0.25) 100%),
+      url('img/masthead-track.jpg');
+    background-repeat: no-repeat, no-repeat;
+    background-size: 100% 100%, cover;
+    background-position: 0 0, center 65%;
+  }
   .masthead::after {
     content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.05;
     background-image: repeating-conic-gradient(#fff 0% 25%, transparent 0% 50%);
@@ -54,6 +63,8 @@
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
             mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
   }
+  .photo-credit { position: absolute; right: 20px; bottom: 8px; font: 600 9.5px/1 var(--mono); letter-spacing: 0.02em; color: rgba(245,245,243,0.6); text-shadow: 0 1px 4px rgba(0,0,0,0.8); pointer-events: none; }
+  .live-hero .photo-credit { right: 18px; bottom: 10px; }
   .masthead-inner { position: relative; max-width: 1080px; margin: 0 auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .mh-flag-icon { flex: 0 0 auto; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5)); }
   .mh-flag-icon svg { display: block; animation: flag-wave 2.6s ease-in-out infinite; transform-origin: 4px 6px; }
@@ -90,9 +101,13 @@
   /* ---------- live hero ---------- */
   .live-hero {
     position: relative; overflow: hidden; border-radius: 18px; margin: 26px 0 0;
-    background:
-      radial-gradient(ellipse 640px 300px at 85% -20%, rgba(225,6,0,0.4), transparent 60%),
-      linear-gradient(150deg, #1c0b0a 0%, #100708 55%, #0a0a0c 100%);
+    background-image:
+      linear-gradient(100deg, rgba(10,4,4,0.95) 0%, rgba(10,4,4,0.88) 32%, rgba(18,6,6,0.55) 62%, rgba(18,6,6,0.28) 100%),
+      radial-gradient(ellipse 640px 300px at 85% -20%, rgba(225,6,0,0.35), transparent 60%),
+      url('img/live-hero-car.jpg');
+    background-repeat: no-repeat, no-repeat, no-repeat;
+    background-size: 100% 100%, 100% 100%, cover;
+    background-position: 0 0, 0 0, right center;
     border: 1px solid rgba(225,6,0,0.3);
     padding: 26px 28px 24px;
     animation: rise .5s var(--ease-out) both;
@@ -101,8 +116,6 @@
     content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
     background-image: repeating-linear-gradient(100deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 46px);
   }
-  .live-hero-track { position: absolute; right: -6%; top: 0; width: 52%; height: 100%; opacity: 0.15; pointer-events: none; }
-  .live-hero-track svg { width: 100%; height: 100%; display: block; }
   .live-tag { position: relative; display: inline-flex; align-items: center; gap: 7px; font: 800 11px/1 var(--mono); letter-spacing: 0.14em; color: #fff; background: var(--f1-red); padding: 5px 11px 5px 9px; border-radius: 20px; text-transform: uppercase; }
   .live-tag .dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: livepulse 1.3s var(--ease-out) infinite; }
   @keyframes livepulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
@@ -177,6 +190,7 @@
 <body>
 
 <div class="masthead">
+  <span class="photo-credit">Photo: Thomas De Giorgio / Unsplash</span>
   <div class="masthead-inner">
     <div>
       <div class="mh-round">LIVE-WIRED DASHBOARD</div>
@@ -355,30 +369,16 @@ function fmtDate(ms) {
 }
 
 // ---------------- live hero ----------------
-// Original abstract circuit-outline illustration, decorative only -- not a
-// trace of any real track's official layout (same "illustration, not a
-// literal copy" approach as helmetSVG in the race dashboard).
-const LIVE_HERO_TRACK_SVG = `
-  <svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M18 150 C10 120, 30 90, 60 84 C82 80, 92 100, 116 98
-             C140 96, 144 66, 176 58 C210 49, 230 78, 220 104
-             C212 124, 186 118, 176 138 C168 154, 186 172, 212 166
-             C232 161, 246 140, 250 116"
-          fill="none" stroke="#ff2a1f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="18" cy="150" r="4.4" fill="#fff"/>
-    <path d="M9 150 L27 150" stroke="#fff" stroke-width="1.6"/>
-  </svg>`;
-
 function liveHero(s) {
   if (!s) return '';
   return `
     <div class="live-hero">
-      <div class="live-hero-track">${LIVE_HERO_TRACK_SVG}</div>
       <span class="live-tag"><span class="dot"></span>Live</span>
       <div class="live-hero-round">${s.round}</div>
       <div class="live-hero-name">${s.name}</div>
       <div class="live-hero-meta">Capturing since ${fmtDate(s.start_ms)}</div>
       <a class="live-hero-cta" href="/race?session=${encodeURIComponent(s.session_id)}">Open Live Dashboard <span class="arrow">→</span></a>
+      <span class="photo-credit">Photo: Jonathan Borba / Pexels</span>
     </div>`;
 }
 

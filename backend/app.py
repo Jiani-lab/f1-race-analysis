@@ -18,6 +18,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 import analysis
@@ -217,6 +218,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="F1 Race Analysis", lifespan=lifespan)
+app.mount("/img", StaticFiles(directory=Path(__file__).parent.parent / "frontend" / "img"), name="img")
 
 
 def _session_exists(session_id: str) -> bool:
