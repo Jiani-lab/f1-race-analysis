@@ -55,6 +55,13 @@ RULE_LOOKUP_SYSTEM_NOTE = (
     "If the transcript doesn't mention a rule, say so plainly instead of guessing."
 )
 
+CHAT_SYSTEM_NOTE = (
+    "You are answering a specific question about this F1 race, grounded ONLY in the retrieved records "
+    "below (a mix of detected race events and real commentary transcript snippets, each tagged with its "
+    "lap or timestamp). Answer directly and concisely. If the retrieved records don't actually cover "
+    "what's being asked, say so plainly instead of guessing or filling in from general F1 knowledge."
+)
+
 WHATIF_SYSTEM_NOTE = (
     "You are constructing a counterfactual ('what if') race strategy scenario, grounded in the real "
     "race data provided plus general F1 strategy knowledge (tire degradation, pit-stop time loss, etc). "
@@ -457,6 +464,37 @@ def rule_lookup(session_id: str, around_ms: int, window_ms: int = 3 * 60 * 1000)
         return "No commentary audio found around this point in time."
     prompt = f"{RULE_LOOKUP_SYSTEM_NOTE}\n\nCommentary records:\n\n" + _format_records(records)
     return _run_claude(prompt)
+
+
+def chat_answer(session_id: str, question: str, max_lap: int | None = None) -> dict:
+    """Free-form Q&A grounded in rag.search()'s retrieved chunks, not the
+    map-reduce full-context pattern catchup/summary/whatif use -- this is
+    the "point lookup" case RAG genuinely suits, versus those three needing
+    a holistic read of the whole window. max_lap optional: the standalone
+    chat page passes None (search the whole race so far), the race-page
+    widget passes the currently-viewed lap (never let the chatbot answer
+    with information from beyond what's on screen) -- resolved to a real
+    cutoff timestamp via replay_cutoffs so it applies to audio chunks
+    (timestamp-indexed) too, not just event chunks (lap-indexed)."""
+    import rag  # local import: rag.py imports _event_key from this module, avoid the cycle at load time
+
+    cutoff_ms = None
+    if max_lap is not None:
+        cutoffs = replay_cutoffs(session_id)
+        at_or_before = [c for c in cutoffs if c["lap"] <= max_lap]
+        if at_or_before:
+            cutoff_ms = max(c["timestamp"] for c in at_or_before)
+
+    results = rag.search(session_id, question, top_k=6, max_lap=max_lap, cutoff_ms=cutoff_ms)
+    if not results:
+        return {
+            "answer": "Nothing indexed yet for this race that's relevant to that question.",
+            "sources": [],
+        }
+    records_text = "\n".join(f"[{r['source']}, lap={r['lap']}] {r['text']}" for r in results)
+    prompt = f"{CHAT_SYSTEM_NOTE}\n\nRetrieved records:\n\n{records_text}\n\nQuestion: {question}"
+    answer = _run_claude(prompt, timeout=90.0)
+    return {"answer": answer, "sources": results}
 
 
 def strategy_trend(session_id: str) -> list[dict]:

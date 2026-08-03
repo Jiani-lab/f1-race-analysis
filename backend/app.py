@@ -23,12 +23,14 @@ from pydantic import BaseModel
 
 import analysis
 import push
+import rag
 import retrieval
 from detect import is_f1_live_now
 
 POLL_INTERVAL_SEC = 90
 FRONTEND_HOME = Path(__file__).parent.parent / "frontend" / "home.html"
 FRONTEND_SETTINGS = Path(__file__).parent.parent / "frontend" / "settings.html"
+FRONTEND_CHAT = Path(__file__).parent.parent / "frontend" / "chat.html"
 FRONTEND_SW = Path(__file__).parent.parent / "frontend" / "sw.js"
 FRONTEND_ICON = Path(__file__).parent.parent / "frontend" / "icon.png"
 
@@ -204,6 +206,8 @@ async def _event_refresh_loop():
                 from_ms, to_ms = _current_window(state.session_id)
                 events = await asyncio.to_thread(_generate_events, state.session_id, from_ms, to_ms)
                 _maybe_push_notification(state.session_id, events)
+                records = analysis._load_log(state.session_id)  # noqa: SLF001 -- internal reuse within backend
+                await asyncio.to_thread(rag.index_new_content, state.session_id, events, records)
         except Exception as e:  # noqa: BLE001 -- keep the loop alive no matter what
             print(f"[events] refresh error (will retry): {e}")
         await asyncio.sleep(EVENT_REFRESH_INTERVAL_SEC)
@@ -293,6 +297,11 @@ def race_dashboard():
 @app.get("/settings")
 def settings_page():
     return FileResponse(FRONTEND_SETTINGS)
+
+
+@app.get("/chat")
+def chat_page():
+    return FileResponse(FRONTEND_CHAT)
 
 
 @app.get("/sw.js")
@@ -498,3 +507,19 @@ def session_events(session_id: str | None = None):
     from_ms, to_ms = _current_window(resolved)
     events = _generate_events(resolved, from_ms, to_ms)
     return {"events": events}
+
+
+class ChatRequest(BaseModel):
+    question: str
+    max_lap: int | None = None  # omitted by the standalone chat page; sent by the race-page widget
+
+
+@app.post("/session/chat")
+def session_chat(body: ChatRequest, session_id: str | None = None):
+    """RAG Q&A over whatever's been indexed for this session so far (see
+    rag.py) -- can lag a few minutes behind the very latest lap on a live
+    race, since indexing runs on the same 5-minute background tick as event
+    phrasing, not synchronously on every request (that would mean an
+    embedding-API round-trip on every single chat message)."""
+    resolved = _require_session(session_id)
+    return analysis.chat_answer(resolved, body.question, max_lap=body.max_lap)

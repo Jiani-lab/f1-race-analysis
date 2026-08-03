@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ask — F1 Race Control</title>
+<style>
+  :root {
+    --track:          #050506;
+    --surface:        #101013;
+    --surface-raised: #17171b;
+    --hairline:       rgba(255,255,255,0.08);
+    --hairline-strong: rgba(255,255,255,0.18);
+    --ink:            #f5f5f3;
+    --ink-dim:        #9c9c9f;
+    --ink-faint:      #616164;
+    --f1-red:         #E10600;
+    --f1-red-bright:  #ff2a1f;
+    --f1-red-dim:     rgba(225,6,0,0.16);
+    --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", sans-serif;
+    --sans-display: "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body {
+    margin: 0; background: var(--track); color: var(--ink); font-family: var(--sans);
+    display: flex; flex-direction: column;
+    background-image: radial-gradient(ellipse 900px 460px at 12% -8%, rgba(225,6,0,0.09), transparent 60%);
+  }
+  a { color: inherit; }
+  button, select, input { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--f1-red-bright); outline-offset: 2px; border-radius: 4px; }
+
+  .masthead { position: relative; background: linear-gradient(180deg, #14100f 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 18px 20px 16px; overflow: hidden; flex: 0 0 auto; }
+  .masthead::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.05;
+    background-image: repeating-conic-gradient(#fff 0% 25%, transparent 0% 50%);
+    background-size: 16px 16px; mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+  }
+  .masthead-inner { position: relative; max-width: 760px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .back-home { display: inline-block; font: 700 11.5px/1 var(--mono); letter-spacing: 0.06em; color: var(--ink-faint); text-decoration: none; margin-bottom: 8px; }
+  .back-home:hover { color: var(--ink); }
+  .mh-title-row { display: flex; align-items: center; gap: 10px; }
+  .mh-flag-icon { flex: 0 0 auto; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5)); }
+  .mh-flag-icon svg { display: block; animation: flag-wave 2.6s ease-in-out infinite; transform-origin: 4px 6px; }
+  @keyframes flag-wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
+  .mh-title { font: 800 20px/1.15 var(--sans); letter-spacing: -0.01em; }
+  .mh-sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
+
+  .race-select { background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 9px 12px; border-radius: 9px; font: 600 13px var(--sans); min-width: 200px; }
+
+  main { flex: 1 1 auto; max-width: 760px; width: 100%; margin: 0 auto; padding: 18px 20px 0; display: flex; flex-direction: column; min-height: 0; }
+  .empty-note { margin: auto; text-align: center; color: var(--ink-faint); font: 500 14px/1.7 var(--sans); max-width: 380px; }
+  .empty-note b { color: var(--ink-dim); }
+
+  .thread { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-bottom: 16px; }
+  .msg { display: flex; flex-direction: column; max-width: 84%; animation: rise .3s var(--ease-out) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.bot { align-self: flex-start; align-items: flex-start; }
+  .bubble { padding: 11px 14px; border-radius: 14px; font: 500 14.5px/1.55 var(--sans); white-space: pre-wrap; }
+  .msg.user .bubble { background: var(--f1-red); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot .bubble { background: var(--surface); border: 1px solid var(--hairline); border-bottom-left-radius: 4px; }
+  .msg.bot .bubble.pending { color: var(--ink-faint); font-style: italic; }
+  .sources { margin-top: 6px; }
+  .sources summary { cursor: pointer; font: 700 10.5px/1 var(--mono); letter-spacing: 0.04em; color: var(--ink-faint); text-transform: uppercase; }
+  .sources summary:hover { color: var(--ink-dim); }
+  .source-row { display: flex; gap: 8px; margin-top: 6px; font: 500 12px/1.5 var(--sans); color: var(--ink-dim); }
+  .source-row .lap-tag { flex: 0 0 auto; font: 700 10px/1 var(--mono); color: var(--f1-red-bright); background: var(--f1-red-dim); padding: 3px 6px; border-radius: 4px; }
+
+  .composer { flex: 0 0 auto; display: flex; gap: 8px; padding: 14px 0 20px; border-top: 1px solid var(--hairline); }
+  .composer input { flex: 1; background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 11px 14px; border-radius: 10px; font: 500 14.5px var(--sans); }
+  .composer input:disabled { opacity: .5; }
+  .composer button { background: var(--f1-red); color: #fff; border: none; padding: 0 20px; border-radius: 10px; font: 800 13px var(--sans); cursor: pointer; }
+  .composer button:disabled { opacity: .5; cursor: default; }
+  .composer button:not(:disabled):hover { background: var(--f1-red-bright); }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <a class="back-home" href="/">← All Races</a>
+      <div class="mh-title-row">
+        <span class="mh-flag-icon">
+          <svg width="26" height="30" viewBox="0 0 34 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="2" y="2" width="3" height="37" rx="1.5" fill="#9c9c9f"/>
+            <path d="M5 3 C 14 -1, 22 7, 31 3 L 31 21 C 22 25, 14 17, 5 21 Z" fill="#f5f5f3"/>
+            <g fill="#101013">
+              <rect x="5" y="3" width="4.3" height="4.5"/><rect x="13.6" y="2.4" width="4.3" height="4.5"/><rect x="22.2" y="3.6" width="4.3" height="4.5"/>
+              <rect x="9.3" y="7.5" width="4.3" height="4.5"/><rect x="17.9" y="6.9" width="4.3" height="4.5"/><rect x="26.5" y="8.1" width="4.3" height="4.5"/>
+              <rect x="5" y="12" width="4.3" height="4.5"/><rect x="13.6" y="11.4" width="4.3" height="4.5"/><rect x="22.2" y="12.6" width="4.3" height="4.5"/>
+              <rect x="9.3" y="16.5" width="4.3" height="4.5"/><rect x="17.9" y="15.9" width="4.3" height="4.5"/>
+            </g>
+          </svg>
+        </span>
+        <div>
+          <div class="mh-title">Ask about a race</div>
+          <div class="mh-sub">Grounded in real detected events + commentary — not general F1 knowledge</div>
+        </div>
+      </div>
+    </div>
+    <select class="race-select" id="race-select"><option>Loading races…</option></select>
+  </div>
+</div>
+
+<main>
+  <div class="thread" id="thread"></div>
+  <div class="empty-note" id="empty-note" style="display:none">
+    Pick a race above, then ask anything — <b>"when did Norris pit?"</b>, <b>"what happened with Hamilton's penalty?"</b>,
+    <b>"who was fighting for 3rd mid-race?"</b> Answers only use what was actually detected/said during that broadcast.
+  </div>
+  <form class="composer" id="composer">
+    <input type="text" id="question-input" placeholder="Ask about this race…" autocomplete="off" disabled />
+    <button type="submit" id="send-btn" disabled>Ask</button>
+  </form>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentSessionId = null;
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || res.statusText);
+  }
+  return res.json();
+}
+
+function addMessage(role, text) {
+  const thread = $('thread');
+  const msg = document.createElement('div');
+  msg.className = `msg ${role}`;
+  msg.innerHTML = `<div class="bubble${role === 'bot' && text === '…' ? ' pending' : ''}">${text}</div>`;
+  thread.appendChild(msg);
+  thread.scrollTop = thread.scrollHeight;
+  return msg;
+}
+
+function renderSources(msgEl, sources) {
+  if (!sources || !sources.length) return;
+  const details = document.createElement('details');
+  details.className = 'sources';
+  details.innerHTML = `<summary>▸ ${sources.length} source${sources.length > 1 ? 's' : ''}</summary>` +
+    sources.map(s => `<div class="source-row">${s.lap != null ? `<span class="lap-tag">L${s.lap}</span>` : `<span class="lap-tag">AUDIO</span>`}<span>${s.text}</span></div>`).join('');
+  msgEl.appendChild(details);
+}
+
+async function populateRaceSelect() {
+  const sel = $('race-select');
+  try {
+    const { sessions } = await api('/sessions');
+    if (!sessions.length) {
+      sel.innerHTML = '<option>No races yet</option>';
+      return;
+    }
+    sel.innerHTML = sessions.map(s => `<option value="${s.session_id}">${s.round} · ${s.name}</option>`).join('');
+    currentSessionId = sessions[0].session_id;
+    onRaceChange();
+  } catch (e) {
+    sel.innerHTML = '<option>Error loading races</option>';
+  }
+}
+
+function onRaceChange() {
+  currentSessionId = $('race-select').value;
+  $('thread').innerHTML = '';
+  $('empty-note').style.display = 'block';
+  $('question-input').disabled = false;
+  $('send-btn').disabled = false;
+  $('question-input').focus();
+}
+$('race-select').addEventListener('change', onRaceChange);
+
+$('composer').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const input = $('question-input');
+  const question = input.value.trim();
+  if (!question || !currentSessionId) return;
+  $('empty-note').style.display = 'none';
+  input.value = '';
+  input.disabled = true;
+  $('send-btn').disabled = true;
+
+  addMessage('user', question);
+  const pending = addMessage('bot', '…');
+
+  try {
+    const result = await api(`/session/chat?session_id=${encodeURIComponent(currentSessionId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+    });
+    pending.querySelector('.bubble').textContent = result.answer;
+    pending.querySelector('.bubble').classList.remove('pending');
+    renderSources(pending, result.sources);
+  } catch (e) {
+    pending.querySelector('.bubble').textContent = 'Error: ' + e.message;
+    pending.querySelector('.bubble').classList.remove('pending');
+  }
+  input.disabled = false;
+  $('send-btn').disabled = false;
+  input.focus();
+});
+
+populateRaceSelect();
+</script>
+</body>
+</html>

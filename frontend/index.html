@@ -298,6 +298,33 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .notif-run-btn:hover { background: rgba(225,6,0,0.28); }
   .notif-run-btn:disabled { opacity: .6; cursor: default; }
   .notif-run-result { margin-top: 8px; font: 600 12.5px/1.5 var(--sans); color: var(--green); }
+
+  /* ---------- floating chat widget: independent of the replay slider,
+     stays fixed bottom-right regardless of lap/scroll state ---------- */
+  .chat-widget { position: fixed; right: 22px; bottom: 22px; z-index: 90; }
+  .chat-fab { width: 52px; height: 52px; border-radius: 50%; background: var(--f1-red); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0,0,0,0.45); transition: background .15s, transform .15s var(--ease-out); }
+  .chat-fab:hover { background: var(--f1-red-bright); transform: translateY(-2px); }
+  .chat-fab .icon-close { display: none; }
+  .chat-widget.open .chat-fab .icon-chat { display: none; }
+  .chat-widget.open .chat-fab .icon-close { display: block; }
+  .chat-panel { display: none; position: absolute; right: 0; bottom: calc(100% + 12px); width: 340px; max-width: calc(100vw - 44px); height: 460px; max-height: calc(100vh - 140px); background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.55); flex-direction: column; overflow: hidden; }
+  .chat-widget.open .chat-panel { display: flex; animation: rise .18s var(--ease-out); }
+  .chat-panel-head { flex: 0 0 auto; padding: 12px 14px; background: linear-gradient(180deg, #170f0e 0%, var(--surface-raised) 100%); border-bottom: 1px solid var(--hairline); font: 800 12.5px/1 var(--sans); display: flex; align-items: center; justify-content: space-between; }
+  .chat-panel-head .sub { display: block; font: 500 10.5px/1 var(--mono); color: var(--ink-faint); margin-top: 4px; letter-spacing: .02em; }
+  .cw-thread { flex: 1 1 auto; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .cw-empty { margin: auto; text-align: center; color: var(--ink-faint); font: 500 12.5px/1.6 var(--sans); padding: 0 10px; }
+  .cw-msg { display: flex; max-width: 88%; }
+  .cw-msg.user { align-self: flex-end; }
+  .cw-msg.bot { align-self: flex-start; }
+  .cw-bubble { padding: 8px 11px; border-radius: 11px; font: 500 13px/1.5 var(--sans); white-space: pre-wrap; }
+  .cw-msg.user .cw-bubble { background: var(--f1-red); color: #fff; border-bottom-right-radius: 3px; }
+  .cw-msg.bot .cw-bubble { background: var(--surface); border: 1px solid var(--hairline); border-bottom-left-radius: 3px; }
+  .cw-bubble.pending { color: var(--ink-faint); font-style: italic; }
+  .cw-composer { flex: 0 0 auto; display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--hairline); }
+  .cw-composer input { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 8px 10px; border-radius: 8px; font: 500 13px var(--sans); }
+  .cw-composer input:disabled { opacity: .5; }
+  .cw-composer button { background: var(--f1-red); color: #fff; border: none; width: 34px; border-radius: 8px; font-size: 15px; cursor: pointer; flex: 0 0 auto; }
+  .cw-composer button:disabled { opacity: .5; cursor: default; }
 </style>
 </head>
 <body>
@@ -462,6 +489,30 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
     </details>
   </section>
 </main>
+
+<div class="chat-widget" id="chat-widget">
+  <div class="chat-panel" id="chat-panel">
+    <div class="chat-panel-head">
+      <div>Ask about this race<span class="sub">Grounded in what's happened up to the current lap</span></div>
+    </div>
+    <div class="cw-thread" id="cw-thread">
+      <div class="cw-empty" id="cw-empty">Ask anything about this race so far — e.g. "when did Norris pit?" Answers only use what's actually been detected up to the lap you're viewing.</div>
+    </div>
+    <form class="cw-composer" id="cw-composer">
+      <input type="text" id="cw-input" placeholder="Ask…" autocomplete="off" />
+      <button type="submit" aria-label="Send">→</button>
+    </form>
+  </div>
+  <button class="chat-fab" id="chat-fab" onclick="toggleChatWidget()" aria-label="Ask about this race">
+    <svg class="icon-chat" width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8A2.5 2.5 0 0 1 17.5 16H10l-4.5 4.2V16h-.5A2.5 2.5 0 0 1 2.5 13.5v-8A2.5 2.5 0 0 1 4 5.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      <circle cx="8.3" cy="9.6" r="1.1" fill="currentColor"/><circle cx="12" cy="9.6" r="1.1" fill="currentColor"/><circle cx="15.7" cy="9.6" r="1.1" fill="currentColor"/>
+    </svg>
+    <svg class="icon-close" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+</div>
 
 <script>
 // Which race this tab shows -- read once from ?session=<id> in the URL
@@ -1581,6 +1632,60 @@ document.querySelector('.raw-log').addEventListener('toggle', async function () 
     });
     $('raw-log-summary').textContent = `▸ Raw commentary log (showing ${Math.min(500, events.length)} of ${events.length})`;
   } catch (e) { container.textContent = 'Error: ' + e.message; }
+});
+</script>
+
+<script>
+// Floating chat widget -- deliberately independent of renderForLap()/the
+// replay slider: it never re-renders when the lap changes, it just reads
+// `currentLap` (from the main script above, same global lexical scope --
+// classic <script> tags share one global scope for let/const) at the
+// moment a question is actually sent, so answers respect "no lookahead
+// past what's on screen right now" without the widget itself needing to
+// track lap changes.
+function cwAddMessage(role, text) {
+  const thread = $('cw-thread');
+  const empty = $('cw-empty');
+  if (empty) empty.remove();
+  const msg = document.createElement('div');
+  msg.className = `cw-msg ${role}`;
+  msg.innerHTML = `<div class="cw-bubble${role === 'bot' && text === '…' ? ' pending' : ''}"></div>`;
+  msg.querySelector('.cw-bubble').textContent = text;
+  thread.appendChild(msg);
+  thread.scrollTop = thread.scrollHeight;
+  return msg;
+}
+
+function toggleChatWidget() {
+  $('chat-widget').classList.toggle('open');
+  if ($('chat-widget').classList.contains('open')) $('cw-input').focus();
+}
+
+document.getElementById('cw-composer').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const input = $('cw-input');
+  const question = input.value.trim();
+  if (!question) return;
+  input.value = '';
+  input.disabled = true;
+
+  cwAddMessage('user', question);
+  const pending = cwAddMessage('bot', '…');
+
+  try {
+    const result = await api('/session/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, max_lap: currentLap }),
+    });
+    pending.querySelector('.cw-bubble').textContent = result.answer;
+    pending.querySelector('.cw-bubble').classList.remove('pending');
+  } catch (e) {
+    pending.querySelector('.cw-bubble').textContent = 'Error: ' + e.message;
+    pending.querySelector('.cw-bubble').classList.remove('pending');
+  }
+  input.disabled = false;
+  input.focus();
 });
 </script>
 
