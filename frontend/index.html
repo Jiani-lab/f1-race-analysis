@@ -202,6 +202,23 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
 
   /* ---------- what-if (live) ---------- */
   .whatif-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 16px; }
+  /* Fading photo backdrop, scoped to just the catch-up/summary card (not
+     the What-If card below, which also uses .whatif-card) -- kept heavily
+     dimmed since real chart data and read text sit on top of this. */
+  .catchup-card {
+    position: relative; overflow: hidden;
+    background-image:
+      linear-gradient(rgba(16,16,19,0.9), rgba(16,16,19,0.93)),
+      url('img/catchup-bg.jpg');
+    background-size: auto, cover;
+    background-position: 0 0, center 35%;
+    background-repeat: no-repeat, no-repeat;
+  }
+  .catchup-card .photo-credit {
+    position: absolute; right: 14px; bottom: 8px; font: 600 9px/1 var(--mono);
+    letter-spacing: 0.02em; color: rgba(245,245,243,0.5); text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+  }
   .whatif-caveat { font: 600 11.5px var(--mono); color: var(--amber); margin-top: 2px; letter-spacing: 0.02em; }
   .whatif-form { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   .whatif-form input { flex: 1; min-width: 220px; background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 10px 12px; border-radius: 8px; font: 500 14.5px var(--sans); }
@@ -406,7 +423,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
 
   <section>
     <div class="sec-head"><span class="chip"></span><h2>Catch-Up / Race Summary</h2><span class="note">Real position data</span></div>
-    <div class="whatif-card">
+    <div class="whatif-card catchup-card">
       <div class="whatif-form">
         <button onclick="doCatchup()" id="btn-catchup">What just happened (last 15 laps)</button>
         <button onclick="doSummary()" id="btn-summary">Generate race summary (full race)</button>
@@ -417,6 +434,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
         <summary>▸ Show written summary</summary>
         <div class="body" id="catchup-summary-text"></div>
       </details>
+      <span class="photo-credit">Photo: Elliott Ledain / Unsplash</span>
     </div>
   </section>
 
