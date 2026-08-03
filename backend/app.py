@@ -27,6 +27,7 @@ from detect import is_f1_live_now
 
 POLL_INTERVAL_SEC = 90
 FRONTEND_HOME = Path(__file__).parent.parent / "frontend" / "home.html"
+FRONTEND_SETTINGS = Path(__file__).parent.parent / "frontend" / "settings.html"
 FRONTEND_SW = Path(__file__).parent.parent / "frontend" / "sw.js"
 FRONTEND_ICON = Path(__file__).parent.parent / "frontend" / "icon.png"
 
@@ -122,11 +123,12 @@ async def _detection_loop():
                 state.start()
                 print(f"[watcher] F1 stream detected, started session {state.session_id}")
                 info = _display_info(state.session_id, state.start_ms, None, "active")
-                push.send_push(
-                    "New F1 session detected",
-                    f"{info['name']} is on screen now.",
-                    f"/race?session={state.session_id}",
-                )
+                if push.get_preferences()["notify_session_start"]:
+                    push.send_push(
+                        "New F1 session detected",
+                        f"{info['name']} is on screen now.",
+                        f"/race?session={state.session_id}",
+                    )
         except Exception as e:  # noqa: BLE001 -- keep the loop alive no matter what
             print(f"[watcher] detection error (will retry): {e}")
         await asyncio.sleep(POLL_INTERVAL_SEC)
@@ -153,8 +155,9 @@ def _maybe_push_notification(session_id: str, events: list[dict]) -> None:
     because a real push has to be sent by the backend, which can't read a
     browser's localStorage. Silently no-ops if no one has ever completed
     the one-time subscribe flow (push.send_push returns False for that)."""
-    favorite = push.get_favorite_driver()
-    if not favorite:
+    prefs = push.get_preferences()
+    favorite = prefs["favorite_driver"]
+    if not favorite or not prefs["notify_driver_events"]:
         return
     notif_state = push.get_notif_state(session_id)
     if notif_state["count"] >= NOTIF_MAX_PER_RACE:
@@ -285,6 +288,11 @@ def race_dashboard():
     return FileResponse(FRONTEND_INDEX)
 
 
+@app.get("/settings")
+def settings_page():
+    return FileResponse(FRONTEND_SETTINGS)
+
+
 @app.get("/sw.js")
 def service_worker():
     # Must be served from the origin root -- a Service Worker's scope is the
@@ -311,6 +319,37 @@ def push_vapid_public_key():
 @app.post("/push/subscribe")
 def push_subscribe(body: PushSubscribeRequest):
     push.save_subscription(body.subscription, body.favorite_driver)
+    return {"ok": True}
+
+
+@app.get("/push/preferences")
+def push_preferences():
+    """Backs the settings page's initial render -- the homepage's push-card
+    never had to read this back (it trusts its own localStorage instead),
+    but a dedicated settings page needs the server's actual saved state,
+    since that's the only copy that's consistent across browsers/devices."""
+    return push.get_preferences()
+
+
+class PushPreferencesRequest(BaseModel):
+    notify_session_start: bool
+    notify_driver_events: bool
+    favorite_driver: str | None = None
+
+
+@app.post("/push/preferences")
+def push_update_preferences(body: PushPreferencesRequest):
+    push.save_preferences(body.notify_session_start, body.notify_driver_events, body.favorite_driver)
+    return {"ok": True}
+
+
+@app.post("/push/unsubscribe")
+def push_unsubscribe():
+    """'Forget this device' -- the browser-side PushSubscription.unsubscribe()
+    call happens in the frontend (only the browser can invalidate its own
+    subscription); this just drops our copy so send_push stops finding
+    anything to send to, same as if it had never been set up."""
+    push.clear_subscription()
     return {"ok": True}
 
 

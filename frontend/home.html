@@ -63,6 +63,9 @@
   .mh-title { font: 800 clamp(24px, 4.4vw, 32px)/1.1 var(--sans-display); letter-spacing: -0.02em; margin: 5px 0 0; }
   .mh-sub { font: 500 14.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 5px; max-width: 480px; }
 
+  .mh-actions { display: flex; align-items: center; gap: 10px; }
+  .settings-link { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink-dim); text-decoration: none; transition: background .15s, color .15s, transform .3s var(--ease-out); }
+  .settings-link:hover { background: var(--surface-raised); color: var(--ink); transform: rotate(45deg); }
   .account { position: relative; }
   .account-btn { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--hairline-strong); padding: 6px 12px 6px 6px; border-radius: 24px; cursor: pointer; color: var(--ink); font: 600 13px var(--sans); }
   .account-btn:hover { background: var(--surface-raised); }
@@ -98,6 +101,8 @@
     content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
     background-image: repeating-linear-gradient(100deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 46px);
   }
+  .live-hero-track { position: absolute; right: -6%; top: 0; width: 52%; height: 100%; opacity: 0.15; pointer-events: none; }
+  .live-hero-track svg { width: 100%; height: 100%; display: block; }
   .live-tag { position: relative; display: inline-flex; align-items: center; gap: 7px; font: 800 11px/1 var(--mono); letter-spacing: 0.14em; color: #fff; background: var(--f1-red); padding: 5px 11px 5px 9px; border-radius: 20px; text-transform: uppercase; }
   .live-tag .dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: livepulse 1.3s var(--ease-out) infinite; }
   @keyframes livepulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
@@ -149,6 +154,9 @@
     animation: rise .45s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 45ms);
   }
   .race-card:hover { border-color: var(--hairline-strong); transform: translateY(-3px); background: var(--surface-raised); }
+  .race-mini-track { position: absolute; top: 16px; right: 14px; width: 46px; height: 20px; opacity: 0.32; pointer-events: none; transition: opacity .15s; }
+  .race-mini-track svg { width: 100%; height: 100%; display: block; }
+  .race-card:hover .race-mini-track { opacity: 0.6; }
   .status-badge { display: inline-flex; align-items: center; gap: 6px; font: 800 10px/1 var(--mono); letter-spacing: 0.1em; padding: 4px 9px; border-radius: 20px; text-transform: uppercase; }
   .status-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
   .status-badge.ended { background: var(--green-dim); color: var(--green); }
@@ -189,6 +197,13 @@
       </div>
       <div class="mh-sub">Real screen + audio capture, real recall, no scripted content</div>
     </div>
+    <div class="mh-actions">
+    <a class="settings-link" href="/settings" aria-label="Notification settings" title="Notification settings">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M19.4 13a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V19a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H4a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H10a1.65 1.65 0 001-1.51V4a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V10a1.65 1.65 0 001.51 1H20a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8"/>
+      </svg>
+    </a>
     <div class="account" id="account">
       <button class="account-btn" onclick="toggleAccount(event)">
         <span class="account-avatar" id="account-avatar">J</span>
@@ -202,6 +217,7 @@
         <div class="account-sep"></div>
         <div class="account-item" onclick="toggleAccount()">Sign out</div>
       </div>
+    </div>
     </div>
   </div>
 </div>
@@ -339,10 +355,25 @@ function fmtDate(ms) {
 }
 
 // ---------------- live hero ----------------
+// Original abstract circuit-outline illustration, decorative only -- not a
+// trace of any real track's official layout (same "illustration, not a
+// literal copy" approach as helmetSVG in the race dashboard).
+const LIVE_HERO_TRACK_SVG = `
+  <svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M18 150 C10 120, 30 90, 60 84 C82 80, 92 100, 116 98
+             C140 96, 144 66, 176 58 C210 49, 230 78, 220 104
+             C212 124, 186 118, 176 138 C168 154, 186 172, 212 166
+             C232 161, 246 140, 250 116"
+          fill="none" stroke="#ff2a1f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="18" cy="150" r="4.4" fill="#fff"/>
+    <path d="M9 150 L27 150" stroke="#fff" stroke-width="1.6"/>
+  </svg>`;
+
 function liveHero(s) {
   if (!s) return '';
   return `
     <div class="live-hero">
+      <div class="live-hero-track">${LIVE_HERO_TRACK_SVG}</div>
       <span class="live-tag"><span class="dot"></span>Live</span>
       <div class="live-hero-round">${s.round}</div>
       <div class="live-hero-name">${s.name}</div>
@@ -359,11 +390,33 @@ function yearOf(s) {
   return s.start_ms ? new Date(s.start_ms).getFullYear() : null;
 }
 
+// Small set of abstract circuit-outline variants (not traces of any real
+// track) -- picked per session by a stable hash so the same race always
+// shows the same shape, and different races visually read as "different
+// tracks" without needing real geography data we don't have.
+const MINI_TRACK_VARIANTS = [
+  'M4 20 C4 10, 14 4, 24 6 C34 8, 32 18, 42 18 C52 18, 54 8, 64 6',
+  'M4 8 C14 4, 20 16, 30 12 C42 8, 44 20, 56 18 C64 17, 66 10, 66 6',
+  'M4 16 C10 6, 22 6, 26 14 C30 22, 42 22, 46 12 C50 4, 60 4, 66 12',
+  'M4 6 C4 18, 16 22, 22 14 C28 6, 40 6, 44 16 C48 24, 60 22, 66 14',
+  'M4 12 C10 4, 20 4, 24 10 C30 18, 40 20, 44 12 C48 6, 58 8, 66 16',
+];
+function hashCode(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function miniTrackSVG(sessionId) {
+  const d = MINI_TRACK_VARIANTS[hashCode(sessionId || '') % MINI_TRACK_VARIANTS.length];
+  return `<svg viewBox="0 0 70 26" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="${d}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+}
+
 function raceCard(s, i) {
   const statusClass = s.status === 'ended' ? 'ended' : 'idle';
   const statusLabel = s.status === 'ended' ? 'Completed' : 'Idle';
   return `
     <a class="race-card" href="/race?session=${encodeURIComponent(s.session_id)}" style="--i:${i}">
+      <div class="race-mini-track">${miniTrackSVG(s.session_id)}</div>
       <span class="status-badge ${statusClass}"><span class="dot"></span>${statusLabel}</span>
       <div class="race-round">${s.round}</div>
       <div class="race-name">${s.name}</div>

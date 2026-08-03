@@ -47,6 +47,11 @@ def save_subscription(subscription: dict, favorite_driver: str) -> None:
     state["subscription"] = subscription
     state["favorite_driver"] = favorite_driver
     state.setdefault("notif_state", {})
+    # Two independently-toggleable notification types (settings page) --
+    # both default on so a fresh subscribe reproduces today's behavior
+    # exactly, matching the existing single "enable notifications" switch.
+    state.setdefault("notify_session_start", True)
+    state.setdefault("notify_driver_events", True)
     _save_state(state)
 
 
@@ -54,8 +59,39 @@ def get_subscription() -> dict | None:
     return _load_state().get("subscription")
 
 
-def get_favorite_driver() -> str | None:
-    return _load_state().get("favorite_driver")
+def get_preferences() -> dict:
+    """Read-side of the settings page. `enabled` reflects whether a real
+    subscription is on file, not just whether prefs exist -- browser
+    permission can be revoked between visits, so this is the same
+    subscription-presence check send_push already relies on."""
+    state = _load_state()
+    return {
+        "enabled": bool(state.get("subscription")),
+        "favorite_driver": state.get("favorite_driver"),
+        "notify_session_start": state.get("notify_session_start", True),
+        "notify_driver_events": state.get("notify_driver_events", True),
+    }
+
+
+def save_preferences(notify_session_start: bool, notify_driver_events: bool, favorite_driver: str | None) -> None:
+    state = _load_state()
+    state["notify_session_start"] = notify_session_start
+    state["notify_driver_events"] = notify_driver_events
+    if favorite_driver:
+        state["favorite_driver"] = favorite_driver
+    _save_state(state)
+
+
+def clear_subscription() -> None:
+    """'Forget this device' -- drops the subscription and both toggles so a
+    later re-subscribe starts from the same clean defaults as a first-ever
+    signup, rather than resurrecting stale prior choices."""
+    state = _load_state()
+    state.pop("subscription", None)
+    state.pop("favorite_driver", None)
+    state.pop("notify_session_start", None)
+    state.pop("notify_driver_events", None)
+    _save_state(state)
 
 
 def get_notif_state(session_id: str) -> dict:
