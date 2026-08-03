@@ -18,7 +18,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from mcp_client import call_tool
+from mcp_client import LuciMCPError, call_tool
 
 VISION_CHUNK_MINUTES = 30
 VISION_LIMIT_PER_CHUNK = 500  # Luci's own cap
@@ -363,6 +363,151 @@ def _drop_post_retirement_noise(retirements: dict[str, int], points: list[dict])
 def _canon_driver(code: str) -> str | None:
     canonical = SURNAME_TO_CODE.get(code, code)
     return canonical if canonical in KNOWN_DRIVER_CODES else None
+
+
+# ---------------------------------------------------------------------------
+# Structured re-parse fallback for frames flagged as unreliable (see
+# .claude/skills/ocr-data-reliability/SKILL.md pattern 1). Real case: LIN and
+# LAW's gap values swapped between frames of the same lap because GAP_RE and
+# _extract_columnar_gaps both pair a driver-code token with a gap-value token
+# by ORDER OF APPEARANCE in Luci's already-flattened OCR text -- that order
+# is not stable frame-to-frame. Checked Luci's get_detail tool against real
+# data and confirmed every OCR block carries its own screen coordinates
+# (focusRect), and a driver's code sits at the same Y as its gap value (e.g.
+# real capture 7660: "NOR" at focusRect "460,498,71,25", "+1.7" at
+# "569,498,71,25" -- same y=498). Pairing by row instead of by text order is
+# a deterministic, no-LLM-call fix for exactly this failure mode -- cheaper
+# and more reliable than re-reading the screenshot with a vision model (which
+# was the first idea here, but Luci's screenshotPath files turned out to be
+# a proprietary format, not real JPEGs -- confirmed by hand, `claude -p`
+# can't decode them). Only called for laps that actually show the spread
+# signature, not on every capture -- matches the project's existing "no
+# per-frame LLM/extra work unless something's actually wrong" principle.
+UNRELIABLE_SPREAD_THRESHOLD = 8.0  # seconds; matches frontend's reliableMedian
+_GAP_VALUE_RE = re.compile(r"^[+-]?(\d+\.\d+)")
+
+
+def _parse_focus_rect(rect: str) -> tuple[int, int, int, int] | None:
+    try:
+        parts = [int(v) for v in rect.split(",")]
+        return (parts[0], parts[1], parts[2], parts[3]) if len(parts) == 4 else None
+    except (ValueError, AttributeError):
+        return None
+
+
+def _reread_structured_gaps(capture_id: int) -> dict[str, float] | None:
+    """Re-derive {driver_code: gap} for one capture from its individually
+    positioned OCR blocks, pairing driver and gap tokens by shared row
+    (Y-coordinate) instead of by order-of-appearance in flattened text.
+    Returns None on any failure -- callers keep the original regex-derived
+    reading in that case, never crash the extraction pipeline over this.
+
+    Real bug caught building this against actual data: a first version
+    matched blocks to "whichever row was seen first within Y-tolerance",
+    which cross-paired an unrelated sponsor-banner fragment ("PER" from a
+    Perplexity ad, x=1340) with HUL's real gap value (x=569) on a real
+    capture (8568) just because they happened to land within 15px of each
+    other vertically -- and silently dropped HUL's own reading in the
+    process. The leaderboard's driver/gap columns sit at x < 700 in every
+    real capture inspected; sponsor content is always x > 800. Restricting
+    to that region, then nearest-Y (not first-found) matching between two
+    separate driver/gap lists, fixes it -- verified against 8568 and
+    neighboring captures with the real leaderboard's actual columns only."""
+    try:
+        result = call_tool("get_detail", {"captureId": capture_id})
+    except LuciMCPError:
+        return None
+    blocks = ((result or {}).get("detail") or {}).get("blocks", [])
+    if not blocks:
+        return None
+    ROW_TOLERANCE = 15  # px; real block heights run ~21-30px
+    LEADERBOARD_MAX_X = 900  # px; widest real leaderboard row (long surname) reaches ~812, nearest sponsor-text collision risk ("PER" ad fragment) sits at ~1340
+    driver_blocks: list[tuple[int, str]] = []
+    gap_blocks: list[tuple[int, float]] = []
+    for b in blocks:
+        rect = _parse_focus_rect(b.get("focusRect", ""))
+        if not rect or rect[0] >= LEADERBOARD_MAX_X:
+            continue
+        y = rect[1]
+        text = (b.get("text") or "").strip()
+        for tok in _DRIVER_TOKEN_RE.findall(text):
+            driver = _canon_driver(tok)
+            if driver:
+                driver_blocks.append((y, driver))
+                break
+        gap_match = _GAP_VALUE_RE.match(text)
+        if gap_match:
+            gap_blocks.append((y, float(gap_match.group(1))))
+    paired: dict[str, float] = {}
+    used_gap_indices: set[int] = set()
+    for y, driver in driver_blocks:
+        best_idx, best_dist = None, ROW_TOLERANCE + 1
+        for i, (gy, _gap) in enumerate(gap_blocks):
+            if i in used_gap_indices:
+                continue
+            dist = abs(gy - y)
+            if dist <= ROW_TOLERANCE and dist < best_dist:
+                best_idx, best_dist = i, dist
+        if best_idx is not None:
+            used_gap_indices.add(best_idx)
+            paired[driver] = gap_blocks[best_idx][1]
+    return paired or None
+
+
+def _flag_unreliable_laps(points: list[dict]) -> set[int]:
+    """Same spread check as the frontend's reliableMedian (index.html),
+    run here so the (more expensive, network-calling) correction below
+    only targets laps that actually need it."""
+    by_lap_driver: dict[tuple[int, str], list[float]] = {}
+    for p in points:
+        for code, val in p["gaps"].items():
+            by_lap_driver.setdefault((p["lap"], code), []).append(val)
+    flagged = set()
+    for (lap, _code), vals in by_lap_driver.items():
+        if len(vals) >= 2 and max(vals) - min(vals) > UNRELIABLE_SPREAD_THRESHOLD:
+            flagged.add(lap)
+    return flagged
+
+
+def correct_unreliable_frames(
+    points: list[dict], vision_entries: list[dict], session_dir: Path
+) -> list[dict]:
+    """For laps whose raw multi-frame readings show the swap-corruption
+    spread signature, re-derive each contributing frame's gaps via
+    _reread_structured_gaps and replace the regex-derived values wholesale
+    for that frame. Cached per capture id to disk (vision_corrections.json)
+    so repeated merge_and_write calls during a still-live session don't
+    re-hit get_detail for frames already resolved."""
+    flagged_laps = _flag_unreliable_laps(points)
+    if not flagged_laps:
+        return points
+
+    cache_path = session_dir / "vision_corrections.json"
+    cache: dict[str, dict | None] = (
+        json.loads(cache_path.read_text(encoding="utf-8")) if cache_path.exists() else {}
+    )
+    ts_to_capture = {e["timestamp"]: e.get("captureId") for e in vision_entries if e.get("captureId")}
+
+    corrected = []
+    cache_dirty = False
+    for p in points:
+        if p["lap"] not in flagged_laps:
+            corrected.append(p)
+            continue
+        capture_id = ts_to_capture.get(p["timestamp"])
+        if capture_id is None:
+            corrected.append(p)
+            continue
+        key = str(capture_id)
+        if key not in cache:
+            cache[key] = _reread_structured_gaps(capture_id)
+            cache_dirty = True
+        replacement = cache[key]
+        corrected.append({**p, "gaps": replacement} if replacement else p)
+
+    if cache_dirty:
+        cache_path.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+    return corrected
 
 
 # ---------------------------------------------------------------------------
@@ -711,6 +856,7 @@ def merge_and_write(session_id: str, vision_entries: list[dict], audio_segments:
                 "text": e.get("text", ""),
                 "browserUrl": e.get("browserUrl"),
                 "screenshotPath": e.get("screenshotPath"),
+                "captureId": e.get("captureId"),
             }
         )
     for s in audio_segments:
@@ -732,6 +878,7 @@ def merge_and_write(session_id: str, vision_entries: list[dict], audio_segments:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     raw_series, total_laps = extract_numeric_series(vision_entries)
+    raw_series = correct_unreliable_frames(raw_series, vision_entries, session_dir)
     retirements = detect_retirements(vision_entries, total_laps)
     series = _drop_post_retirement_noise(retirements, raw_series)
     (session_dir / "strategy_trend.json").write_text(
