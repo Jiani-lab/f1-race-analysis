@@ -14,3 +14,6 @@ wheels/
 backend/sessions/*
 !backend/sessions/.gitkeep
 backend/push_subscription.json
+
+# Cloudflare Worker build cache
+worker/.wrangler/

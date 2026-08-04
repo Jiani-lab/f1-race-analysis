@@ -1,0 +1,12 @@
+name = "f1-dashboard-fallback"
+main = "src/worker.js"
+compatibility_date = "2026-08-01"
+
+kv_namespaces = [
+  { binding = "F1_SNAPSHOT", id = "4327f77bb8f844a3b81ba48b675868bc" }
+]
+
+routes = [
+  { pattern = "f1lightout.com/*", zone_name = "f1lightout.com" },
+  { pattern = "www.f1lightout.com/*", zone_name = "f1lightout.com" }
+]
