@@ -28,6 +28,12 @@ import retrieval
 from detect import is_f1_live_now
 
 POLL_INTERVAL_SEC = 90
+# How long after a session ends a fresh detection still counts as "the same
+# broadcast reconnecting" rather than a new race -- generous enough to
+# cover a real stream stall/buffer/ad-break (several missed poll ticks),
+# short enough that two genuinely distinct sessions hours apart (Saturday
+# quali, Sunday race) are never merged.
+SESSION_RESUME_GAP_MS = 15 * 60 * 1000
 FRONTEND_HOME = Path(__file__).parent.parent / "frontend" / "home.html"
 FRONTEND_SETTINGS = Path(__file__).parent.parent / "frontend" / "settings.html"
 FRONTEND_CHAT = Path(__file__).parent.parent / "frontend" / "chat.html"
@@ -42,13 +48,69 @@ NOTIF_COOLDOWN_MS = 8 * 60 * 1000
 NOTIF_MAX_PER_RACE = 6
 
 # Real Grand Prix name/round for sessions captured before this per-session
-# display metadata existed -- new sessions (auto-created by state.start())
-# don't know their race name from detection alone (bilibili + OCR only
-# confirms "an F1 broadcast is on", not which round), so they fall back to
-# a generic "F1 Live Session" label in _display_info until manually named.
+# display metadata existed, or wherever the calendar auto-match below gets
+# something wrong (sponsor-prefixed official names in particular -- the
+# calendar only knows the plain country name, not "AWS Hungarian Grand
+# Prix"). Checked first, before the calendar lookup, so a manual entry
+# always wins.
 SESSION_DISPLAY_NAMES = {
     "race-1785212472206": {"name": "FORMULA 1 AWS HUNGARIAN GRAND PRIX", "round": "ROUND 11 / 2026"},
 }
+
+# 2026 F1 calendar (race-weekend date range, country/host name, round number)
+# -- used to auto-name a freshly-detected session instead of leaving it as
+# the generic "F1 LIVE SESSION -- <date>" placeholder until someone manually
+# adds it to SESSION_DISPLAY_NAMES above. Matched by date, not hardcoded per
+# session_id, so every future auto-detected race gets a real name for free.
+F1_2026_CALENDAR = [
+    ("2026-03-06", "2026-03-08", "AUSTRALIAN"),
+    ("2026-03-13", "2026-03-15", "CHINESE"),
+    ("2026-03-27", "2026-03-29", "JAPANESE"),
+    ("2026-04-10", "2026-04-12", "BAHRAIN"),
+    ("2026-04-17", "2026-04-19", "SAUDI ARABIAN"),
+    ("2026-05-01", "2026-05-03", "MIAMI"),
+    ("2026-05-22", "2026-05-24", "CANADIAN"),
+    ("2026-06-05", "2026-06-07", "MONACO"),
+    ("2026-06-12", "2026-06-14", "SPANISH"),
+    ("2026-06-26", "2026-06-28", "AUSTRIAN"),
+    ("2026-07-03", "2026-07-05", "BRITISH"),
+    ("2026-07-17", "2026-07-19", "BELGIAN"),
+    ("2026-07-24", "2026-07-26", "HUNGARIAN"),
+    ("2026-08-21", "2026-08-23", "DUTCH"),
+    ("2026-09-04", "2026-09-06", "ITALIAN"),
+    ("2026-09-11", "2026-09-13", "MADRID"),
+    ("2026-09-24", "2026-09-26", "AZERBAIJAN"),
+    ("2026-10-09", "2026-10-11", "SINGAPORE"),
+    ("2026-10-23", "2026-10-25", "UNITED STATES"),
+    ("2026-10-30", "2026-11-01", "MEXICO CITY"),
+    ("2026-11-06", "2026-11-08", "SAO PAULO"),
+    ("2026-11-19", "2026-11-21", "LAS VEGAS"),
+    ("2026-11-27", "2026-11-29", "QATAR"),
+    ("2026-12-04", "2026-12-06", "ABU DHABI"),
+]
+# Real broadcast coverage often starts a bit before/after the official
+# weekend window (pre-race build-up shows, delayed replays, source
+# calendars disagreeing by a day or two) -- checked against the one real
+# session already on record (the manually-named Hungarian GP: captured
+# 2026-07-28, researched calendar says weekend of 2026-07-24 to 07-26) --
+# a 1-day buffer wasn't enough to cover that real drift, 3 days is.
+_CALENDAR_SLACK_DAYS = 3
+
+
+def _lookup_calendar_gp(start_ms: int | None) -> dict | None:
+    if start_ms is None:
+        return None
+    day = time.strftime("%Y-%m-%d", time.localtime(start_ms / 1000))
+    for round_num, (start_date, end_date, host) in enumerate(F1_2026_CALENDAR, start=1):
+        lo = time.strftime("%Y-%m-%d", time.localtime(
+            time.mktime(time.strptime(start_date, "%Y-%m-%d")) - _CALENDAR_SLACK_DAYS * 86400
+        ))
+        hi = time.strftime("%Y-%m-%d", time.localtime(
+            time.mktime(time.strptime(end_date, "%Y-%m-%d")) + _CALENDAR_SLACK_DAYS * 86400
+        ))
+        if lo <= day <= hi:
+            return {"name": f"FORMULA 1 {host} GRAND PRIX", "round": f"ROUND {round_num} / 2026"}
+    return None
 # Coarser than the 90s live-detection tick on purpose: event phrasing shells
 # out to `claude -p` (real wall-clock cost per event, ~15-90s each measured
 # against real events), whereas detection is a cheap Luci query. A separate
@@ -72,6 +134,18 @@ class SessionState:
         self.status = "active"
         self.session_id = f"race-{now}"
         self.start_ms = now
+        self.end_ms = None
+
+    def resume(self):
+        """Reactivates the existing session_id in place of start() -- for
+        when detection drops out briefly (stream buffering, a stall long
+        enough to miss one 90s poll tick) and picks back up moments later.
+        Keeps session_id/start_ms unchanged so it is genuinely a
+        continuation: the same merged.jsonl keeps being appended to, and
+        push.py's per-session notif_state (cooldown/count) isn't reset,
+        so a flaky reconnect can't grant extra notification budget for
+        what is really one race."""
+        self.status = "active"
         self.end_ms = None
 
     def end(self):
@@ -123,15 +197,37 @@ async def _detection_loop():
     while True:
         try:
             if state.status != "active" and is_f1_live_now():
-                state.start()
-                print(f"[watcher] F1 stream detected, started session {state.session_id}")
-                info = _display_info(state.session_id, state.start_ms, None, "active")
-                if push.get_preferences()["notify_session_start"]:
-                    push.send_push(
-                        "New F1 session detected",
-                        f"{info['name']} is on screen now.",
-                        f"/race?session={state.session_id}",
-                    )
+                # A stream that stutters (buffering, a brief drop) can miss
+                # one or two 90s poll ticks and read as "not active" for a
+                # few minutes before reconnecting -- without this check that
+                # would start() a brand-new session_id for what's really the
+                # same broadcast, duplicating it on the homepage, resetting
+                # the push notification cooldown/count for what should still
+                # be one race's budget, and firing a second "New F1 session
+                # detected" push moments after the first. Only a genuine
+                # same-race reconnect qualifies: same session_id already on
+                # record and it ended recently enough that a new broadcast
+                # starting from scratch is implausible.
+                is_reconnect = (
+                    state.session_id is not None
+                    and state.end_ms is not None
+                    and (int(time.time() * 1000) - state.end_ms) <= SESSION_RESUME_GAP_MS
+                )
+                if is_reconnect:
+                    state.resume()
+                    print(f"[watcher] F1 stream re-detected within {SESSION_RESUME_GAP_MS // 1000}s of the last "
+                          f"one ending -- treating as a reconnect, resuming session {state.session_id} "
+                          f"(no duplicate session, no duplicate push)")
+                else:
+                    state.start()
+                    print(f"[watcher] F1 stream detected, started session {state.session_id}")
+                    info = _display_info(state.session_id, state.start_ms, None, "active")
+                    if push.get_preferences()["notify_session_start"]:
+                        push.send_push(
+                            "New F1 session detected",
+                            f"{info['name']} is on screen now.",
+                            f"/race?session={state.session_id}",
+                        )
         except Exception as e:  # noqa: BLE001 -- keep the loop alive no matter what
             print(f"[watcher] detection error (will retry): {e}")
         await asyncio.sleep(POLL_INTERVAL_SEC)
@@ -272,7 +368,7 @@ def _current_window(session_id: str) -> tuple[int, int]:
 
 
 def _display_info(session_id: str, start_ms: int | None, end_ms: int | None, status: str) -> dict:
-    known = SESSION_DISPLAY_NAMES.get(session_id, {})
+    known = SESSION_DISPLAY_NAMES.get(session_id) or _lookup_calendar_gp(start_ms) or {}
     date_str = time.strftime("%Y-%m-%d", time.localtime(start_ms / 1000)) if start_ms else "unknown date"
     return {
         "session_id": session_id,
