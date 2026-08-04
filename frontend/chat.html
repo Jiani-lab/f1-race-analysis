@@ -6,7 +6,7 @@
 <title>Ask — F1 Race Control</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;1,900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,500;0,600;0,700;0,800;0,900;1,900&display=swap" rel="stylesheet">
 <style>
   :root {
     --track:          #050506;
@@ -52,7 +52,7 @@
   .mh-title { font: italic 900 20px/1.15 var(--sans-display); letter-spacing: -0.005em; }
   .mh-sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
 
-  .race-select { background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 9px 12px; border-radius: 9px; font: 600 13px var(--sans); min-width: 200px; }
+  .race-select { background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 9px 12px; border-radius: 9px; font: 600 13px var(--sans-display); min-width: 200px; }
 
   main { flex: 1 1 auto; max-width: 760px; width: 100%; margin: 0 auto; padding: 18px 20px 0; display: flex; flex-direction: column; min-height: 0; }
   .empty-note { margin: auto; text-align: center; color: var(--ink-faint); font: 500 14px/1.7 var(--sans); max-width: 380px; }
@@ -72,11 +72,12 @@
   .sources summary:hover { color: var(--ink-dim); }
   .source-row { display: flex; gap: 8px; margin-top: 6px; font: 500 12px/1.5 var(--sans); color: var(--ink-dim); }
   .source-row .lap-tag { flex: 0 0 auto; font: 700 10px/1 var(--mono); color: var(--f1-red-bright); background: var(--f1-red-dim); padding: 3px 6px; border-radius: 4px; }
+  .via-web-tag { display: inline-block; margin-top: 6px; font: 700 10px/1 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); background: rgba(255,255,255,0.06); padding: 3px 7px; border-radius: 4px; }
 
   .composer { flex: 0 0 auto; display: flex; gap: 8px; padding: 14px 0 20px; border-top: 1px solid var(--hairline); }
   .composer input { flex: 1; background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 11px 14px; border-radius: 10px; font: 500 14.5px var(--sans); }
   .composer input:disabled { opacity: .5; }
-  .composer button { background: var(--f1-red); color: #fff; border: none; padding: 0 20px; border-radius: 10px; font: 800 13px var(--sans); cursor: pointer; }
+  .composer button { background: var(--f1-red); color: #fff; border: none; padding: 0 20px; border-radius: 10px; font: 800 13px var(--sans-display); cursor: pointer; }
   .composer button:disabled { opacity: .5; cursor: default; }
   .composer button:not(:disabled):hover { background: var(--f1-red-bright); }
 </style>
@@ -102,7 +103,7 @@
         </span>
         <div>
           <div class="mh-title">Ask about a race</div>
-          <div class="mh-sub">Grounded in real detected events + commentary — not general F1 knowledge</div>
+          <div class="mh-sub">Answers this race's own detected events + commentary first, falls back to web search for general F1 questions</div>
         </div>
       </div>
     </div>
@@ -114,7 +115,8 @@
   <div class="thread" id="thread"></div>
   <div class="empty-note" id="empty-note" style="display:none">
     Pick a race above, then ask anything — <b>"when did Norris pit?"</b>, <b>"what happened with Hamilton's penalty?"</b>,
-    <b>"who was fighting for 3rd mid-race?"</b> Answers only use what was actually detected/said during that broadcast.
+    <b>"who won the 2019 championship?"</b> Questions about this race use what was actually detected/said during
+    that broadcast; general F1 questions fall back to a web search.
   </div>
   <form class="composer" id="composer">
     <input type="text" id="question-input" placeholder="Ask about this race…" autocomplete="off" disabled />
@@ -201,7 +203,11 @@ $('composer').addEventListener('submit', async ev => {
     });
     pending.querySelector('.bubble').textContent = result.answer;
     pending.querySelector('.bubble').classList.remove('pending');
-    renderSources(pending, result.sources);
+    if (result.answered_via === 'web') {
+      pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
+    } else {
+      renderSources(pending, result.sources);
+    }
   } catch (e) {
     pending.querySelector('.bubble').textContent = 'Error: ' + e.message;
     pending.querySelector('.bubble').classList.remove('pending');

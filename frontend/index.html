@@ -12,7 +12,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
 <title>F1 Race Control — Live</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,700;1,900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,500;0,600;0,700;0,800;0,900;1,900&display=swap" rel="stylesheet">
 <style>
   :root {
     --track:          #050506;
@@ -86,7 +86,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
 
   /* ---------- replay bar ---------- */
   .replay-bar { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 14px; margin: 4px 0 16px; flex-wrap: wrap; }
-  .replay-play { background: var(--f1-red); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font: 800 12.5px var(--sans); cursor: pointer; flex: 0 0 auto; }
+  .replay-play { background: var(--f1-red); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font: 800 12.5px var(--sans-display); cursor: pointer; flex: 0 0 auto; }
   .replay-play:hover { background: #ff2a1f; }
   .replay-slider { flex: 1; min-width: 160px; accent-color: var(--f1-red); }
   .replay-lap-readout { font: 800 15px/1 var(--mono); flex: 0 0 auto; min-width: 62px; }
@@ -108,7 +108,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
   .sec-head .chip { width: 5px; height: 14px; background: var(--f1-red); border-radius: 1px; }
   .sec-head h2 { font: 700 15.5px/1 var(--sans-display); letter-spacing: 0.03em; text-transform: uppercase; margin: 0; }
-  .sec-head .note { font: 500 14.5px var(--sans); color: var(--ink-faint); }
+  .sec-head .note { font: 500 14.5px var(--sans-display); color: var(--ink-faint); }
   .sec-head .refresh-btn { margin-left: auto; font: 700 11.5px var(--mono); letter-spacing: 0.04em; color: var(--ink-dim); background: rgba(255,255,255,0.06); border: 1px solid var(--hairline); padding: 4px 10px; border-radius: 20px; cursor: pointer; }
   .sec-head .refresh-btn:hover { background: rgba(255,255,255,0.1); color: var(--ink); }
   .sec-head .refresh-btn:disabled { opacity: .5; cursor: default; }
@@ -126,7 +126,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .impact-body { flex: 1; min-width: 0; }
   .impact-award { display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(90deg, var(--team-mcl), #cc6600); font: 800 9.5px/1 var(--mono); letter-spacing: 0.1em; padding: 4px 10px; border-radius: 20px; color: #1a0f00; }
   .impact-award svg { width: 12px; height: 12px; display: block; }
-  .impact-headline { font: 800 20px/1.3 var(--sans); margin-top: 10px; }
+  .impact-headline { font: 800 20px/1.3 var(--sans-display); margin-top: 10px; }
   .impact-meta { display: flex; gap: 18px; margin-top: 12px; flex-wrap: wrap; }
   .impact-meta .m .v { font: 800 15px/1 var(--mono); color: var(--team-mcl); }
   .impact-meta .m .l { font: 700 9px/1 var(--mono); color: var(--ink-faint); letter-spacing: 0.08em; margin-top: 3px; }
@@ -144,8 +144,8 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .driver-card .pos { font: 800 11.5px/1 var(--mono); color: var(--ink-faint); }
   .driver-card .num { font: 800 11.5px/1 var(--mono); padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.08); }
   .driver-card .card-id { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
-  .driver-card .code { font: 800 22px/1 var(--sans); letter-spacing: 0.01em; }
-  .driver-card .team { font: 600 11.5px/1 var(--sans); color: var(--ink-dim); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .driver-card .code { font: 800 22px/1 var(--sans-display); letter-spacing: 0.01em; }
+  .driver-card .team { font: 600 11.5px/1 var(--sans-display); color: var(--ink-dim); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.04em; }
   .helmet-badge { flex: 0 0 auto; width: 56px; height: 56px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.4)); transition: transform .25s cubic-bezier(.16,1,.3,1); }
   .driver-card:hover .helmet-badge { transform: rotate(-4deg) scale(1.06); }
   .driver-card.retired .helmet-badge { filter: grayscale(1) drop-shadow(0 4px 10px rgba(0,0,0,0.4)); opacity: 0.6; }
@@ -155,7 +155,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .momentum-meter { margin-top: 18px; height: 10px; border-radius: 6px; background: linear-gradient(90deg, var(--f1-red), #333 48%, #333 52%, var(--green)); position: relative; }
   .momentum-needle { position: absolute; top: -4px; width: 3px; height: 18px; background: #fff; border-radius: 2px; transition: left .6s cubic-bezier(.16,1,.3,1); }
   .momentum-labels { display: flex; justify-content: space-between; margin-top: 6px; font: 700 9px/1 var(--mono); color: var(--ink-faint); letter-spacing: 0.06em; }
-  .momentum-verdict { margin-top: 14px; font: 800 14.5px/1.35 var(--sans); }
+  .momentum-verdict { margin-top: 14px; font: 800 14.5px/1.35 var(--sans-display); }
   .momentum-sub { font: 600 11.5px/1.5 var(--mono); color: var(--ink-dim); margin-top: 6px; }
 
   /* ---------- position ticker ---------- */
@@ -181,7 +181,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .tl-dot { position: absolute; left: -26px; top: 2px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; border: 2px solid var(--track); }
   .tl-dot svg { width: 13px; height: 13px; display: block; }
   .tl-lap { font: 800 9px/1 var(--mono); color: var(--ink-faint); }
-  .tl-fact { font: 700 15px/1.4 var(--sans); margin-top: 3px; }
+  .tl-fact { font: 700 15px/1.4 var(--sans-display); margin-top: 3px; }
   .tl-insight { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; font: 600 11.5px/1.5 var(--sans); color: var(--green); background: var(--green-dim); padding: 7px 10px; border-radius: 6px; }
   .tl-insight.uncertain { color: var(--amber); background: rgba(245,166,35,0.1); }
   .tl-src { font: 500 10.5px var(--mono); color: var(--ink-faint); margin-top: 4px; }
@@ -192,13 +192,13 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   svg.chart { width: 100%; height: 280px; display: block; overflow: visible; }
   .axis-label { fill: var(--ink-faint); font-size: 11px; font-family: var(--mono); }
   .crosshair { stroke: var(--hairline-strong); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
-  .chart-verdict { margin-top: 12px; padding: 10px 12px; background: rgba(255,255,255,0.04); border-radius: 8px; font: 800 14.5px/1.5 var(--sans); }
+  .chart-verdict { margin-top: 12px; padding: 10px 12px; background: rgba(255,255,255,0.04); border-radius: 8px; font: 800 14.5px/1.5 var(--sans-display); }
   .chart-verdict .sub { display: block; font: 600 11.5px/1.4 var(--mono); color: var(--ink-faint); margin-top: 4px; font-weight: 600; }
   .legend { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
   .legend-item { display: flex; align-items: center; gap: 6px; font: 700 11.5px var(--mono); color: var(--ink-dim); }
   .legend-swatch { width: 14px; height: 8px; border-radius: 2px; }
   .tooltip { position: absolute; pointer-events: none; opacity: 0; transition: opacity .1s; background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 8px; padding: 8px 10px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); white-space: nowrap; font-family: var(--mono); }
-  details.table-view summary { cursor: pointer; font: 600 14.5px var(--sans); color: var(--ink-faint); margin-top: 12px; }
+  details.table-view summary { cursor: pointer; font: 600 14.5px var(--sans-display); color: var(--ink-faint); margin-top: 12px; }
   table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 10px; font: 500 13px var(--mono); }
   th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--hairline); }
   th { color: var(--ink-faint); font-weight: 700; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.06em; }
@@ -226,7 +226,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .whatif-caveat { font: 600 11.5px var(--mono); color: var(--amber); margin-top: 2px; letter-spacing: 0.02em; }
   .whatif-form { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
   .whatif-form input { flex: 1; min-width: 220px; background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 10px 12px; border-radius: 8px; font: 500 14.5px var(--sans); }
-  .whatif-form button { background: var(--f1-red); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font: 800 12.5px var(--sans); cursor: pointer; }
+  .whatif-form button { background: var(--f1-red); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font: 800 12.5px var(--sans-display); cursor: pointer; }
   .whatif-form button:disabled { opacity: .5; cursor: default; }
   .whatif-out { margin-top: 14px; font: 500 14px/1.75 var(--sans); color: var(--ink-dim); white-space: pre-wrap; }
   .whatif-out:empty::before { content: 'Click the button above to generate a live simulation from real race data.'; color: var(--ink-faint); font-style: italic; }
@@ -236,12 +236,12 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .scenario { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
   .scenario .icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex: 0 0 auto; }
   .scenario .body { flex: 1; min-width: 0; }
-  .scenario .name { font: 800 12.5px var(--sans); }
+  .scenario .name { font: 800 12.5px var(--sans-display); }
   .scenario .desc { font: 500 11px var(--sans); color: var(--ink-dim); margin-top: 2px; }
   .scenario .bar-bg { height: 7px; background: rgba(255,255,255,.06); border-radius: 4px; overflow: hidden; margin-top: 6px; }
   .scenario .bar-fill { height: 100%; border-radius: 4px; }
   .scenario .pct { font: 900 17px var(--mono); flex: 0 0 auto; width: 48px; text-align: right; }
-  .verdict { margin-top: 14px; padding: 10px 12px; background: var(--f1-red-dim); border: 1px solid rgba(225,6,0,0.35); border-radius: 8px; font: 600 13.5px/1.6 var(--sans); }
+  .verdict { margin-top: 14px; padding: 10px 12px; background: var(--f1-red-dim); border: 1px solid rgba(225,6,0,0.35); border-radius: 8px; font: 600 13.5px/1.6 var(--sans-display); }
   details.full-reasoning summary { cursor: pointer; font: 700 12px var(--mono); letter-spacing: 0.04em; color: var(--f1-red); margin-top: 14px; text-transform: uppercase; }
   .full-reasoning .body { font: 400 13.5px/1.7 var(--sans); color: var(--ink-dim); white-space: pre-wrap; margin-top: 8px; border-top: 1px solid var(--hairline); padding-top: 8px; }
 
@@ -271,20 +271,20 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .onboard-overlay.hidden { display: none; }
   .onboard-card { background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 16px; padding: 26px; max-width: 440px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
   .onboard-eyebrow { font: 800 10.5px/1 var(--mono); letter-spacing: 0.12em; color: var(--f1-red); text-transform: uppercase; }
-  .onboard-title { font: 800 19px/1.3 var(--sans); margin-top: 8px; }
+  .onboard-title { font: 800 19px/1.3 var(--sans-display); margin-top: 8px; }
   .onboard-sub { font: 500 13px/1.5 var(--sans); color: var(--ink-dim); margin-top: 6px; }
   .onboard-field { margin-top: 18px; }
   .onboard-field label { font: 700 11px/1 var(--mono); color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 8px; }
-  .onboard-select, .onboard-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 10px 12px; border-radius: 8px; font: 500 14px var(--sans); }
+  .onboard-select, .onboard-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 10px 12px; border-radius: 8px; font: 500 14px var(--sans-display); }
   .onboard-options { display: flex; flex-direction: column; gap: 8px; }
-  .onboard-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: 8px; cursor: pointer; font: 600 13.5px var(--sans); }
+  .onboard-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--hairline); border-radius: 8px; cursor: pointer; font: 600 13.5px var(--sans-display); }
   .onboard-option:hover { background: rgba(255,255,255,0.04); }
   .onboard-option.selected { border-color: var(--f1-red); background: var(--f1-red-dim); }
   .onboard-input.other-input { margin-top: 10px; }
   .onboard-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; gap: 10px; }
-  .onboard-skip { background: none; border: none; color: var(--ink-faint); font: 600 12.5px var(--sans); cursor: pointer; padding: 6px 0; }
+  .onboard-skip { background: none; border: none; color: var(--ink-faint); font: 600 12.5px var(--sans-display); cursor: pointer; padding: 6px 0; }
   .onboard-skip:hover { color: var(--ink-dim); }
-  .onboard-next, .onboard-submit { background: var(--f1-red); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font: 800 12.5px var(--sans); cursor: pointer; }
+  .onboard-next, .onboard-submit { background: var(--f1-red); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font: 800 12.5px var(--sans-display); cursor: pointer; }
   .onboard-next:hover, .onboard-submit:hover { background: #ff2a1f; }
   .onboard-loading { font: 500 13px var(--sans); color: var(--ink-faint); font-style: italic; padding: 10px 0; }
 
@@ -297,11 +297,11 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .notif-item { padding: 10px; border-radius: 8px; }
   .notif-item + .notif-item { margin-top: 2px; border-top: 1px solid var(--hairline); padding-top: 12px; }
   .notif-item .lap-tag { font: 700 9.5px/1 var(--mono); color: var(--f1-red); text-transform: uppercase; margin-bottom: 4px; display: block; letter-spacing: 0.04em; }
-  .notif-item .hook { font: 600 13px/1.5 var(--sans); color: var(--ink); }
-  .notif-run-btn { margin-top: 8px; background: var(--f1-red-dim); color: #ff6a5f; border: 1px solid rgba(225,6,0,0.35); padding: 6px 10px; border-radius: 6px; font: 700 11px var(--sans); cursor: pointer; }
+  .notif-item .hook { font: 600 13px/1.5 var(--sans-display); color: var(--ink); }
+  .notif-run-btn { margin-top: 8px; background: var(--f1-red-dim); color: #ff6a5f; border: 1px solid rgba(225,6,0,0.35); padding: 6px 10px; border-radius: 6px; font: 700 11px var(--sans-display); cursor: pointer; }
   .notif-run-btn:hover { background: rgba(225,6,0,0.28); }
   .notif-run-btn:disabled { opacity: .6; cursor: default; }
-  .notif-run-result { margin-top: 8px; font: 600 12.5px/1.5 var(--sans); color: var(--green); }
+  .notif-run-result { margin-top: 8px; font: 600 12.5px/1.5 var(--sans-display); color: var(--green); }
 
   /* ---------- floating chat widget: independent of the replay slider,
      stays fixed bottom-right regardless of lap/scroll state ---------- */
@@ -313,7 +313,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .chat-widget.open .chat-fab .icon-close { display: block; }
   .chat-panel { display: none; position: absolute; right: 0; bottom: calc(100% + 12px); width: 340px; max-width: calc(100vw - 44px); height: 460px; max-height: calc(100vh - 140px); background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.55); flex-direction: column; overflow: hidden; }
   .chat-widget.open .chat-panel { display: flex; animation: rise .18s var(--ease-out); }
-  .chat-panel-head { flex: 0 0 auto; padding: 12px 14px; background: linear-gradient(180deg, #170f0e 0%, var(--surface-raised) 100%); border-bottom: 1px solid var(--hairline); font: 800 12.5px/1 var(--sans); display: flex; align-items: center; justify-content: space-between; }
+  .chat-panel-head { flex: 0 0 auto; padding: 12px 14px; background: linear-gradient(180deg, #170f0e 0%, var(--surface-raised) 100%); border-bottom: 1px solid var(--hairline); font: 800 12.5px/1 var(--sans-display); display: flex; align-items: center; justify-content: space-between; }
   .chat-panel-head .sub { display: block; font: 500 10.5px/1 var(--mono); color: var(--ink-faint); margin-top: 4px; letter-spacing: .02em; }
   .cw-thread { flex: 1 1 auto; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
   .cw-empty { margin: auto; text-align: center; color: var(--ink-faint); font: 500 12.5px/1.6 var(--sans); padding: 0 10px; }
@@ -324,6 +324,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .cw-msg.user .cw-bubble { background: var(--f1-red); color: #fff; border-bottom-right-radius: 3px; }
   .cw-msg.bot .cw-bubble { background: var(--surface); border: 1px solid var(--hairline); border-bottom-left-radius: 3px; }
   .cw-bubble.pending { color: var(--ink-faint); font-style: italic; }
+  .via-web-tag { display: inline-block; margin-top: 5px; font: 700 9.5px/1 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); background: rgba(255,255,255,0.06); padding: 3px 6px; border-radius: 4px; }
   .cw-composer { flex: 0 0 auto; display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--hairline); }
   .cw-composer input { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 8px 10px; border-radius: 8px; font: 500 13px var(--sans); }
   .cw-composer input:disabled { opacity: .5; }
@@ -500,7 +501,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
       <div>Ask about this race<span class="sub">Grounded in what's happened up to the current lap</span></div>
     </div>
     <div class="cw-thread" id="cw-thread">
-      <div class="cw-empty" id="cw-empty">Ask anything about this race so far — e.g. "when did Norris pit?" Answers only use what's actually been detected up to the lap you're viewing.</div>
+      <div class="cw-empty" id="cw-empty">Ask anything — e.g. "when did Norris pit?" (uses what's been detected up to the lap you're viewing), or a general F1 question like "who won the 2019 championship?" (falls back to web search).</div>
     </div>
     <form class="cw-composer" id="cw-composer">
       <input type="text" id="cw-input" placeholder="Ask…" autocomplete="off" />
@@ -1717,6 +1718,9 @@ document.getElementById('cw-composer').addEventListener('submit', async ev => {
     });
     pending.querySelector('.cw-bubble').textContent = result.answer;
     pending.querySelector('.cw-bubble').classList.remove('pending');
+    if (result.answered_via === 'web') {
+      pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
+    }
   } catch (e) {
     pending.querySelector('.cw-bubble').textContent = 'Error: ' + e.message;
     pending.querySelector('.cw-bubble').classList.remove('pending');
