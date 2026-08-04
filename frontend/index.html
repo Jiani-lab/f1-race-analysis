@@ -1718,7 +1718,9 @@ document.getElementById('cw-composer').addEventListener('submit', async ev => {
     });
     pending.querySelector('.cw-bubble').textContent = result.answer;
     pending.querySelector('.cw-bubble').classList.remove('pending');
-    if (result.answered_via === 'web') {
+    if (result.answered_via === 'web_quota_exceeded') {
+      pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search — shared key quota reached</span>');
+    } else if (result.answered_via === 'web') {
       pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
     }
   } catch (e) {

@@ -203,7 +203,9 @@ $('composer').addEventListener('submit', async ev => {
     });
     pending.querySelector('.bubble').textContent = result.answer;
     pending.querySelector('.bubble').classList.remove('pending');
-    if (result.answered_via === 'web') {
+    if (result.answered_via === 'web_quota_exceeded') {
+      pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search — shared key quota reached, add your own Voyage key in .env for full race Q&amp;A</span>');
+    } else if (result.answered_via === 'web') {
       pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
     } else {
       renderSources(pending, result.sources);

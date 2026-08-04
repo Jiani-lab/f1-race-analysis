@@ -13,6 +13,8 @@ import threading
 import uuid
 from pathlib import Path
 
+from retrieval import KNOWN_DRIVER_CODES
+
 SESSIONS_DIR = Path(__file__).parent / "sessions"
 
 COMMENTATOR_TONE_NOTE = (
@@ -501,7 +503,18 @@ def chat_answer(session_id: str, question: str, max_lap: int | None = None) -> d
         if at_or_before:
             cutoff_ms = max(c["timestamp"] for c in at_or_before)
 
-    results = rag.search(session_id, question, top_k=6, max_lap=max_lap, cutoff_ms=cutoff_ms)
+    # A shared-key installation that's used up its local quota can't do
+    # local-grounded search (that needs an embedding call too, for the
+    # query itself) -- but the web-search fallback below is Voyage-free
+    # (pure claude -p), so degrade to "web only" rather than failing the
+    # whole chat outright. answered_via distinguishes this from a normal
+    # web answer so the frontend can explain why (add your own key).
+    quota_exceeded = False
+    try:
+        results = rag.search(session_id, question, top_k=6, max_lap=max_lap, cutoff_ms=cutoff_ms)
+    except rag.VoyageQuotaExceeded:
+        quota_exceeded = True
+        results = []
 
     # Two-layer fallback to general web-connected F1 knowledge, reusing the
     # exact "tell claude -p to use web search" pattern already proven in
@@ -521,7 +534,11 @@ def chat_answer(session_id: str, question: str, max_lap: int | None = None) -> d
 
     web_prompt = f"{CHAT_WEB_FALLBACK_SYSTEM_NOTE}\n\nQuestion: {question}"
     web_answer = _run_claude(web_prompt, timeout=90.0)
-    return {"answer": web_answer, "sources": [], "answered_via": "web"}
+    return {
+        "answer": web_answer,
+        "sources": [],
+        "answered_via": "web_quota_exceeded" if quota_exceeded else "web",
+    }
 
 
 def strategy_trend(session_id: str) -> list[dict]:
@@ -711,11 +728,18 @@ EVENT_PHRASING_SYSTEM_NOTE = (
     "(e.g. 'What if Hamilton hadn't pitted when the penalty was issued -- what position would he "
     "be holding now?') that could be fed directly into a what-if simulator. Leave it as an empty "
     "string for anything else, including most notification_worthy events.\n\n"
+    "Some events (race-control banners especially) arrive with an empty drivers list because the "
+    "upstream extraction deliberately leaves driver attribution to you -- read the evidence text "
+    "and identify every driver the event is clearly about, using ONLY these 3-letter codes: "
+    + ", ".join(sorted(KNOWN_DRIVER_CODES)) + ". Match by surname, full name, or code appearing "
+    "in the evidence (e.g. evidence mentioning \"Hamilton\" -> [\"HAM\"]). If the evidence names "
+    "no driver, or you are not confident, return an empty list -- do not guess.\n\n"
     "Output strictly a single JSON array, one element per event (same order as the input), no "
     "text before or after, no markdown code fences, each element in this format:\n"
     '{"index": 0, "headline": "one-sentence fact", "insight": "brief inference/significance, '
     'under 25 words", "uncertain": true or false, "importance": integer 0 to 100 (how significant '
-    'this event is to the race narrative), "notification_worthy": true or false, '
+    'this event is to the race narrative), "drivers": ["HAM"] (driver codes the event is clearly '
+    'about, per the rule above -- empty list if none), "notification_worthy": true or false, '
     '"notification_hook": "", "suggested_whatif": ""}'
 )
 
@@ -826,11 +850,28 @@ def _parse_event_batch_json(raw: str, batch: list[dict]) -> list[dict]:
                     continue
                 try:
                     notification_worthy = bool(item.get("notification_worthy", False))
+                    # Trust the raw extraction's drivers when it has one (pit-stop/radio
+                    # events already pull the code from structured OCR, more reliable than
+                    # an LLM re-reading the same evidence text). Only when raw extraction
+                    # deliberately left it empty (race-control banners, penalty mentions --
+                    # see detect_race_control_banners/detect_penalty_mentions in retrieval.py)
+                    # does the LLM's own reading fill the gap, and even then only codes from
+                    # the known-driver vocabulary survive -- never trust a free-form model
+                    # output into a field other code treats as validated.
+                    raw_drivers = event.get("drivers", [])
+                    if raw_drivers:
+                        drivers = raw_drivers
+                    else:
+                        llm_drivers = item.get("drivers", [])
+                        drivers = sorted({
+                            d for d in llm_drivers
+                            if isinstance(d, str) and d.upper() in KNOWN_DRIVER_CODES
+                        }) if isinstance(llm_drivers, list) else []
                     results.append({
                         "lap": event["lap"],
                         "end_lap": event.get("end_lap"),
                         "type": event["type"],
-                        "drivers": event.get("drivers", []),
+                        "drivers": drivers,
                         "headline": item["headline"],
                         "insight": item.get("insight", ""),
                         "uncertain": bool(item.get("uncertain", False)),
