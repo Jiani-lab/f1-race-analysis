@@ -59,8 +59,24 @@ CHAT_SYSTEM_NOTE = (
     "You are answering a specific question about this F1 race, grounded ONLY in the retrieved records "
     "below (a mix of detected race events and real commentary transcript snippets, each tagged with its "
     "lap or timestamp). Answer directly and concisely. If the retrieved records don't actually cover "
-    "what's being asked, say so plainly instead of guessing or filling in from general F1 knowledge."
+    "what's being asked, respond with exactly the single line NEEDS_WEB_SEARCH and nothing else -- do "
+    "not guess, do not fill in from general F1 knowledge, do not write a refusal sentence."
 )
+
+CHAT_WEB_FALLBACK_SYSTEM_NOTE = (
+    "You're answering a general Formula 1 question that isn't covered by this specific race's captured "
+    "data. Use web search to answer it accurately -- this can be anything from historical results and "
+    "championship standings to rules, regulations, or driver/team facts. Answer directly and concisely, "
+    "the same tone as a quick factual lookup, not a full article."
+)
+
+# Real data check (not guessed) against this project's actual embeddings: in-scope
+# questions ("when did Norris pit?", "what happened with Hamilton's penalty?") scored
+# 0.56-0.62 top cosine similarity; clearly out-of-scope general-knowledge questions
+# ("who won the 2008 championship?", "what is DRS?") scored 0.26-0.46. This threshold
+# is a cheap pre-filter only -- the real safety net is CHAT_SYSTEM_NOTE's
+# NEEDS_WEB_SEARCH sentinel below, which catches whatever this score misjudges.
+CHAT_LOCAL_COVERAGE_THRESHOLD = 0.5
 
 WHATIF_SYSTEM_NOTE = (
     "You are constructing a counterfactual ('what if') race strategy scenario, grounded in the real "
@@ -486,15 +502,26 @@ def chat_answer(session_id: str, question: str, max_lap: int | None = None) -> d
             cutoff_ms = max(c["timestamp"] for c in at_or_before)
 
     results = rag.search(session_id, question, top_k=6, max_lap=max_lap, cutoff_ms=cutoff_ms)
-    if not results:
-        return {
-            "answer": "Nothing indexed yet for this race that's relevant to that question.",
-            "sources": [],
-        }
-    records_text = "\n".join(f"[{r['source']}, lap={r['lap']}] {r['text']}" for r in results)
-    prompt = f"{CHAT_SYSTEM_NOTE}\n\nRetrieved records:\n\n{records_text}\n\nQuestion: {question}"
-    answer = _run_claude(prompt, timeout=90.0)
-    return {"answer": answer, "sources": results}
+
+    # Two-layer fallback to general web-connected F1 knowledge, reusing the
+    # exact "tell claude -p to use web search" pattern already proven in
+    # interest_options() -- no new search API needed, same _run_claude call
+    # shape. Layer 1 (cheap): skip the local-grounded prompt entirely when
+    # retrieval itself found nothing relevant (see CHAT_LOCAL_COVERAGE_THRESHOLD
+    # for how that number was picked). Layer 2 (the real safety net): even
+    # when retrieval looks plausible, the local prompt can self-report
+    # insufficient coverage via the NEEDS_WEB_SEARCH sentinel instead of
+    # guessing -- catches whatever layer 1's score misjudges.
+    if results and results[0]["score"] >= CHAT_LOCAL_COVERAGE_THRESHOLD:
+        records_text = "\n".join(f"[{r['source']}, lap={r['lap']}] {r['text']}" for r in results)
+        prompt = f"{CHAT_SYSTEM_NOTE}\n\nRetrieved records:\n\n{records_text}\n\nQuestion: {question}"
+        answer = _run_claude(prompt, timeout=90.0)
+        if answer.strip() != "NEEDS_WEB_SEARCH":
+            return {"answer": answer, "sources": results, "answered_via": "local"}
+
+    web_prompt = f"{CHAT_WEB_FALLBACK_SYSTEM_NOTE}\n\nQuestion: {question}"
+    web_answer = _run_claude(web_prompt, timeout=90.0)
+    return {"answer": web_answer, "sources": [], "answered_via": "web"}
 
 
 def strategy_trend(session_id: str) -> list[dict]:
