@@ -1,0 +1,83 @@
+# Current status
+
+A snapshot of what this project actually is and what's actually working,
+right now. This is not a changelog (that's [`PROGRESS.md`](PROGRESS.md))
+and not a task list (that's [`TODO.md`](TODO.md)) — it's what you'd want
+to know before touching the codebase. Edit this file in place as things
+change; don't append to it.
+
+## What this is
+
+A live F1 race dashboard, built as a personal test of "screen (Luci OCR) +
+audio (Luci ASR) + LLM analysis" as a methodology, that grew into a real
+tool: point it at a live broadcast (any platform — B站, YouTube, etc.,
+detection isn't platform-locked) and it detects the race, extracts events
+and strategy data in real time, answers questions about what happened, and
+pushes personalized notifications.
+
+## Architecture, in one picture
+
+```
+Luci (local-only, loopback)  →  backend/ (FastAPI, one process per person)  →  frontend/ (static HTML/JS, same-origin)
+                                        │
+                                        ├─ push.py → browser Web Push (VAPID)
+                                        ├─ rag.py → Voyage embeddings + claude -p
+                                        └─ watchdog.py → alerts if backend/tunnel/sync die
+
+worker/ (Cloudflare Worker, SEPARATE sub-project)
+  → reverse-proxies f1lightout.com to this Mac's tunnel
+  → falls back to a read-only KV snapshot (backend/sync_snapshot.py pushes it) if the Mac is offline
+```
+
+**Luci is strictly local-machine-only** (`LUCI_MCP_URL` is always
+`127.0.0.1`, no remote mode exists) — this is why "everyone gets their own
+live dashboard" means everyone runs their own full local stack
+(`./setup.sh`), not one shared server. There is no multi-tenant backend
+today, no accounts, no auth, no CORS — `app.py` has exactly one global
+`state` (one live race at a time, per process).
+
+## What's actually live and working
+
+- **Detection + capture**: background poll (90s) detects a live F1
+  broadcast from on-screen text alone (not platform-restricted since
+  Phase 4), pulls Luci vision/audio, merges into per-session JSONL.
+- **Auto-generated events**: pit stops, safety cars, lead changes, race
+  control notices, team radio — detected deterministically, phrased by
+  `claude -p` into headlines/insights, refreshed every 5 min while live.
+- **Personalized push notifications**: real Web Push (VAPID), fires with
+  zero tabs open once a person has granted permission once. Independent
+  toggles for session-start vs. driver-specific events. Per-installation,
+  no server-side multi-user state needed (see below).
+- **RAG chatbot**: grounded Q&A over a race's own detected events/audio
+  (Voyage embeddings + cosine search), falls back to `claude -p` web
+  search for general F1 questions or when local coverage is thin. A
+  shared project Voyage key ships by default with a per-installation
+  token quota; degrades to web-only (no error) once exhausted.
+- **Offline fallback**: `f1lightout.com` stays up (read-only cached
+  snapshot) even when this Mac is off, via the separate `worker/` +
+  `sync_snapshot.py` sub-project.
+- **Watchdog**: alerts (via push) if the backend, tunnel, or sync loop
+  stop responding — added after a real crash-loop went unnoticed.
+- **Onboarding**: `./setup.sh` automates everything scriptable for a
+  fresh install (deps, VAPID keygen, .env scaffolding, Luci connectivity
+  probe, guided Voyage key setup). See `.env.example` for what's left
+  manual and why.
+
+## What's designed but not built
+
+- **Multi-user portal** (so a friend can log into a website and see their
+  own races without you doing anything): planned as fully independent new
+  infrastructure, not touching `worker/`. See `TODO.md` — blocked on an
+  account-mechanism decision.
+
+## Known constraints worth knowing before you change something
+
+- One `state` object per backend process — no concept of multiple
+  concurrent races or multiple users in one running server.
+- No auth anywhere in `backend/`. Every endpoint is trusted-local-only.
+- Luci's `app` field is unreliable (often null) — detection and event
+  logic depend on on-screen OCR text, not app identity.
+- `frontend/style-0N-*.html` and `frontend/module-*.html` are design
+  exploration/preview files, not part of the live site — don't treat
+  their design choices (or design-hook findings on them) as bugs in the
+  real UI (`home.html`, `index.html`, `chat.html`, `settings.html`).
