@@ -827,6 +827,32 @@ def _degraded_event(event: dict, reason: str) -> dict:
     }
 
 
+def _resolve_event_drivers(raw_drivers: list, llm_drivers) -> list[str]:
+    """Trust the raw extraction's drivers when it has one (pit-stop/radio
+    events already pull the code from structured OCR, more reliable than an
+    LLM re-reading the same evidence text). Only when raw extraction
+    deliberately left it empty (race-control banners, penalty mentions --
+    see detect_race_control_banners/detect_penalty_mentions in retrieval.py)
+    does the LLM's own reading fill the gap, and even then only codes from
+    the known-driver vocabulary survive -- never trust a free-form model
+    output into a field other code treats as validated. Pure function on
+    purpose -- see backend/tests/test_event_drivers.py, this is the exact
+    logic that had a real bug (a Hamilton-relevant race-control event
+    tagged with an empty drivers list, so it could never trigger a
+    favorite-driver push) before the drivers field existed at all."""
+    if raw_drivers:
+        return raw_drivers
+    if not isinstance(llm_drivers, list):
+        return []
+    # Normalize to the .upper() form actually returned, not the model's
+    # original casing -- push.py's favorite-driver match is an exact
+    # string comparison against the always-uppercase stored code
+    # (`favorite in (e.get("drivers") or [])`), so a validated-but-still-
+    # lowercase "ham" would silently fail that check downstream, the same
+    # class of bug this function exists to fix in the first place.
+    return sorted({d.upper() for d in llm_drivers if isinstance(d, str) and d.upper() in KNOWN_DRIVER_CODES})
+
+
 def _parse_event_batch_json(raw: str, batch: list[dict]) -> list[dict]:
     """Three-layer parse (bare array -> fenced -> embedded blob). If the
     whole batch fails to parse, every event in it degrades individually
@@ -850,23 +876,7 @@ def _parse_event_batch_json(raw: str, batch: list[dict]) -> list[dict]:
                     continue
                 try:
                     notification_worthy = bool(item.get("notification_worthy", False))
-                    # Trust the raw extraction's drivers when it has one (pit-stop/radio
-                    # events already pull the code from structured OCR, more reliable than
-                    # an LLM re-reading the same evidence text). Only when raw extraction
-                    # deliberately left it empty (race-control banners, penalty mentions --
-                    # see detect_race_control_banners/detect_penalty_mentions in retrieval.py)
-                    # does the LLM's own reading fill the gap, and even then only codes from
-                    # the known-driver vocabulary survive -- never trust a free-form model
-                    # output into a field other code treats as validated.
-                    raw_drivers = event.get("drivers", [])
-                    if raw_drivers:
-                        drivers = raw_drivers
-                    else:
-                        llm_drivers = item.get("drivers", [])
-                        drivers = sorted({
-                            d for d in llm_drivers
-                            if isinstance(d, str) and d.upper() in KNOWN_DRIVER_CODES
-                        }) if isinstance(llm_drivers, list) else []
+                    drivers = _resolve_event_drivers(event.get("drivers", []), item.get("drivers", []))
                     results.append({
                         "lap": event["lap"],
                         "end_lap": event.get("end_lap"),

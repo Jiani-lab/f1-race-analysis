@@ -11,3 +11,17 @@ dependencies = [
     "pywebpush>=2.3.0",
     "uvicorn[standard]>=0.51.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+# backend/*.py import each other as bare modules (`import push`, `import
+# retrieval`), matching how they're actually run (`uvicorn app:app
+# --app-dir backend`, which puts backend/ on sys.path) -- pythonpath here
+# instead of a conftest.py sys.path hack reproduces the same layout tests
+# actually run under.
+pythonpath = ["backend"]
+testpaths = ["backend/tests"]

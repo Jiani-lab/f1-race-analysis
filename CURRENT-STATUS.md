@@ -58,6 +58,12 @@ today, no accounts, no auth, no CORS — `app.py` has exactly one global
   `sync_snapshot.py` sub-project.
 - **Watchdog**: alerts (via push) if the backend, tunnel, or sync loop
   stop responding — added after a real crash-loop went unnoticed.
+- **Tests**: `backend/tests/` (pytest, run with `uv run pytest`) covers
+  the calendar auto-naming, reconnect dedup, and event-driver-tagging
+  logic — the three pure-logic pieces most recently found to have real
+  bugs. Not exhaustive (no coverage yet for `push.py`, `retrieval.py`'s
+  OCR extraction, or `watchdog.py`'s own checks) — add tests alongside
+  new pure-logic functions as they're written, same pattern.
 - **Onboarding**: `./setup.sh` automates everything scriptable for a
   fresh install (deps, VAPID keygen, .env scaffolding, Luci connectivity
   probe, guided Voyage key setup). See `.env.example` for what's left

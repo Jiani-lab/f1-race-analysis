@@ -193,27 +193,30 @@ def _resume_last_session() -> None:
 _resume_last_session()
 
 
+def _is_reconnect(session_id: str | None, end_ms: int | None, now_ms: int) -> bool:
+    """A stream that stutters (buffering, a brief drop) can miss one or two
+    90s poll ticks and read as "not active" for a few minutes before
+    reconnecting -- without this check that would start() a brand-new
+    session_id for what's really the same broadcast, duplicating it on the
+    homepage, resetting the push notification cooldown/count for what
+    should still be one race's budget, and firing a second "New F1 session
+    detected" push moments after the first. Only a genuine same-race
+    reconnect qualifies: same session_id already on record and it ended
+    recently enough that a new broadcast starting from scratch is
+    implausible. Pure function (no clock/global-state reads) on purpose --
+    see backend/tests/test_reconnect.py."""
+    return (
+        session_id is not None
+        and end_ms is not None
+        and (now_ms - end_ms) <= SESSION_RESUME_GAP_MS
+    )
+
+
 async def _detection_loop():
     while True:
         try:
             if state.status != "active" and is_f1_live_now():
-                # A stream that stutters (buffering, a brief drop) can miss
-                # one or two 90s poll ticks and read as "not active" for a
-                # few minutes before reconnecting -- without this check that
-                # would start() a brand-new session_id for what's really the
-                # same broadcast, duplicating it on the homepage, resetting
-                # the push notification cooldown/count for what should still
-                # be one race's budget, and firing a second "New F1 session
-                # detected" push moments after the first. Only a genuine
-                # same-race reconnect qualifies: same session_id already on
-                # record and it ended recently enough that a new broadcast
-                # starting from scratch is implausible.
-                is_reconnect = (
-                    state.session_id is not None
-                    and state.end_ms is not None
-                    and (int(time.time() * 1000) - state.end_ms) <= SESSION_RESUME_GAP_MS
-                )
-                if is_reconnect:
+                if _is_reconnect(state.session_id, state.end_ms, int(time.time() * 1000)):
                     state.resume()
                     print(f"[watcher] F1 stream re-detected within {SESSION_RESUME_GAP_MS // 1000}s of the last "
                           f"one ending -- treating as a reconnect, resuming session {state.session_id} "

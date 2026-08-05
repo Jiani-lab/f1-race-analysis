@@ -9,6 +9,24 @@ session under one dated bullet where it makes sense.
 
 ---
 
+- **2026-08-05** — Offline fallback page (`worker/`) redesigned for real
+  visual parity with the live site (Saira Condensed, checkered-flag mark,
+  masthead photo served via a Workers Assets binding so it works
+  independent of the origin) plus two real functional gaps fixed: past-
+  session cards had no `href` at all (dead clicks), and the KV snapshot
+  only ever carried event data for whichever session was live at sync
+  time — `sync_snapshot.py` now syncs every session's events, so a fully-
+  generated past session actually has content to show once the Mac is
+  offline, not just a dead end. Also added a first pytest suite
+  (`backend/tests/`, 22 tests) covering the calendar auto-naming,
+  reconnect dedup, and event-driver-tagging logic added the day before —
+  writing it caught two more real bugs on the spot: a driver-code case-
+  normalization bug in `_resolve_event_drivers` (an LLM-returned lowercase
+  code would silently fail the exact-match push filter downstream) and an
+  incorrect test assumption about calendar slack windows never overlapping
+  for closely-spaced races (they can, documented as a known tradeoff
+  rather than "fixed" by shrinking slack back to a value that breaks the
+  original regression case).
 - **2026-08-05** — Added the multi-session coordination protocol itself
   (this file + `AGENTS.md` + `CURRENT-STATUS.md` + `TODO.md`), after
   repeated real friction from concurrent sessions on this repo (port
