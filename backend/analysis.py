@@ -7,9 +7,11 @@ Claude Code auth. E is pure structured data, no LLM involved.
 
 import hashlib
 import json
+import queue
 import re
 import subprocess
 import threading
+import time
 import uuid
 from pathlib import Path
 
@@ -120,6 +122,106 @@ def _run_claude(
     if result.returncode != 0:
         raise RuntimeError(f"claude -p failed: {result.stderr}")
     return result.stdout.strip()
+
+
+def _run_claude_stream(
+    prompt: str,
+    timeout: float,
+    on_chunk,
+    cli_session_id: str | None = None,
+    resume: bool = False,
+) -> str:
+    """Same claude -p invocation as _run_claude, but reads
+    --output-format stream-json incrementally instead of blocking on the
+    whole response -- verified for real against this exact CLI (a plain
+    `claude -p ... --output-format stream-json --include-partial-messages
+    --verbose` run) that `stream_event` / `content_block_delta` /
+    `text_delta` events carry genuine incremental token text as it's
+    generated, and the final `result` line carries the authoritative
+    complete answer -- trusted over manually concatenating every delta, in
+    case the CLI ever reorders/coalesces them differently than expected.
+    on_chunk(text) fires for every delta as it arrives; chat_answer's
+    caller uses it to append to a run's buffered chunks so a reconnecting
+    client can replay what's already happened.
+
+    Reads stdout/stderr via two background reader threads into a shared
+    queue rather than iterating `proc.stdout` directly in this thread --
+    the standard fix for two real risks a naive readline loop has: (1) a
+    large stderr the child fills while nobody's draining it can deadlock
+    the child on a full OS pipe buffer, (2) blocking on `for line in
+    proc.stdout` can't be timed out mid-read, so a hung child would ignore
+    `timeout` entirely. Queue.get(timeout=remaining) can.
+
+    Still serialized under _CLAUDE_LOCK like _run_claude -- concurrent
+    claude -p calls were verified elsewhere in this project to slow each
+    other down rather than run faster in parallel; streaming doesn't change
+    that, it only changes how *this* call's own output is delivered."""
+    cmd = ["claude", "-p", "--output-format", "stream-json", "--include-partial-messages", "--verbose"]
+    if cli_session_id:
+        cmd += ["--resume", cli_session_id] if resume else ["--session-id", cli_session_id]
+    cmd.append(prompt)
+
+    with _CLAUDE_LOCK:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+        q: queue.Queue = queue.Queue()
+
+        def _reader(stream, tag):
+            for line in iter(stream.readline, ""):
+                q.put((tag, line))
+            q.put((tag, None))  # EOF sentinel
+
+        readers = [
+            threading.Thread(target=_reader, args=(proc.stdout, "out"), daemon=True),
+            threading.Thread(target=_reader, args=(proc.stderr, "err"), daemon=True),
+        ]
+        for t in readers:
+            t.start()
+
+        final_text = None
+        stderr_lines: list[str] = []
+        eof_count = 0
+        deadline = time.time() + timeout
+        try:
+            while eof_count < 2:
+                remaining = deadline - time.time()
+                if remaining <= 0:
+                    raise subprocess.TimeoutExpired(cmd, timeout)
+                try:
+                    tag, line = q.get(timeout=remaining)
+                except queue.Empty:
+                    raise subprocess.TimeoutExpired(cmd, timeout)
+                if line is None:
+                    eof_count += 1
+                    continue
+                if tag == "err":
+                    stderr_lines.append(line)
+                    continue
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                etype = event.get("type")
+                if etype == "stream_event":
+                    inner = event.get("event") or {}
+                    if inner.get("type") == "content_block_delta":
+                        delta = inner.get("delta") or {}
+                        if delta.get("type") == "text_delta" and delta.get("text"):
+                            on_chunk(delta["text"])
+                elif etype == "result":
+                    if event.get("is_error"):
+                        raise RuntimeError(f"claude -p failed: {event.get('result') or 'unknown error'}")
+                    final_text = (event.get("result") or "").strip()
+            proc.wait(timeout=5)
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+
+    if final_text is None:
+        raise RuntimeError(f"claude -p produced no result: {''.join(stderr_lines)}")
+    return final_text
 
 
 def _load_log(session_id: str) -> list[dict]:
@@ -484,7 +586,100 @@ def rule_lookup(session_id: str, around_ms: int, window_ms: int = 3 * 60 * 1000)
     return _run_claude(prompt)
 
 
+# In-memory registry of in-flight/recent chat generations, keyed by run_id.
+# Exists so a chat answer survives the HTTP request that started it -- the
+# worst case here is genuinely long (local-grounded attempt + web fallback,
+# each up to 90s -- see _execute_chat_answer's docstring), and until this,
+# /session/chat just blocked the request for that whole duration with zero
+# feedback, and a page refresh mid-answer silently threw the answer away.
+# A sibling project's AID_PIM retrospective (2026-08, chapter 11) hit and
+# documented this exact class of problem for its own read-only chat agent
+# ("赛博Doreen") -- streaming + a persisted, reconnectable run is the fix
+# there too, this is that same pattern applied here. In-memory (not a file)
+# is a deliberate choice matching this project's existing single-process,
+# no-database posture (CURRENT-STATUS.md) -- if the backend process itself
+# dies, the run is gone regardless, so persisting it to disk would only
+# protect against a case (surviving a backend restart mid-answer) nobody
+# asked for.
+_CHAT_RUNS: dict[str, dict] = {}
+_CHAT_RUNS_LOCK = threading.Lock()
+_CHAT_RUN_MAX_AGE_SEC = 30 * 60  # lazily pruned whenever a new run starts -- long enough
+# to reattach after a real refresh or an accidentally-closed tab, short enough that a
+# long-lived local process doesn't accumulate finished runs with no eviction at all
+
+
+def _prune_old_chat_runs() -> None:
+    cutoff = time.time() - _CHAT_RUN_MAX_AGE_SEC
+    with _CHAT_RUNS_LOCK:
+        for rid in [rid for rid, run in _CHAT_RUNS.items() if run["created_at"] < cutoff]:
+            del _CHAT_RUNS[rid]
+
+
+def _append_chat_chunk(run_id: str, text: str) -> None:
+    with _CHAT_RUNS_LOCK:
+        run = _CHAT_RUNS.get(run_id)
+        if run is not None:
+            run["chunks"].append(text)
+
+
+def get_chat_run(run_id: str) -> dict | None:
+    """Snapshot of a run's current state for the streaming endpoint --
+    status is "running" | "done" | "error". "chunks" is everything
+    generated so far (a reconnecting client replays these before receiving
+    any new ones); "result" (the full {answer, sources, answered_via} dict)
+    and "error" are only populated once status leaves "running"."""
+    with _CHAT_RUNS_LOCK:
+        run = _CHAT_RUNS.get(run_id)
+        return dict(run) if run is not None else None
+
+
+def start_chat_run(session_id: str, question: str, max_lap: int | None = None) -> str:
+    """Kicks off _execute_chat_answer on a background thread and returns a
+    run_id immediately, instead of blocking the HTTP request for however
+    long claude -p takes. See the module-level _CHAT_RUNS docstring for why
+    this exists at all."""
+    _prune_old_chat_runs()
+    run_id = uuid.uuid4().hex
+    with _CHAT_RUNS_LOCK:
+        _CHAT_RUNS[run_id] = {
+            "status": "running",
+            "chunks": [],
+            "result": None,
+            "error": None,
+            "created_at": time.time(),
+        }
+
+    def _worker():
+        try:
+            result = _execute_chat_answer(
+                session_id, question, max_lap, on_chunk=lambda t: _append_chat_chunk(run_id, t)
+            )
+            with _CHAT_RUNS_LOCK:
+                _CHAT_RUNS[run_id]["status"] = "done"
+                _CHAT_RUNS[run_id]["result"] = result
+        except Exception as e:  # noqa: BLE001 -- deliberately broad: whatever goes wrong, the
+            # run MUST end in a terminal state, or a client waiting on the SSE stream hangs
+            # forever instead of seeing a real "generation failed" signal (the whole point of
+            # this refactor was to stop leaving the frontend guessing).
+            with _CHAT_RUNS_LOCK:
+                _CHAT_RUNS[run_id]["status"] = "error"
+                _CHAT_RUNS[run_id]["error"] = str(e)
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return run_id
+
+
 def chat_answer(session_id: str, question: str, max_lap: int | None = None) -> dict:
+    """Blocking wrapper around _execute_chat_answer for any caller that
+    genuinely wants a synchronous result (tests, a script) -- app.py's
+    /session/chat endpoint uses start_chat_run()/get_chat_run() instead so
+    the HTTP request doesn't block on it. Kept so this function's name and
+    signature don't just disappear out from under anything depending on
+    them."""
+    return _execute_chat_answer(session_id, question, max_lap, on_chunk=lambda _t: None)
+
+
+def _execute_chat_answer(session_id: str, question: str, max_lap: int | None, on_chunk) -> dict:
     """Free-form Q&A grounded in rag.search()'s retrieved chunks, not the
     map-reduce full-context pattern catchup/summary/whatif use -- this is
     the "point lookup" case RAG genuinely suits, versus those three needing
@@ -493,7 +688,11 @@ def chat_answer(session_id: str, question: str, max_lap: int | None = None) -> d
     widget passes the currently-viewed lap (never let the chatbot answer
     with information from beyond what's on screen) -- resolved to a real
     cutoff timestamp via replay_cutoffs so it applies to audio chunks
-    (timestamp-indexed) too, not just event chunks (lap-indexed)."""
+    (timestamp-indexed) too, not just event chunks (lap-indexed).
+
+    on_chunk(text) is called with each incremental piece of the answer as
+    claude -p generates it (see _run_claude_stream) -- start_chat_run wires
+    this to append into the run's buffered chunks for streaming/replay."""
     import rag  # local import: rag.py imports _event_key from this module, avoid the cycle at load time
 
     cutoff_ms = None
@@ -525,15 +724,35 @@ def chat_answer(session_id: str, question: str, max_lap: int | None = None) -> d
     # when retrieval looks plausible, the local prompt can self-report
     # insufficient coverage via the NEEDS_WEB_SEARCH sentinel instead of
     # guessing -- catches whatever layer 1's score misjudges.
+    #
+    # The local-grounded attempt streams into on_chunk like everything else,
+    # but its output is provisional -- it might end in the NEEDS_WEB_SEARCH
+    # sentinel, which must never reach the user as if it were a real answer.
+    # A "local_chunks" buffer holds what streamed so far so the sentinel
+    # case can be told apart from a real answer *after* the fact (the
+    # sentinel is only knowable once the stream ends), while still getting
+    # genuine incremental streaming for the common case where it wasn't.
     if results and results[0]["score"] >= CHAT_LOCAL_COVERAGE_THRESHOLD:
+        local_chunks: list[str] = []
+
+        def _on_local_chunk(text: str) -> None:
+            local_chunks.append(text)
+            on_chunk(text)
+
         records_text = "\n".join(f"[{r['source']}, lap={r['lap']}] {r['text']}" for r in results)
         prompt = f"{CHAT_SYSTEM_NOTE}\n\nRetrieved records:\n\n{records_text}\n\nQuestion: {question}"
-        answer = _run_claude(prompt, timeout=90.0)
+        answer = _run_claude_stream(prompt, timeout=90.0, on_chunk=_on_local_chunk)
         if answer.strip() != "NEEDS_WEB_SEARCH":
             return {"answer": answer, "sources": results, "answered_via": "local"}
+        # Sentinel hit: what already streamed to the client was the sentinel
+        # text itself, not a real answer -- on_chunk has no "undo," so the
+        # run's chunk buffer would otherwise show a half-written wrong
+        # answer before the web fallback's real one appends after it. The
+        # frontend clears its pending bubble on seeing this marker.
+        on_chunk("\x00RESTART\x00")
 
     web_prompt = f"{CHAT_WEB_FALLBACK_SYSTEM_NOTE}\n\nQuestion: {question}"
-    web_answer = _run_claude(web_prompt, timeout=90.0)
+    web_answer = _run_claude_stream(web_prompt, timeout=90.0, on_chunk=on_chunk)
     return {
         "answer": web_answer,
         "sources": [],

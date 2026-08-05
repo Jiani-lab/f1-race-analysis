@@ -52,7 +52,14 @@ today, no accounts, no auth, no CORS — `app.py` has exactly one global
   (Voyage embeddings + cosine search), falls back to `claude -p` web
   search for general F1 questions or when local coverage is thin. A
   shared project Voyage key ships by default with a per-installation
-  token quota; degrades to web-only (no error) once exhausted.
+  token quota; degrades to web-only (no error) once exhausted. Streams
+  token-by-token over SSE rather than blocking the request (worst case is
+  ~180s: local-grounded attempt + web fallback, each up to 90s) — the
+  generation itself runs on a background thread independent of the HTTP
+  request, tracked in an in-memory run registry (`analysis._CHAT_RUNS`),
+  so a page refresh mid-answer reattaches and replays instead of losing
+  the answer. No separate database or persistence: if the backend process
+  itself restarts, in-flight runs are gone, same as everything else here.
 - **Offline fallback**: `f1lightout.com` stays up (read-only cached
   snapshot) even when this Mac is off, via the separate `worker/` +
   `sync_snapshot.py` sub-project.

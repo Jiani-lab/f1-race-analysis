@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -619,6 +619,57 @@ def session_chat(body: ChatRequest, session_id: str | None = None):
     rag.py) -- can lag a few minutes behind the very latest lap on a live
     race, since indexing runs on the same 5-minute background tick as event
     phrasing, not synchronously on every request (that would mean an
-    embedding-API round-trip on every single chat message)."""
+    embedding-API round-trip on every single chat message).
+
+    Kicks off generation on a background thread and returns a run_id right
+    away rather than blocking -- the real answer can take up to ~180s
+    worst case (local-grounded attempt + web fallback, each up to 90s), and
+    blocking the whole request for that with zero feedback, with the answer
+    just vanishing on a refresh, was a real problem, not a hypothetical one
+    -- see analysis.py's _CHAT_RUNS docstring. The frontend follows up with
+    GET /session/chat/stream/{run_id}."""
     resolved = _require_session(session_id)
-    return analysis.chat_answer(resolved, body.question, max_lap=body.max_lap)
+    run_id = analysis.start_chat_run(resolved, body.question, max_lap=body.max_lap)
+    return {"run_id": run_id}
+
+
+@app.get("/session/chat/stream/{run_id}")
+async def session_chat_stream(run_id: str):
+    """Server-Sent Events: replays every chunk already generated for this
+    run first (so reattaching after a page refresh picks up mid-answer
+    instead of starting over), then streams new chunks as they arrive, then
+    a final `done` (carrying the full {answer, sources, answered_via}
+    result) or `error` event.
+
+    Polls analysis._CHAT_RUNS every 150ms rather than anything push-based
+    -- the run's writer (start_chat_run's background thread) isn't async,
+    so there's no asyncio primitive to await on directly, and polling an
+    in-memory dict at this interval is cheap enough not to matter for a
+    single local user.
+
+    No separate "is this run still alive" endpoint: if the connection just
+    drops without a `done`/`error` event, that itself is the interrupt
+    signal (EventSource's own onerror fires client-side) -- a real,
+    working alternative to the explicit run-status-polling endpoint a
+    sibling project's AID_PIM retrospective describes, which existed there
+    because that chat transport wasn't SSE to begin with."""
+    async def event_stream():
+        sent = 0
+        while True:
+            run = analysis.get_chat_run(run_id)
+            if run is None:
+                yield f"event: error\ndata: {json.dumps({'error': 'unknown run'})}\n\n"
+                return
+            chunks = run["chunks"]
+            while sent < len(chunks):
+                yield f"event: chunk\ndata: {json.dumps({'text': chunks[sent]})}\n\n"
+                sent += 1
+            if run["status"] == "done":
+                yield f"event: done\ndata: {json.dumps(run['result'])}\n\n"
+                return
+            if run["status"] == "error":
+                yield f"event: error\ndata: {json.dumps({'error': run['error']})}\n\n"
+                return
+            await asyncio.sleep(0.15)
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")

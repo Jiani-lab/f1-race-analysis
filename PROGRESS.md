@@ -9,6 +9,21 @@ session under one dated bullet where it makes sense.
 
 ---
 
+- **2026-08-05** — RAG chatbot rebuilt to stream over SSE with a
+  persisted, reconnectable run (`analysis.start_chat_run`/`get_chat_run`,
+  `/session/chat/stream/{run_id}`) instead of a single blocking
+  request/response — the worst case there (local-grounded attempt + web
+  fallback, each up to 90s) meant up to ~180s of zero feedback and the
+  answer vanishing outright on a refresh. Modeled on a pattern documented
+  in a sibling project's AID_PIM retrospective (streaming + a run that
+  survives the browser tab), adapted for `claude -p`'s own
+  `--output-format stream-json` and for the fact that our chat needs a
+  genuine web-search fallback theirs didn't. Verified end-to-end over real
+  HTTP: normal streaming, the NEEDS_WEB_SEARCH→web-fallback handoff (a
+  `\x00RESTART\x00` sentinel clears the bubble rather than leaving a
+  half-written wrong answer visible), a dropped-and-reconnected SSE
+  connection correctly replaying + continuing the same run, and an
+  unknown/expired run_id producing a clean error instead of hanging.
 - **2026-08-05** — Offline fallback page (`worker/`) redesigned for real
   visual parity with the live site (Saira Condensed, checkered-flag mark,
   masthead photo served via a Workers Assets binding so it works

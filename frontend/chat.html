@@ -141,10 +141,22 @@ function addMessage(role, text) {
   const thread = $('thread');
   const msg = document.createElement('div');
   msg.className = `msg ${role}`;
-  msg.innerHTML = `<div class="bubble${role === 'bot' && text === '…' ? ' pending' : ''}">${text}</div>`;
+  msg.innerHTML = `<div class="bubble${role === 'bot' && text === '…' ? ' pending' : ''}"></div>`;
+  msg.querySelector('.bubble').textContent = text === '…' ? '' : text;
   thread.appendChild(msg);
   thread.scrollTop = thread.scrollHeight;
   return msg;
+}
+
+function appendToBubble(msgEl, text) {
+  const bubble = msgEl.querySelector('.bubble');
+  bubble.classList.remove('pending');
+  bubble.textContent += text;
+  $('thread').scrollTop = $('thread').scrollHeight;
+}
+
+function resetBubble(msgEl) {
+  msgEl.querySelector('.bubble').textContent = '';
 }
 
 function renderSources(msgEl, sources) {
@@ -154,6 +166,92 @@ function renderSources(msgEl, sources) {
   details.innerHTML = `<summary>▸ ${sources.length} source${sources.length > 1 ? 's' : ''}</summary>` +
     sources.map(s => `<div class="source-row">${s.lap != null ? `<span class="lap-tag">L${s.lap}</span>` : `<span class="lap-tag">AUDIO</span>`}<span>${s.text}</span></div>`).join('');
   msgEl.appendChild(details);
+}
+
+// /session/chat now returns a run_id and streams the answer via SSE
+// instead of blocking the request for however long claude -p takes (up to
+// ~180s worst case: local-grounded attempt + web fallback). PENDING_KEY
+// persists the in-flight run across a refresh -- tryReattachPendingChat()
+// picks it back up on load instead of the answer just vanishing.
+const PENDING_KEY = 'f1chat_pending_run';
+// Emitted by chat_answer's local-grounded attempt when it hits the
+// NEEDS_WEB_SEARCH sentinel: whatever streamed so far was never a real
+// answer, so the bubble gets cleared and restarted with the web fallback's
+// real text (see analysis.py's _execute_chat_answer for why this can't
+// just be suppressed server-side -- streaming means it's already out the
+// door by the time the sentinel is known).
+const RESTART_MARK = '\x00RESTART\x00';
+
+function attachToRun(runId, pendingEl, storageKey, onSettled) {
+  const es = new EventSource(`/session/chat/stream/${encodeURIComponent(runId)}`);
+  let giveUpTimer = null;
+  const clearGiveUp = () => { if (giveUpTimer) { clearTimeout(giveUpTimer); giveUpTimer = null; } };
+  const settle = () => { es.close(); sessionStorage.removeItem(storageKey); onSettled(); };
+
+  es.addEventListener('chunk', ev => {
+    clearGiveUp();
+    const { text } = JSON.parse(ev.data);
+    if (text === RESTART_MARK) resetBubble(pendingEl);
+    else appendToBubble(pendingEl, text);
+  });
+  es.addEventListener('done', ev => {
+    clearGiveUp();
+    const result = JSON.parse(ev.data);
+    pendingEl.querySelector('.bubble').classList.remove('pending');
+    if (result.answered_via === 'web_quota_exceeded') {
+      pendingEl.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search — shared key quota reached, add your own Voyage key in .env for full race Q&amp;A</span>');
+    } else if (result.answered_via === 'web') {
+      pendingEl.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
+    } else {
+      renderSources(pendingEl, result.sources);
+    }
+    settle();
+  });
+  es.addEventListener('error', ev => {
+    clearGiveUp();
+    let msg = 'generation failed';
+    try { msg = JSON.parse(ev.data).error || msg; } catch (e) {}
+    const bubble = pendingEl.querySelector('.bubble');
+    bubble.classList.remove('pending');
+    bubble.textContent = (bubble.textContent ? bubble.textContent + '\n\n' : '') + 'Error: ' + msg;
+    settle();
+  });
+  // EventSource auto-retries a dropped connection on its own (a real dev-
+  // server restart happens often enough in this project's own workflow
+  // that this isn't hypothetical) -- give that a window before treating it
+  // as a genuine interruption, rather than giving up on the first blip.
+  es.onerror = () => {
+    if (giveUpTimer) return;
+    giveUpTimer = setTimeout(() => {
+      const bubble = pendingEl.querySelector('.bubble');
+      bubble.classList.remove('pending');
+      bubble.textContent = (bubble.textContent ? bubble.textContent + '\n\n' : '') + '[Interrupted — connection lost. Try asking again.]';
+      settle();
+    }, 8000);
+  };
+}
+
+function tryReattachPendingChat() {
+  const raw = sessionStorage.getItem(PENDING_KEY);
+  if (!raw) return;
+  let pending;
+  try { pending = JSON.parse(raw); } catch (e) { sessionStorage.removeItem(PENDING_KEY); return; }
+
+  const sel = $('race-select');
+  if ([...sel.options].some(o => o.value === pending.session_id)) sel.value = pending.session_id;
+  currentSessionId = pending.session_id;
+  $('empty-note').style.display = 'none';
+  $('thread').innerHTML = '';
+  addMessage('user', pending.question);
+  const bubble = addMessage('bot', '…');
+
+  const input = $('question-input');
+  input.disabled = true;
+  $('send-btn').disabled = true;
+  attachToRun(pending.run_id, bubble, PENDING_KEY, () => {
+    input.disabled = false;
+    $('send-btn').disabled = false;
+  });
 }
 
 async function populateRaceSelect() {
@@ -194,32 +292,24 @@ $('composer').addEventListener('submit', async ev => {
 
   addMessage('user', question);
   const pending = addMessage('bot', '…');
+  const onSettled = () => { input.disabled = false; $('send-btn').disabled = false; input.focus(); };
 
   try {
-    const result = await api(`/session/chat?session_id=${encodeURIComponent(currentSessionId)}`, {
+    const { run_id } = await api(`/session/chat?session_id=${encodeURIComponent(currentSessionId)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question }),
     });
-    pending.querySelector('.bubble').textContent = result.answer;
-    pending.querySelector('.bubble').classList.remove('pending');
-    if (result.answered_via === 'web_quota_exceeded') {
-      pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search — shared key quota reached, add your own Voyage key in .env for full race Q&amp;A</span>');
-    } else if (result.answered_via === 'web') {
-      pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
-    } else {
-      renderSources(pending, result.sources);
-    }
+    sessionStorage.setItem(PENDING_KEY, JSON.stringify({ run_id, session_id: currentSessionId, question }));
+    attachToRun(run_id, pending, PENDING_KEY, onSettled);
   } catch (e) {
     pending.querySelector('.bubble').textContent = 'Error: ' + e.message;
     pending.querySelector('.bubble').classList.remove('pending');
+    onSettled();
   }
-  input.disabled = false;
-  $('send-btn').disabled = false;
-  input.focus();
 });
 
-populateRaceSelect();
+populateRaceSelect().then(tryReattachPendingChat);
 </script>
 </body>
 </html>

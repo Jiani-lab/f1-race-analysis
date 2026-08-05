@@ -1688,15 +1688,94 @@ function cwAddMessage(role, text) {
   const msg = document.createElement('div');
   msg.className = `cw-msg ${role}`;
   msg.innerHTML = `<div class="cw-bubble${role === 'bot' && text === '…' ? ' pending' : ''}"></div>`;
-  msg.querySelector('.cw-bubble').textContent = text;
+  msg.querySelector('.cw-bubble').textContent = text === '…' ? '' : text;
   thread.appendChild(msg);
   thread.scrollTop = thread.scrollHeight;
   return msg;
 }
 
+function cwAppendToBubble(msgEl, text) {
+  const bubble = msgEl.querySelector('.cw-bubble');
+  bubble.classList.remove('pending');
+  bubble.textContent += text;
+  $('cw-thread').scrollTop = $('cw-thread').scrollHeight;
+}
+
+function cwResetBubble(msgEl) {
+  msgEl.querySelector('.cw-bubble').textContent = '';
+}
+
 function toggleChatWidget() {
   $('chat-widget').classList.toggle('open');
   if ($('chat-widget').classList.contains('open')) $('cw-input').focus();
+}
+
+// Same run-id + SSE streaming flow as chat.html's attachToRun -- see that
+// file's comments for why (worst-case ~180s blocking wait otherwise, and a
+// refresh mid-answer silently losing it). Scoped to this page's own
+// SESSION_ID so a reload of *this* race page reattaches to *this* race's
+// pending question, not some other page's.
+const CW_PENDING_KEY = 'f1chat_widget_pending_' + (SESSION_ID || 'live');
+const CW_RESTART_MARK = '\x00RESTART\x00';
+
+function cwAttachToRun(runId, pendingEl, onSettled) {
+  const es = new EventSource(`/session/chat/stream/${encodeURIComponent(runId)}`);
+  let giveUpTimer = null;
+  const clearGiveUp = () => { if (giveUpTimer) { clearTimeout(giveUpTimer); giveUpTimer = null; } };
+  const settle = () => { es.close(); sessionStorage.removeItem(CW_PENDING_KEY); onSettled(); };
+
+  es.addEventListener('chunk', ev => {
+    clearGiveUp();
+    const { text } = JSON.parse(ev.data);
+    if (text === CW_RESTART_MARK) cwResetBubble(pendingEl);
+    else cwAppendToBubble(pendingEl, text);
+  });
+  es.addEventListener('done', ev => {
+    clearGiveUp();
+    const result = JSON.parse(ev.data);
+    pendingEl.querySelector('.cw-bubble').classList.remove('pending');
+    if (result.answered_via === 'web_quota_exceeded') {
+      pendingEl.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search — shared key quota reached</span>');
+    } else if (result.answered_via === 'web') {
+      pendingEl.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
+    }
+    settle();
+  });
+  es.addEventListener('error', ev => {
+    clearGiveUp();
+    let msg = 'generation failed';
+    try { msg = JSON.parse(ev.data).error || msg; } catch (e) {}
+    const bubble = pendingEl.querySelector('.cw-bubble');
+    bubble.classList.remove('pending');
+    bubble.textContent = (bubble.textContent ? bubble.textContent + '\n\n' : '') + 'Error: ' + msg;
+    settle();
+  });
+  // Give a dropped connection a window to auto-reconnect (EventSource does
+  // this natively) before calling it a real interruption -- a dev-server
+  // restart mid-answer is common enough in this project to design for.
+  es.onerror = () => {
+    if (giveUpTimer) return;
+    giveUpTimer = setTimeout(() => {
+      const bubble = pendingEl.querySelector('.cw-bubble');
+      bubble.classList.remove('pending');
+      bubble.textContent = (bubble.textContent ? bubble.textContent + '\n\n' : '') + '[Interrupted — connection lost. Try asking again.]';
+      settle();
+    }, 8000);
+  };
+}
+
+function cwTryReattachPending() {
+  const raw = sessionStorage.getItem(CW_PENDING_KEY);
+  if (!raw) return;
+  let pending;
+  try { pending = JSON.parse(raw); } catch (e) { sessionStorage.removeItem(CW_PENDING_KEY); return; }
+
+  $('chat-widget').classList.add('open'); // surface the in-progress answer, don't hide it collapsed
+  cwAddMessage('user', pending.question);
+  const bubble = cwAddMessage('bot', '…');
+  const input = $('cw-input');
+  input.disabled = true;
+  cwAttachToRun(pending.run_id, bubble, () => { input.disabled = false; });
 }
 
 document.getElementById('cw-composer').addEventListener('submit', async ev => {
@@ -1709,27 +1788,24 @@ document.getElementById('cw-composer').addEventListener('submit', async ev => {
 
   cwAddMessage('user', question);
   const pending = cwAddMessage('bot', '…');
+  const onSettled = () => { input.disabled = false; input.focus(); };
 
   try {
-    const result = await api('/session/chat', {
+    const { run_id } = await api('/session/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question, max_lap: currentLap }),
     });
-    pending.querySelector('.cw-bubble').textContent = result.answer;
-    pending.querySelector('.cw-bubble').classList.remove('pending');
-    if (result.answered_via === 'web_quota_exceeded') {
-      pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search — shared key quota reached</span>');
-    } else if (result.answered_via === 'web') {
-      pending.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
-    }
+    sessionStorage.setItem(CW_PENDING_KEY, JSON.stringify({ run_id, question }));
+    cwAttachToRun(run_id, pending, onSettled);
   } catch (e) {
     pending.querySelector('.cw-bubble').textContent = 'Error: ' + e.message;
     pending.querySelector('.cw-bubble').classList.remove('pending');
+    onSettled();
   }
-  input.disabled = false;
-  input.focus();
 });
+
+cwTryReattachPending();
 </script>
 
 </body>
