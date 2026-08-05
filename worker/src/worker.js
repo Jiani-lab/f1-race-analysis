@@ -83,25 +83,47 @@ async function renderFallback(env, url) {
     ? sessions.map(sessionCard).join("")
     : `<div class="empty-state">No races captured yet.</div>`;
 
-  const liveBlock = liveSession ? `
-    <div class="card live-card">
-      <span class="live-tag"><span class="dot"></span>Live (as of last sync)</span>
-      <div class="round">${escapeHtml(liveSession.round || "")}</div>
-      <div class="name">${escapeHtml(liveSession.name || "")}</div>
-      ${(liveSession.events || []).length ? `
-        <div class="events-label">Captured events</div>
-        <div class="events">
-          ${(liveSession.events || []).slice(-8).reverse().map(eventRow).join("")}
-        </div>` : `<div class="events-label">No events captured yet in this session.</div>`}
-    </div>` : "";
-
+  // Every session card links here (?session=<id>) same as the live site --
+  // each session's events were synced too (not just whichever was live at
+  // sync time), so this actually has real content to show, not just a
+  // "come back when the Mac is on" dead end.
   if (url.pathname.startsWith("/race")) {
+    const sessionId = url.searchParams.get("session");
+    const target = sessionId
+      ? sessions.find((s) => s.session_id === sessionId)
+      : liveSession;
+
+    if (!target) {
+      return new Response(shellHTML(`
+        <div class="banner">⚠ Offline snapshot from ${syncedAt} — this session wasn't in it (never synced, or the ID doesn't match).</div>
+        <a class="back-link" href="/">← All races</a>
+      `), { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
+    }
+
+    const isLive = target.status === "active";
     return new Response(shellHTML(`
-      <div class="banner">⚠ Live view is offline (Jiani's machine is asleep/off) — showing the last synced snapshot from ${syncedAt}. Nothing here updates until it's back.</div>
-      ${liveBlock || `<div class="empty-state">No live session in the last snapshot.</div>`}
+      <div class="banner">⚠ Live view is offline (Jiani's machine is asleep/off) — showing the last synced snapshot from ${syncedAt}. Nothing here updates until it's back${isLive ? " — this session was still live at last sync" : ""}.</div>
+      <div class="card ${isLive ? "live-card" : ""}">
+        ${isLive ? `<span class="live-tag"><span class="dot"></span>Live (as of last sync)</span>` : `<span class="status ${target.status === "ended" ? "ended" : "idle"}"><span class="dot"></span>${target.status === "ended" ? "Completed" : "Idle"}</span>`}
+        <div class="round">${escapeHtml(target.round || "")}</div>
+        <div class="name">${escapeHtml(target.name || "")}</div>
+        ${(target.events || []).length ? `
+          <div class="events-label">Captured events</div>
+          <div class="events">
+            ${(target.events || []).slice(-8).reverse().map(eventRow).join("")}
+          </div>` : `<div class="events-label">No events captured for this session.</div>`}
+      </div>
       <a class="back-link" href="/">← All races</a>
     `), { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
   }
+
+  const liveBlock = liveSession ? `
+    <a class="card live-card link-card" href="/race?session=${encodeURIComponent(liveSession.session_id)}">
+      <span class="live-tag"><span class="dot"></span>Live (as of last sync)</span>
+      <div class="round">${escapeHtml(liveSession.round || "")}</div>
+      <div class="name">${escapeHtml(liveSession.name || "")}</div>
+      <div class="cta">Open (offline snapshot) →</div>
+    </a>` : "";
 
   return new Response(shellHTML(`
     <div class="intro">
@@ -118,12 +140,13 @@ async function renderFallback(env, url) {
 function sessionCard(s) {
   const statusLabel = s.status === "ended" ? "Completed" : "Idle";
   return `
-    <div class="card">
+    <a class="card link-card" href="/race?session=${encodeURIComponent(s.session_id)}">
       <span class="status ${s.status === "ended" ? "ended" : "idle"}"><span class="dot"></span>${statusLabel}</span>
       <div class="round">${escapeHtml(s.round || "")}</div>
       <div class="name">${escapeHtml(s.name || "")}</div>
       <div class="date">${s.start_ms ? new Date(s.start_ms).toISOString().slice(0, 10) : "—"}</div>
-    </div>`;
+      <div class="cta">Open (offline snapshot) →</div>
+    </a>`;
 }
 
 function eventRow(e) {
@@ -218,6 +241,10 @@ function shellHTML(body) {
   .round { font: 700 10.5px/1 var(--mono); letter-spacing: .1em; color: var(--ink-faint); text-transform: uppercase; margin-top: 13px; }
   .name { font: 800 16px var(--sans-display); margin-top: 6px; }
   .date { font: 600 12px var(--mono); color: var(--ink-faint); margin-top: 10px; }
+  .link-card { display: block; text-decoration: none; transition: border-color .15s; }
+  .link-card:hover { border-color: var(--hairline-strong); }
+  .cta { font: 700 11.5px/1 var(--mono); letter-spacing: .04em; color: var(--f1-red); margin-top: 14px; text-transform: uppercase; }
+  .link-card:hover .cta { color: var(--f1-red-bright); }
   .events-label { font: 700 11px var(--mono); letter-spacing: .06em; color: var(--ink-faint); text-transform: uppercase; margin-top: 16px; }
   .events { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
   .event { font: 500 13px/1.5 var(--sans); color: var(--ink-dim); border-top: 1px solid var(--hairline); padding-top: 8px; }

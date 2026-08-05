@@ -42,17 +42,20 @@ def build_snapshot() -> dict | None:
         return None
     sessions = sessions_resp.get("sessions", [])
 
-    live = next((s for s in sessions if s.get("status") == "active"), None)
-    live_session = None
-    if live:
-        events_resp = _get_json(f"/session/events?session_id={live['session_id']}")
-        events = (events_resp or {}).get("events", [])[-MAX_EVENTS_IN_SNAPSHOT:]
-        live_session = {
-            "session_id": live["session_id"],
-            "round": live.get("round"),
-            "name": live.get("name"),
-            "events": events,
-        }
+    # Every session's events get synced, not just whichever one is live --
+    # a past session's analysis is already fully generated and cached
+    # locally (get_phrased_events reads from events.json, no new `claude -p`
+    # calls for laps already processed), so this is cheap even though it
+    # runs every tick. The whole point of syncing is to make already-done
+    # work visible offline, not just today's race -- a snapshot that only
+    # ever carried the live session left every past session's own detail
+    # page dead once the Mac was off, even though the content already
+    # existed on disk.
+    for s in sessions:
+        events_resp = _get_json(f"/session/events?session_id={s['session_id']}")
+        s["events"] = (events_resp or {}).get("events", [])[-MAX_EVENTS_IN_SNAPSHOT:]
+
+    live_session = next((s for s in sessions if s.get("status") == "active"), None)
 
     return {
         "synced_at": int(time.time() * 1000),
