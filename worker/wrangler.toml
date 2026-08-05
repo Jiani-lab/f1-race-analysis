@@ -10,3 +10,15 @@ routes = [
   { pattern = "f1lightout.com/*", zone_name = "f1lightout.com" },
   { pattern = "www.f1lightout.com/*", zone_name = "f1lightout.com" }
 ]
+
+# Served directly by Cloudflare's edge, independent of the tunnel/origin --
+# the whole point is the fallback page needs its background photo to work
+# even when the Mac (and therefore origin.f1lightout.com) is unreachable.
+# Placed last: TOML table-header scoping means any key after [assets]
+# would otherwise be swallowed into the assets table instead of staying
+# top-level (routes ended up nested under [assets] the first time this was
+# ordered the other way around, and wrangler rejected it as an unknown
+# assets field).
+[assets]
+directory = "./assets"
+binding = "ASSETS"
