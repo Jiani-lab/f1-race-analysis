@@ -9,17 +9,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,500;0,600;0,700;0,800;0,900;1,900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --track:          #050506;
-    --surface:        #101013;
-    --surface-raised: #17171b;
+    --track:          #08090b;
+    --panel:          #131417;
+    --panel-raised:   #1a1c20;
     --hairline:       rgba(255,255,255,0.08);
     --hairline-strong: rgba(255,255,255,0.18);
-    --ink:            #f5f5f3;
-    --ink-dim:        #9c9c9f;
-    --ink-faint:      #616164;
+    --ink:            #f2f2f0;
+    --ink-dim:        #96979c;
+    --ink-faint:      #58595d;
     --f1-red:         #E10600;
     --f1-red-bright:  #ff2a1f;
     --f1-red-dim:     rgba(225,6,0,0.16);
+    --amber:          #f0a33a;
     --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
     --sans: -apple-system, "Segoe UI", sans-serif;
     --sans-display: "Saira Condensed", "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
@@ -27,12 +28,9 @@
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; overflow-x: hidden; }
-  body {
-    margin: 0; background: var(--track); color: var(--ink); font-family: var(--sans);
-    display: flex; flex-direction: column;
-    background-image: radial-gradient(ellipse 900px 460px at 12% -8%, rgba(225,6,0,0.09), transparent 60%);
-  }
-  a { color: inherit; }
+  body { margin: 0; background: var(--track); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; }
+  a { color: var(--f1-red-bright); text-decoration: none; }
+  a:hover { text-decoration: underline; }
   button, select, input { font-family: inherit; }
   :focus-visible { outline: 2px solid var(--f1-red-bright); outline-offset: 2px; border-radius: 4px; }
 
@@ -42,7 +40,7 @@
     background-image: repeating-conic-gradient(#fff 0% 25%, transparent 0% 50%);
     background-size: 16px 16px; mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
   }
-  .masthead-inner { position: relative; max-width: 760px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .masthead-inner { position: relative; max-width: 780px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .back-home { display: inline-block; font: 700 11.5px/1 var(--mono); letter-spacing: 0.06em; color: var(--ink-faint); text-decoration: none; margin-bottom: 8px; }
   .back-home:hover { color: var(--ink); }
   .mh-title-row { display: flex; align-items: center; gap: 10px; }
@@ -52,34 +50,81 @@
   .mh-title { font: italic 900 20px/1.15 var(--sans-display); letter-spacing: -0.005em; }
   .mh-sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
 
-  .race-select { background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 9px 12px; border-radius: 9px; font: 600 13px var(--sans-display); min-width: 200px; }
+  .race-select { background: var(--panel); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 9px 12px; border-radius: 9px; font: 600 13px var(--sans-display); min-width: 200px; }
 
-  main { flex: 1 1 auto; max-width: 760px; width: 100%; margin: 0 auto; padding: 18px 20px 0; display: flex; flex-direction: column; min-height: 0; }
-  .empty-note { margin: auto; text-align: center; color: var(--ink-faint); font: 500 14px/1.7 var(--sans); max-width: 380px; }
+  main { flex: 1 1 auto; max-width: 780px; width: 100%; margin: 0 auto; padding: 20px 20px 0; display: flex; flex-direction: column; min-height: 0; }
+  .empty-note { margin: auto; text-align: center; color: var(--ink-faint); font: 500 14px/1.7 var(--sans); max-width: 400px; }
   .empty-note b { color: var(--ink-dim); }
 
-  .thread { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-bottom: 16px; }
-  .msg { display: flex; flex-direction: column; max-width: 84%; animation: rise .3s var(--ease-out) both; }
-  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .msg.user { align-self: flex-end; align-items: flex-end; }
-  .msg.bot { align-self: flex-start; align-items: flex-start; }
-  .bubble { padding: 11px 14px; border-radius: 14px; font: 500 14.5px/1.55 var(--sans); white-space: pre-wrap; }
-  .msg.user .bubble { background: var(--f1-red); color: #fff; border-bottom-right-radius: 4px; }
-  .msg.bot .bubble { background: var(--surface); border: 1px solid var(--hairline); border-bottom-left-radius: 4px; }
-  .msg.bot .bubble.pending { color: var(--ink-faint); font-style: italic; }
-  .sources { margin-top: 6px; }
-  .sources summary { cursor: pointer; font: 700 10.5px/1 var(--mono); letter-spacing: 0.04em; color: var(--ink-faint); text-transform: uppercase; }
-  .sources summary:hover { color: var(--ink-dim); }
-  .source-row { display: flex; gap: 8px; margin-top: 6px; font: 500 12px/1.5 var(--sans); color: var(--ink-dim); }
-  .source-row .lap-tag { flex: 0 0 auto; font: 700 10px/1 var(--mono); color: var(--f1-red-bright); background: var(--f1-red-dim); padding: 3px 6px; border-radius: 4px; }
-  .via-web-tag { display: inline-block; margin-top: 6px; font: 700 10px/1 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); background: rgba(255,255,255,0.06); padding: 3px 7px; border-radius: 4px; }
+  .thread { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding-bottom: 16px; }
 
-  .composer { flex: 0 0 auto; display: flex; gap: 8px; padding: 14px 0 20px; border-top: 1px solid var(--hairline); }
-  .composer input { flex: 1; background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 11px 14px; border-radius: 10px; font: 500 14.5px var(--sans); }
+  .row { display: flex; gap: 10px; align-items: flex-start; max-width: 100%; animation: rise .3s var(--ease-out) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .row.user { flex-direction: row-reverse; }
+  .avatar { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font: 800 11px var(--mono); margin-top: 2px; }
+  .avatar.bot { background: var(--f1-red); color: #fff; }
+  .avatar.user { background: var(--panel-raised); color: var(--ink-dim); border: 1px solid var(--hairline-strong); }
+
+  .content { max-width: calc(100% - 40px); }
+  .row.user .content { text-align: right; }
+  .plain-msg { display: inline-block; font: 500 14.5px/1.6 var(--sans); color: var(--ink); padding-top: 3px; white-space: pre-wrap; text-align: left; }
+
+  .row.bot .content { max-width: 640px; width: 100%; }
+  .panel-card { background: var(--panel); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; }
+  .panel-head {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--hairline);
+    font: 700 10.5px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .panel-head .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--f1-red); flex: 0 0 auto; }
+  .panel-head .via-tag { margin-left: auto; color: var(--ink-faint); font-weight: 600; text-transform: none; letter-spacing: 0; }
+  .panel-head .via-tag.web { color: var(--ink-dim); }
+  .panel-head .via-tag.quota { color: var(--amber); }
+
+  .panel-body { padding: 16px; font: 500 14.5px/1.65 var(--sans); }
+  .panel-body p { margin: 0 0 11px; }
+  .panel-body p:last-child { margin-bottom: 0; }
+  .panel-body ul { margin: 8px 0; padding-left: 20px; }
+  .panel-body li { margin: 5px 0; }
+  .panel-body strong { color: #fff; font-weight: 700; }
+  .panel-body.error-body { color: var(--f1-red-bright); }
+
+  .thinking-panel { display: flex; align-items: center; gap: 10px; padding: 15px 16px; }
+  .wave { display: flex; align-items: center; gap: 3px; height: 14px; flex: 0 0 auto; }
+  .wave span { width: 3px; background: var(--f1-red); border-radius: 2px; animation: wave 1s ease-in-out infinite; }
+  .wave span:nth-child(1) { height: 40%; animation-delay: 0s; }
+  .wave span:nth-child(2) { height: 100%; animation-delay: .12s; }
+  .wave span:nth-child(3) { height: 65%; animation-delay: .24s; }
+  .wave span:nth-child(4) { height: 90%; animation-delay: .36s; }
+  .wave span:nth-child(5) { height: 50%; animation-delay: .48s; }
+  @keyframes wave { 0%, 100% { transform: scaleY(.5); opacity: .6; } 50% { transform: scaleY(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .wave span { animation: none; } }
+  .thinking-text { font: 500 13px var(--sans); color: var(--ink-dim); }
+
+  .panel-foot { padding: 4px 0; border-top: 1px solid var(--hairline); background: var(--panel-raised); }
+  .sources-details summary { cursor: pointer; padding: 9px 14px; font: 700 10.5px/1 var(--mono); letter-spacing: 0.04em; color: var(--ink-faint); text-transform: uppercase; list-style: none; }
+  .sources-details summary::-webkit-details-marker { display: none; }
+  .sources-details summary:hover { color: var(--ink-dim); }
+  .sources-details summary::before { content: "▸ "; }
+  .sources-details[open] summary::before { content: "▾ "; }
+  .source-row { display: flex; gap: 8px; padding: 6px 14px 10px; font: 500 12px/1.5 var(--sans); color: var(--ink-dim); }
+  .source-row .lap-tag { flex: 0 0 auto; font: 700 10px/1 var(--mono); color: var(--f1-red-bright); background: var(--f1-red-dim); padding: 3px 6px; border-radius: 4px; height: fit-content; }
+
+  .composer-wrap { flex: 0 0 auto; padding: 16px 0 22px; }
+  .composer {
+    display: flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--hairline-strong);
+    border-radius: 16px; padding: 6px 6px 6px 16px; transition: border-color .15s, box-shadow .15s;
+  }
+  .composer:focus-within { border-color: var(--f1-red); box-shadow: 0 0 0 4px var(--f1-red-dim); }
+  .composer input { flex: 1; background: transparent; border: none; color: var(--ink); padding: 10px 0; font: 500 14.5px var(--sans); outline: none; }
+  .composer input::placeholder { color: var(--ink-faint); }
   .composer input:disabled { opacity: .5; }
-  .composer button { background: var(--f1-red); color: #fff; border: none; padding: 0 20px; border-radius: 10px; font: 800 13px var(--sans-display); cursor: pointer; }
+  .composer button {
+    background: var(--f1-red); color: #fff; border: none; width: 38px; height: 38px; border-radius: 12px;
+    cursor: pointer; display: grid; place-items: center; flex: 0 0 auto; transition: background .15s, transform .1s;
+  }
   .composer button:disabled { opacity: .5; cursor: default; }
   .composer button:not(:disabled):hover { background: var(--f1-red-bright); }
+  .composer button:not(:disabled):active { transform: scale(.94); }
 </style>
 </head>
 <body>
@@ -118,10 +163,14 @@
     <b>"who won the 2019 championship?"</b> Questions about this race use what was actually detected/said during
     that broadcast; general F1 questions fall back to a web search.
   </div>
-  <form class="composer" id="composer">
-    <input type="text" id="question-input" placeholder="Ask about this race…" autocomplete="off" disabled />
-    <button type="submit" id="send-btn" disabled>Ask</button>
-  </form>
+  <div class="composer-wrap">
+    <form class="composer" id="composer">
+      <input type="text" id="question-input" placeholder="Ask about this race…" autocomplete="off" disabled />
+      <button type="submit" id="send-btn" disabled aria-label="Send">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 12h15M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+  </div>
 </main>
 
 <script>
@@ -137,35 +186,134 @@ async function api(path, opts) {
   return res.json();
 }
 
-function addMessage(role, text) {
-  const thread = $('thread');
-  const msg = document.createElement('div');
-  msg.className = `msg ${role}`;
-  msg.innerHTML = `<div class="bubble${role === 'bot' && text === '…' ? ' pending' : ''}"></div>`;
-  msg.querySelector('.bubble').textContent = text === '…' ? '' : text;
-  thread.appendChild(msg);
-  thread.scrollTop = thread.scrollHeight;
-  return msg;
+// Minimal markdown -> HTML: enough for **bold**, "- " lists, and paragraph
+// breaks -- exactly what CHAT_SYSTEM_NOTE/CHAT_WEB_FALLBACK_SYSTEM_NOTE's
+// prompt style actually produces (verified against real answers, not
+// assumed). Not a general-purpose parser on purpose -- scoped to what this
+// feature emits. Safe to call on a partially-streamed-in string: an
+// unclosed "**" just renders literally until its pair arrives on a later
+// chunk, no crash, no visible glitch beyond the raw markers briefly showing.
+function renderMarkdown(md) {
+  if (!md) return '';
+  const blocks = md.trim().split(/\n\n+/);
+  return blocks.map(block => {
+    const lines = block.split('\n').filter(l => l.trim());
+    if (lines.length && lines.every(l => /^-\s/.test(l))) {
+      return '<ul>' + lines.map(l => `<li>${inline(l.replace(/^-\s/, ''))}</li>`).join('') + '</ul>';
+    }
+    return `<p>${inline(lines.join(' '))}</p>`;
+  }).join('');
+}
+function inline(s) {
+  return s
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
 }
 
-function appendToBubble(msgEl, text) {
-  const bubble = msgEl.querySelector('.bubble');
-  bubble.classList.remove('pending');
-  bubble.textContent += text;
+const BOT_AVATAR_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8A2.5 2.5 0 0 1 17.5 16H10l-4.5 4.2V16h-.5A2.5 2.5 0 0 1 2.5 13.5v-8A2.5 2.5 0 0 1 4 5.5Z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+const THINKING_LABELS = ['Reading race records…', 'Checking detected events…', 'Searching the web…', 'Composing the answer…'];
+
+function addUserRow(question) {
+  const thread = $('thread');
+  const row = document.createElement('div');
+  row.className = 'row user';
+  row.innerHTML = `<div class="avatar user">YOU</div><div class="content"><span class="plain-msg"></span></div>`;
+  row.querySelector('.plain-msg').textContent = question;
+  thread.appendChild(row);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+// Returns a handle with everything attachToRun needs -- keeps the raw
+// (unrendered) markdown text alongside the DOM so appendChunk can re-render
+// the whole body from source on every chunk instead of trying to patch
+// HTML incrementally (simpler, and correct for markdown spanning chunks).
+function addBotRow() {
+  const thread = $('thread');
+  const row = document.createElement('div');
+  row.className = 'row bot';
+  row.innerHTML = `<div class="avatar bot">${BOT_AVATAR_SVG}</div><div class="content"><div class="panel-card"></div></div>`;
+  thread.appendChild(row);
+  thread.scrollTop = thread.scrollHeight;
+
+  const card = row.querySelector('.panel-card');
+  const handle = { card, raw: '', labelIndex: 0, rotateTimer: null };
+  showThinking(handle);
+  return handle;
+}
+
+function panelHead(viaTag) {
+  return `<div class="panel-head"><span class="live-dot"></span>F1 Race Control${viaTag || ''}</div>`;
+}
+
+function showThinking(handle) {
+  handle.card.innerHTML = panelHead() + `
+    <div class="thinking-panel">
+      <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="thinking-text" id="think-${handle.id || ''}"></div>
+    </div>`;
+  const label = handle.card.querySelector('.thinking-text');
+  handle.labelIndex = 0;
+  label.textContent = THINKING_LABELS[0];
+  clearInterval(handle.rotateTimer);
+  handle.rotateTimer = setInterval(() => {
+    handle.labelIndex = (handle.labelIndex + 1) % THINKING_LABELS.length;
+    label.textContent = THINKING_LABELS[handle.labelIndex];
+  }, 1400);
+}
+
+function appendChunk(handle, text) {
+  clearInterval(handle.rotateTimer);
+  handle.raw += text;
+  let body = handle.card.querySelector('.panel-body');
+  if (!body) {
+    handle.card.innerHTML = panelHead() + `<div class="panel-body"></div>`;
+    body = handle.card.querySelector('.panel-body');
+  }
+  body.innerHTML = renderMarkdown(handle.raw);
   $('thread').scrollTop = $('thread').scrollHeight;
 }
 
-function resetBubble(msgEl) {
-  msgEl.querySelector('.bubble').textContent = '';
+// NEEDS_WEB_SEARCH sentinel: whatever streamed so far was provisional, not
+// a real answer -- throw it away and go back to a thinking state rather
+// than leaving a half-written wrong answer visible under the real one.
+function restartAsThinking(handle) {
+  handle.raw = '';
+  showThinking(handle);
 }
 
-function renderSources(msgEl, sources) {
-  if (!sources || !sources.length) return;
-  const details = document.createElement('details');
-  details.className = 'sources';
-  details.innerHTML = `<summary>▸ ${sources.length} source${sources.length > 1 ? 's' : ''}</summary>` +
-    sources.map(s => `<div class="source-row">${s.lap != null ? `<span class="lap-tag">L${s.lap}</span>` : `<span class="lap-tag">AUDIO</span>`}<span>${s.text}</span></div>`).join('');
-  msgEl.appendChild(details);
+function finalizeBotRow(handle, result) {
+  clearInterval(handle.rotateTimer);
+  const finalHtml = renderMarkdown(result.answer);
+  if (result.answered_via === 'web_quota_exceeded') {
+    handle.card.innerHTML = panelHead('<span class="via-tag quota">shared key quota reached — add your own Voyage key</span>') +
+      `<div class="panel-body">${finalHtml}</div>`;
+  } else if (result.answered_via === 'web') {
+    handle.card.innerHTML = panelHead('<span class="via-tag web">via web search</span>') +
+      `<div class="panel-body">${finalHtml}</div>`;
+  } else {
+    handle.card.innerHTML = panelHead() + `<div class="panel-body">${finalHtml}</div>`;
+    if (result.sources && result.sources.length) {
+      const n = result.sources.length;
+      handle.card.insertAdjacentHTML('beforeend', `
+        <div class="panel-foot">
+          <details class="sources-details">
+            <summary>${n} source${n > 1 ? 's' : ''}</summary>
+            ${result.sources.map(s => `<div class="source-row">${s.lap != null ? `<span class="lap-tag">L${s.lap}</span>` : `<span class="lap-tag">AUDIO</span>`}<span></span></div>`).join('')}
+          </details>
+        </div>`);
+      // textContent, not innerHTML, for excerpt text -- it's real race
+      // commentary, not markdown, and must never be interpreted as HTML.
+      handle.card.querySelectorAll('.source-row span:last-child').forEach((el, i) => { el.textContent = result.sources[i].text; });
+    }
+  }
+  $('thread').scrollTop = $('thread').scrollHeight;
+}
+
+function showErrorInRow(handle, message) {
+  clearInterval(handle.rotateTimer);
+  handle.card.innerHTML = panelHead() + `<div class="panel-body error-body"></div>`;
+  handle.card.querySelector('.error-body').textContent = message;
 }
 
 // /session/chat now returns a run_id and streams the answer via SSE
@@ -174,15 +322,9 @@ function renderSources(msgEl, sources) {
 // persists the in-flight run across a refresh -- tryReattachPendingChat()
 // picks it back up on load instead of the answer just vanishing.
 const PENDING_KEY = 'f1chat_pending_run';
-// Emitted by chat_answer's local-grounded attempt when it hits the
-// NEEDS_WEB_SEARCH sentinel: whatever streamed so far was never a real
-// answer, so the bubble gets cleared and restarted with the web fallback's
-// real text (see analysis.py's _execute_chat_answer for why this can't
-// just be suppressed server-side -- streaming means it's already out the
-// door by the time the sentinel is known).
 const RESTART_MARK = '\x00RESTART\x00';
 
-function attachToRun(runId, pendingEl, storageKey, onSettled) {
+function attachToRun(runId, handle, storageKey, onSettled) {
   const es = new EventSource(`/session/chat/stream/${encodeURIComponent(runId)}`);
   let giveUpTimer = null;
   const clearGiveUp = () => { if (giveUpTimer) { clearTimeout(giveUpTimer); giveUpTimer = null; } };
@@ -191,29 +333,19 @@ function attachToRun(runId, pendingEl, storageKey, onSettled) {
   es.addEventListener('chunk', ev => {
     clearGiveUp();
     const { text } = JSON.parse(ev.data);
-    if (text === RESTART_MARK) resetBubble(pendingEl);
-    else appendToBubble(pendingEl, text);
+    if (text === RESTART_MARK) restartAsThinking(handle);
+    else appendChunk(handle, text);
   });
   es.addEventListener('done', ev => {
     clearGiveUp();
-    const result = JSON.parse(ev.data);
-    pendingEl.querySelector('.bubble').classList.remove('pending');
-    if (result.answered_via === 'web_quota_exceeded') {
-      pendingEl.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search — shared key quota reached, add your own Voyage key in .env for full race Q&amp;A</span>');
-    } else if (result.answered_via === 'web') {
-      pendingEl.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
-    } else {
-      renderSources(pendingEl, result.sources);
-    }
+    finalizeBotRow(handle, JSON.parse(ev.data));
     settle();
   });
   es.addEventListener('error', ev => {
     clearGiveUp();
     let msg = 'generation failed';
     try { msg = JSON.parse(ev.data).error || msg; } catch (e) {}
-    const bubble = pendingEl.querySelector('.bubble');
-    bubble.classList.remove('pending');
-    bubble.textContent = (bubble.textContent ? bubble.textContent + '\n\n' : '') + 'Error: ' + msg;
+    showErrorInRow(handle, 'Error: ' + msg);
     settle();
   });
   // EventSource auto-retries a dropped connection on its own (a real dev-
@@ -223,9 +355,7 @@ function attachToRun(runId, pendingEl, storageKey, onSettled) {
   es.onerror = () => {
     if (giveUpTimer) return;
     giveUpTimer = setTimeout(() => {
-      const bubble = pendingEl.querySelector('.bubble');
-      bubble.classList.remove('pending');
-      bubble.textContent = (bubble.textContent ? bubble.textContent + '\n\n' : '') + '[Interrupted — connection lost. Try asking again.]';
+      showErrorInRow(handle, handle.raw ? handle.raw + '\n\n[Interrupted — connection lost. Try asking again.]' : '[Interrupted — connection lost. Try asking again.]');
       settle();
     }, 8000);
   };
@@ -242,13 +372,13 @@ function tryReattachPendingChat() {
   currentSessionId = pending.session_id;
   $('empty-note').style.display = 'none';
   $('thread').innerHTML = '';
-  addMessage('user', pending.question);
-  const bubble = addMessage('bot', '…');
+  addUserRow(pending.question);
+  const handle = addBotRow();
 
   const input = $('question-input');
   input.disabled = true;
   $('send-btn').disabled = true;
-  attachToRun(pending.run_id, bubble, PENDING_KEY, () => {
+  attachToRun(pending.run_id, handle, PENDING_KEY, () => {
     input.disabled = false;
     $('send-btn').disabled = false;
   });
@@ -290,8 +420,8 @@ $('composer').addEventListener('submit', async ev => {
   input.disabled = true;
   $('send-btn').disabled = true;
 
-  addMessage('user', question);
-  const pending = addMessage('bot', '…');
+  addUserRow(question);
+  const handle = addBotRow();
   const onSettled = () => { input.disabled = false; $('send-btn').disabled = false; input.focus(); };
 
   try {
@@ -301,10 +431,9 @@ $('composer').addEventListener('submit', async ev => {
       body: JSON.stringify({ question }),
     });
     sessionStorage.setItem(PENDING_KEY, JSON.stringify({ run_id, session_id: currentSessionId, question }));
-    attachToRun(run_id, pending, PENDING_KEY, onSettled);
+    attachToRun(run_id, handle, PENDING_KEY, onSettled);
   } catch (e) {
-    pending.querySelector('.bubble').textContent = 'Error: ' + e.message;
-    pending.querySelector('.bubble').classList.remove('pending');
+    showErrorInRow(handle, 'Error: ' + e.message);
     onSettled();
   }
 });

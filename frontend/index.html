@@ -24,6 +24,7 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
     --ink-dim:        #9c9c9f;
     --ink-faint:      #616164;
     --f1-red:         #E10600;
+    --f1-red-bright:  #ff2a1f;
     --f1-red-dim:     rgba(225,6,0,0.16);
     --green:          #17c964;
     --green-dim:      rgba(23,201,100,0.14);
@@ -315,21 +316,61 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .chat-widget.open .chat-panel { display: flex; animation: rise .18s var(--ease-out); }
   .chat-panel-head { flex: 0 0 auto; padding: 12px 14px; background: linear-gradient(180deg, #170f0e 0%, var(--surface-raised) 100%); border-bottom: 1px solid var(--hairline); font: 800 12.5px/1 var(--sans-display); display: flex; align-items: center; justify-content: space-between; }
   .chat-panel-head .sub { display: block; font: 500 10.5px/1 var(--mono); color: var(--ink-faint); margin-top: 4px; letter-spacing: .02em; }
-  .cw-thread { flex: 1 1 auto; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .cw-thread { flex: 1 1 auto; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
   .cw-empty { margin: auto; text-align: center; color: var(--ink-faint); font: 500 12.5px/1.6 var(--sans); padding: 0 10px; }
-  .cw-msg { display: flex; max-width: 88%; }
-  .cw-msg.user { align-self: flex-end; }
-  .cw-msg.bot { align-self: flex-start; }
-  .cw-bubble { padding: 8px 11px; border-radius: 11px; font: 500 13px/1.5 var(--sans); white-space: pre-wrap; }
-  .cw-msg.user .cw-bubble { background: var(--f1-red); color: #fff; border-bottom-right-radius: 3px; }
-  .cw-msg.bot .cw-bubble { background: var(--surface); border: 1px solid var(--hairline); border-bottom-left-radius: 3px; }
-  .cw-bubble.pending { color: var(--ink-faint); font-style: italic; }
-  .via-web-tag { display: inline-block; margin-top: 5px; font: 700 9.5px/1 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); background: rgba(255,255,255,0.06); padding: 3px 6px; border-radius: 4px; }
+
+  /* Panel-card treatment (option B, picked over the plain-bubble original) --
+     same structure/behavior as the standalone chat.html, scaled down to fit
+     the 340px-wide floating widget. */
+  .cw-row { display: flex; gap: 8px; align-items: flex-start; max-width: 100%; }
+  .cw-row.user { flex-direction: row-reverse; }
+  .cw-avatar { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; font: 800 8.5px var(--mono); margin-top: 1px; }
+  .cw-avatar.bot { background: var(--f1-red); color: #fff; }
+  .cw-avatar.user { background: var(--surface); color: var(--ink-faint); border: 1px solid var(--hairline-strong); }
+  .cw-content { max-width: calc(100% - 28px); }
+  .cw-row.user .cw-content { text-align: right; }
+  .cw-plain-msg { display: inline-block; font: 500 13px/1.5 var(--sans); color: var(--ink); padding-top: 1px; white-space: pre-wrap; text-align: left; }
+
+  .cw-row.bot .cw-content { width: 100%; }
+  .cw-panel-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; overflow: hidden; }
+  .cw-panel-head { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-bottom: 1px solid var(--hairline); font: 700 9px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); }
+  .cw-panel-head .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--f1-red); flex: 0 0 auto; }
+  .cw-panel-head .via-tag { margin-left: auto; color: var(--ink-faint); font-weight: 600; text-transform: none; letter-spacing: 0; }
+  .cw-panel-head .via-tag.quota { color: var(--amber); }
+  .cw-panel-body { padding: 10px 11px; font: 500 13px/1.55 var(--sans); }
+  .cw-panel-body p { margin: 0 0 8px; }
+  .cw-panel-body p:last-child { margin-bottom: 0; }
+  .cw-panel-body ul { margin: 6px 0; padding-left: 17px; }
+  .cw-panel-body li { margin: 3px 0; }
+  .cw-panel-body strong { color: #fff; font-weight: 700; }
+  .cw-panel-body.error-body { color: var(--f1-red-bright); }
+
+  .cw-thinking { display: flex; align-items: center; gap: 8px; padding: 11px; }
+  .cw-wave { display: flex; align-items: center; gap: 2px; height: 11px; flex: 0 0 auto; }
+  .cw-wave span { width: 2.5px; background: var(--f1-red); border-radius: 2px; animation: cw-wave 1s ease-in-out infinite; }
+  .cw-wave span:nth-child(1) { height: 40%; animation-delay: 0s; }
+  .cw-wave span:nth-child(2) { height: 100%; animation-delay: .12s; }
+  .cw-wave span:nth-child(3) { height: 65%; animation-delay: .24s; }
+  .cw-wave span:nth-child(4) { height: 90%; animation-delay: .36s; }
+  .cw-wave span:nth-child(5) { height: 50%; animation-delay: .48s; }
+  @keyframes cw-wave { 0%, 100% { transform: scaleY(.5); opacity: .6; } 50% { transform: scaleY(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .cw-wave span { animation: none; } }
+  .cw-thinking-text { font: 500 11.5px var(--sans); color: var(--ink-dim); }
+
+  .cw-panel-foot { border-top: 1px solid var(--hairline); background: var(--surface-raised); }
+  .cw-sources-details summary { cursor: pointer; padding: 6px 10px; font: 700 9px/1 var(--mono); letter-spacing: 0.04em; color: var(--ink-faint); text-transform: uppercase; list-style: none; }
+  .cw-sources-details summary::-webkit-details-marker { display: none; }
+  .cw-sources-details summary::before { content: "▸ "; }
+  .cw-sources-details[open] summary::before { content: "▾ "; }
+  .cw-source-row { display: flex; gap: 6px; padding: 4px 10px 8px; font: 500 11px/1.4 var(--sans); color: var(--ink-dim); }
+  .cw-source-row .lap-tag { flex: 0 0 auto; font: 700 9px/1 var(--mono); color: var(--f1-red-bright); background: var(--f1-red-dim); padding: 2px 5px; border-radius: 4px; height: fit-content; }
+
   .cw-composer { flex: 0 0 auto; display: flex; gap: 6px; padding: 10px; border-top: 1px solid var(--hairline); }
   .cw-composer input { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 8px 10px; border-radius: 8px; font: 500 13px var(--sans); }
   .cw-composer input:disabled { opacity: .5; }
   .cw-composer button { background: var(--f1-red); color: #fff; border: none; width: 34px; border-radius: 8px; font-size: 15px; cursor: pointer; flex: 0 0 auto; }
   .cw-composer button:disabled { opacity: .5; cursor: default; }
+  .cw-composer button:not(:disabled):hover { background: var(--f1-red-bright); }
 </style>
 </head>
 <body>
@@ -1681,28 +1722,124 @@ document.querySelector('.raw-log').addEventListener('toggle', async function () 
 // moment a question is actually sent, so answers respect "no lookahead
 // past what's on screen right now" without the widget itself needing to
 // track lap changes.
-function cwAddMessage(role, text) {
+// Minimal markdown -> HTML, same scope/rules as chat.html's renderMarkdown
+// (see that file for why this isn't a general-purpose parser).
+function cwRenderMarkdown(md) {
+  if (!md) return '';
+  const blocks = md.trim().split(/\n\n+/);
+  return blocks.map(block => {
+    const lines = block.split('\n').filter(l => l.trim());
+    if (lines.length && lines.every(l => /^-\s/.test(l))) {
+      return '<ul>' + lines.map(l => `<li>${cwInline(l.replace(/^-\s/, ''))}</li>`).join('') + '</ul>';
+    }
+    return `<p>${cwInline(lines.join(' '))}</p>`;
+  }).join('');
+}
+function cwInline(s) {
+  return s
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+
+const CW_BOT_AVATAR_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8A2.5 2.5 0 0 1 17.5 16H10l-4.5 4.2V16h-.5A2.5 2.5 0 0 1 2.5 13.5v-8A2.5 2.5 0 0 1 4 5.5Z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+const CW_THINKING_LABELS = ['Reading race records…', 'Checking detected events…', 'Searching the web…', 'Composing the answer…'];
+
+function cwAddUserRow(question) {
   const thread = $('cw-thread');
   const empty = $('cw-empty');
   if (empty) empty.remove();
-  const msg = document.createElement('div');
-  msg.className = `cw-msg ${role}`;
-  msg.innerHTML = `<div class="cw-bubble${role === 'bot' && text === '…' ? ' pending' : ''}"></div>`;
-  msg.querySelector('.cw-bubble').textContent = text === '…' ? '' : text;
-  thread.appendChild(msg);
+  const row = document.createElement('div');
+  row.className = 'cw-row user';
+  row.innerHTML = `<div class="cw-avatar user">Y</div><div class="cw-content"><span class="cw-plain-msg"></span></div>`;
+  row.querySelector('.cw-plain-msg').textContent = question;
+  thread.appendChild(row);
   thread.scrollTop = thread.scrollHeight;
-  return msg;
 }
 
-function cwAppendToBubble(msgEl, text) {
-  const bubble = msgEl.querySelector('.cw-bubble');
-  bubble.classList.remove('pending');
-  bubble.textContent += text;
+function cwAddBotRow() {
+  const thread = $('cw-thread');
+  const empty = $('cw-empty');
+  if (empty) empty.remove();
+  const row = document.createElement('div');
+  row.className = 'cw-row bot';
+  row.innerHTML = `<div class="cw-avatar bot">${CW_BOT_AVATAR_SVG}</div><div class="cw-content"><div class="cw-panel-card"></div></div>`;
+  thread.appendChild(row);
+  thread.scrollTop = thread.scrollHeight;
+
+  const card = row.querySelector('.cw-panel-card');
+  const handle = { card, raw: '', labelIndex: 0, rotateTimer: null };
+  cwShowThinking(handle);
+  return handle;
+}
+
+function cwPanelHead(viaTag) {
+  return `<div class="cw-panel-head"><span class="live-dot"></span>RACE CONTROL${viaTag || ''}</div>`;
+}
+
+function cwShowThinking(handle) {
+  handle.card.innerHTML = cwPanelHead() + `
+    <div class="cw-thinking">
+      <div class="cw-wave"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="cw-thinking-text"></div>
+    </div>`;
+  const label = handle.card.querySelector('.cw-thinking-text');
+  handle.labelIndex = 0;
+  label.textContent = CW_THINKING_LABELS[0];
+  clearInterval(handle.rotateTimer);
+  handle.rotateTimer = setInterval(() => {
+    handle.labelIndex = (handle.labelIndex + 1) % CW_THINKING_LABELS.length;
+    label.textContent = CW_THINKING_LABELS[handle.labelIndex];
+  }, 1400);
+}
+
+function cwAppendChunk(handle, text) {
+  clearInterval(handle.rotateTimer);
+  handle.raw += text;
+  let body = handle.card.querySelector('.cw-panel-body');
+  if (!body) {
+    handle.card.innerHTML = cwPanelHead() + `<div class="cw-panel-body"></div>`;
+    body = handle.card.querySelector('.cw-panel-body');
+  }
+  body.innerHTML = cwRenderMarkdown(handle.raw);
   $('cw-thread').scrollTop = $('cw-thread').scrollHeight;
 }
 
-function cwResetBubble(msgEl) {
-  msgEl.querySelector('.cw-bubble').textContent = '';
+// NEEDS_WEB_SEARCH sentinel -- see chat.html's restartAsThinking for why:
+// whatever streamed so far was provisional, throw it away.
+function cwRestartAsThinking(handle) {
+  handle.raw = '';
+  cwShowThinking(handle);
+}
+
+function cwFinalizeBotRow(handle, result) {
+  clearInterval(handle.rotateTimer);
+  const finalHtml = cwRenderMarkdown(result.answer);
+  if (result.answered_via === 'web_quota_exceeded') {
+    handle.card.innerHTML = cwPanelHead('<span class="via-tag quota">quota reached</span>') + `<div class="cw-panel-body">${finalHtml}</div>`;
+  } else if (result.answered_via === 'web') {
+    handle.card.innerHTML = cwPanelHead('<span class="via-tag">via web</span>') + `<div class="cw-panel-body">${finalHtml}</div>`;
+  } else {
+    handle.card.innerHTML = cwPanelHead() + `<div class="cw-panel-body">${finalHtml}</div>`;
+    if (result.sources && result.sources.length) {
+      const n = result.sources.length;
+      handle.card.insertAdjacentHTML('beforeend', `
+        <div class="cw-panel-foot">
+          <details class="cw-sources-details">
+            <summary>${n} source${n > 1 ? 's' : ''}</summary>
+            ${result.sources.map(s => `<div class="cw-source-row">${s.lap != null ? `<span class="lap-tag">L${s.lap}</span>` : `<span class="lap-tag">AUDIO</span>`}<span></span></div>`).join('')}
+          </details>
+        </div>`);
+      handle.card.querySelectorAll('.cw-source-row span:last-child').forEach((el, i) => { el.textContent = result.sources[i].text; });
+    }
+  }
+  $('cw-thread').scrollTop = $('cw-thread').scrollHeight;
+}
+
+function cwShowErrorInRow(handle, message) {
+  clearInterval(handle.rotateTimer);
+  handle.card.innerHTML = cwPanelHead() + `<div class="cw-panel-body error-body"></div>`;
+  handle.card.querySelector('.error-body').textContent = message;
 }
 
 function toggleChatWidget() {
@@ -1718,7 +1855,7 @@ function toggleChatWidget() {
 const CW_PENDING_KEY = 'f1chat_widget_pending_' + (SESSION_ID || 'live');
 const CW_RESTART_MARK = '\x00RESTART\x00';
 
-function cwAttachToRun(runId, pendingEl, onSettled) {
+function cwAttachToRun(runId, handle, onSettled) {
   const es = new EventSource(`/session/chat/stream/${encodeURIComponent(runId)}`);
   let giveUpTimer = null;
   const clearGiveUp = () => { if (giveUpTimer) { clearTimeout(giveUpTimer); giveUpTimer = null; } };
@@ -1727,27 +1864,19 @@ function cwAttachToRun(runId, pendingEl, onSettled) {
   es.addEventListener('chunk', ev => {
     clearGiveUp();
     const { text } = JSON.parse(ev.data);
-    if (text === CW_RESTART_MARK) cwResetBubble(pendingEl);
-    else cwAppendToBubble(pendingEl, text);
+    if (text === CW_RESTART_MARK) cwRestartAsThinking(handle);
+    else cwAppendChunk(handle, text);
   });
   es.addEventListener('done', ev => {
     clearGiveUp();
-    const result = JSON.parse(ev.data);
-    pendingEl.querySelector('.cw-bubble').classList.remove('pending');
-    if (result.answered_via === 'web_quota_exceeded') {
-      pendingEl.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search — shared key quota reached</span>');
-    } else if (result.answered_via === 'web') {
-      pendingEl.insertAdjacentHTML('beforeend', '<span class="via-web-tag">via web search</span>');
-    }
+    cwFinalizeBotRow(handle, JSON.parse(ev.data));
     settle();
   });
   es.addEventListener('error', ev => {
     clearGiveUp();
     let msg = 'generation failed';
     try { msg = JSON.parse(ev.data).error || msg; } catch (e) {}
-    const bubble = pendingEl.querySelector('.cw-bubble');
-    bubble.classList.remove('pending');
-    bubble.textContent = (bubble.textContent ? bubble.textContent + '\n\n' : '') + 'Error: ' + msg;
+    cwShowErrorInRow(handle, 'Error: ' + msg);
     settle();
   });
   // Give a dropped connection a window to auto-reconnect (EventSource does
@@ -1756,9 +1885,7 @@ function cwAttachToRun(runId, pendingEl, onSettled) {
   es.onerror = () => {
     if (giveUpTimer) return;
     giveUpTimer = setTimeout(() => {
-      const bubble = pendingEl.querySelector('.cw-bubble');
-      bubble.classList.remove('pending');
-      bubble.textContent = (bubble.textContent ? bubble.textContent + '\n\n' : '') + '[Interrupted — connection lost. Try asking again.]';
+      cwShowErrorInRow(handle, handle.raw ? handle.raw + '\n\n[Interrupted — connection lost. Try asking again.]' : '[Interrupted — connection lost. Try asking again.]');
       settle();
     }, 8000);
   };
@@ -1771,11 +1898,11 @@ function cwTryReattachPending() {
   try { pending = JSON.parse(raw); } catch (e) { sessionStorage.removeItem(CW_PENDING_KEY); return; }
 
   $('chat-widget').classList.add('open'); // surface the in-progress answer, don't hide it collapsed
-  cwAddMessage('user', pending.question);
-  const bubble = cwAddMessage('bot', '…');
+  cwAddUserRow(pending.question);
+  const handle = cwAddBotRow();
   const input = $('cw-input');
   input.disabled = true;
-  cwAttachToRun(pending.run_id, bubble, () => { input.disabled = false; });
+  cwAttachToRun(pending.run_id, handle, () => { input.disabled = false; });
 }
 
 document.getElementById('cw-composer').addEventListener('submit', async ev => {
@@ -1786,8 +1913,8 @@ document.getElementById('cw-composer').addEventListener('submit', async ev => {
   input.value = '';
   input.disabled = true;
 
-  cwAddMessage('user', question);
-  const pending = cwAddMessage('bot', '…');
+  cwAddUserRow(question);
+  const handle = cwAddBotRow();
   const onSettled = () => { input.disabled = false; input.focus(); };
 
   try {
@@ -1797,10 +1924,9 @@ document.getElementById('cw-composer').addEventListener('submit', async ev => {
       body: JSON.stringify({ question, max_lap: currentLap }),
     });
     sessionStorage.setItem(CW_PENDING_KEY, JSON.stringify({ run_id, question }));
-    cwAttachToRun(run_id, pending, onSettled);
+    cwAttachToRun(run_id, handle, onSettled);
   } catch (e) {
-    pending.querySelector('.cw-bubble').textContent = 'Error: ' + e.message;
-    pending.querySelector('.cw-bubble').classList.remove('pending');
+    cwShowErrorInRow(handle, 'Error: ' + e.message);
     onSettled();
   }
 });
