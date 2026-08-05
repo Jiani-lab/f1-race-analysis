@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chat mockup A — Refined Dark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,500;0,600;0,700;0,800;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --track:          #050506;
+    --surface:        #101013;
+    --surface-raised: #17171b;
+    --hairline:       rgba(255,255,255,0.08);
+    --hairline-strong: rgba(255,255,255,0.18);
+    --ink:            #f5f5f3;
+    --ink-dim:        #9c9c9f;
+    --ink-faint:      #616164;
+    --f1-red:         #E10600;
+    --f1-red-bright:  #ff2a1f;
+    --f1-red-dim:     rgba(225,6,0,0.16);
+    --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", sans-serif;
+    --sans-display: "Saira Condensed", "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body {
+    margin: 0; background: var(--track); color: var(--ink); font-family: var(--sans);
+    display: flex; flex-direction: column;
+    background-image: radial-gradient(ellipse 900px 460px at 12% -8%, rgba(225,6,0,0.09), transparent 60%);
+  }
+  a { color: var(--f1-red-bright); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button, select, input { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--f1-red-bright); outline-offset: 2px; border-radius: 4px; }
+
+  .masthead { position: relative; background: linear-gradient(180deg, #14100f 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 18px 20px 16px; flex: 0 0 auto; }
+  .mh-title { font: italic 900 20px/1.15 var(--sans-display); }
+  .mh-sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
+
+  main { flex: 1 1 auto; max-width: 760px; width: 100%; margin: 0 auto; padding: 18px 20px 0; display: flex; flex-direction: column; min-height: 0; }
+  .thread { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; }
+
+  .msg { display: flex; flex-direction: column; max-width: 84%; animation: rise .3s var(--ease-out) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.bot { align-self: flex-start; align-items: flex-start; }
+
+  .bubble {
+    padding: 13px 16px; border-radius: 16px; font: 500 14.5px/1.6 var(--sans);
+  }
+  .msg.user .bubble { background: linear-gradient(155deg, var(--f1-red-bright), var(--f1-red)); color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 10px 24px -14px rgba(0,0,0,0.7); }
+  .msg.bot .bubble {
+    background: var(--surface); border: 1px solid var(--hairline); border-bottom-left-radius: 4px;
+    box-shadow: 0 10px 30px -18px rgba(0,0,0,0.6);
+  }
+  .bubble p { margin: 0 0 10px; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble ul { margin: 8px 0; padding-left: 20px; }
+  .bubble li { margin: 4px 0; }
+  .bubble strong { color: #fff; font-weight: 700; }
+
+  /* Thinking state -- alive, not a frozen blob. Rotates through what's
+     actually happening so a genuine ~15-30s web-search latency reads as
+     "working" instead of "broken". */
+  .thinking { display: flex; align-items: center; gap: 10px; padding: 13px 16px; }
+  .thinking-dots { display: flex; gap: 4px; }
+  .thinking-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--f1-red-bright); animation: bounce 1.1s ease-in-out infinite; }
+  .thinking-dots span:nth-child(2) { animation-delay: .15s; }
+  .thinking-dots span:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .4; } 30% { transform: translateY(-4px); opacity: 1; } }
+  .thinking-label { font: 500 13px var(--sans); color: var(--ink-faint); }
+  @media (prefers-reduced-motion: reduce) { .thinking-dots span { animation: none; opacity: .7; } }
+
+  .sources { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .source-chip {
+    display: inline-flex; align-items: center; gap: 5px; font: 600 11.5px/1 var(--sans); color: var(--ink-dim);
+    background: var(--surface-raised); border: 1px solid var(--hairline); border-radius: 20px; padding: 6px 11px 6px 8px;
+    max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .source-chip:hover { border-color: var(--hairline-strong); color: var(--ink); }
+  .source-chip .n { flex: 0 0 auto; width: 15px; height: 15px; border-radius: 50%; background: var(--f1-red-dim); color: var(--f1-red-bright); font: 800 9px/15px var(--mono); text-align: center; }
+
+  .via-web-tag { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font: 700 10px/1 var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 4px; }
+  .via-web-tag::before { content: "🌐"; font-size: 10px; }
+
+  .composer-wrap { flex: 0 0 auto; padding: 16px 0 22px; }
+  .composer {
+    display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--hairline-strong);
+    border-radius: 16px; padding: 6px 6px 6px 16px; transition: border-color .15s, box-shadow .15s;
+  }
+  .composer:focus-within { border-color: var(--f1-red); box-shadow: 0 0 0 4px var(--f1-red-dim); }
+  .composer input { flex: 1; background: transparent; border: none; color: var(--ink); padding: 10px 0; font: 500 14.5px var(--sans); outline: none; }
+  .composer input::placeholder { color: var(--ink-faint); }
+  .composer button {
+    background: var(--f1-red); color: #fff; border: none; width: 38px; height: 38px; border-radius: 12px;
+    cursor: pointer; display: grid; place-items: center; flex: 0 0 auto; transition: background .15s, transform .1s;
+  }
+  .composer button:hover { background: var(--f1-red-bright); }
+  .composer button:active { transform: scale(.94); }
+  .composer-hint { margin-top: 8px; font: 500 11.5px var(--sans); color: var(--ink-faint); text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="mh-title">Ask about a race</div>
+  <div class="mh-sub">Answers this race's own detected events + commentary first, falls back to web search for general F1 questions</div>
+</div>
+
+<main>
+  <div class="thread" id="thread">
+    <div class="msg user"><div class="bubble">what happened with Hamilton's penalty?</div></div>
+    <div class="msg bot" id="bot-msg">
+      <div class="thinking" id="thinking-el">
+        <div class="thinking-dots"><span></span><span></span><span></span></div>
+        <div class="thinking-label" id="thinking-label">Searching the web…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="composer-wrap">
+    <form class="composer" id="composer">
+      <input type="text" placeholder="Ask about this race…" autocomplete="off" />
+      <button type="submit" aria-label="Send">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 12h15M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+    <div class="composer-hint">Streams in as it's generated — a real answer can take 5–30s, especially for web-search questions</div>
+  </div>
+</main>
+
+<script>
+const ANSWER_MD = `Hamilton has racked up **four penalties across the last three races** in 2026:
+
+- **Belgian GP**: 5-second penalty for causing a collision with George Russell at the start (ended Russell's race on lap 1)
+- **British GP**: 5-second penalty for a jump start at Silverstone (deemed to be creeping before lights out)
+- **Hungarian GP**: Two separate penalties — a **3-place grid drop** for impeding Oscar Piastri in qualifying, and a **5-second race penalty** for pitlane speeding (just 0.1 km/h over the limit), dropping him to P5
+
+Ferrari explained the Hungarian incidents as a "succession of mistakes." The penalty run has been costly — Hamilton now trails championship leader Kimi Antonelli by **50 points**.`;
+
+const SOURCES = [
+  { label: "Hamilton penalty for unsafe pit release in Belgian GP confirmed — formula1.com", url: "#" },
+  { label: "FIA confirms Lewis Hamilton penalty after Oscar Piastri investigation — planetf1.com", url: "#" },
+  { label: "Ferrari explains “succession of mistakes” — crash.net", url: "#" },
+];
+
+// Minimal markdown -> HTML: enough for **bold**, "- " lists, and paragraph
+// breaks -- exactly what CHAT_SYSTEM_NOTE's prompt style actually produces.
+// Not a general-purpose parser; deliberately scoped to what this feature emits.
+function renderMarkdown(md) {
+  const blocks = md.trim().split(/\n\n+/);
+  return blocks.map(block => {
+    const lines = block.split('\n').filter(l => l.trim());
+    if (lines.every(l => /^-\s/.test(l))) {
+      return '<ul>' + lines.map(l => `<li>${inline(l.replace(/^-\s/, ''))}</li>`).join('') + '</ul>';
+    }
+    return `<p>${inline(lines.join(' '))}</p>`;
+  }).join('');
+}
+function inline(s) {
+  return s
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+
+const labels = ['Reading race records…', 'Checking detected events…', 'Searching the web…', 'Composing the answer…'];
+let li = 0;
+const labelEl = document.getElementById('thinking-label');
+const rotate = setInterval(() => { li = (li + 1) % labels.length; labelEl.textContent = labels[li]; }, 1400);
+
+setTimeout(() => {
+  clearInterval(rotate);
+  const el = document.getElementById('bot-msg');
+  el.innerHTML = `<div class="bubble">${renderMarkdown(ANSWER_MD)}
+    <div class="sources">${SOURCES.map((s, i) => `<a class="source-chip" href="${s.url}"><span class="n">${i + 1}</span>${s.label}</a>`).join('')}</div>
+  </div>`;
+}, 4200);
+</script>
+</body>
+</html>

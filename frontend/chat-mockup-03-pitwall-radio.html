@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chat mockup C — Pit Wall Radio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,500;0,600;0,700;0,800;0,900;1,900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --track:          #030303;
+    --surface:        #0d0e0e;
+    --hairline:       rgba(255,255,255,0.09);
+    --hairline-strong: rgba(255,255,255,0.2);
+    --ink:            #eef0ee;
+    --ink-dim:        #8f938f;
+    --ink-faint:      #55584f;
+    --f1-red:         #E10600;
+    --f1-red-bright:  #ff2a1f;
+    --amber:          #ffb020;
+    --mono: "IBM Plex Mono", "SF Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", sans-serif;
+    --sans-display: "Saira Condensed", "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body { margin: 0; background: var(--track); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; }
+  a { color: var(--amber); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button, input { font-family: inherit; }
+
+  .masthead { padding: 18px 20px 14px; border-bottom: 2px solid var(--f1-red); flex: 0 0 auto; }
+  .mh-title { font: italic 900 20px/1.15 var(--sans-display); }
+  .mh-sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
+  .mh-sub .frq { color: var(--ink-faint); font-family: var(--mono); }
+
+  main { flex: 1 1 auto; max-width: 740px; width: 100%; margin: 0 auto; padding: 20px 20px 0; display: flex; flex-direction: column; min-height: 0; }
+  .thread { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding-bottom: 16px; }
+
+  .log-line { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--hairline); }
+  .log-time { flex: 0 0 auto; width: 78px; font: 600 11px var(--mono); color: var(--ink-faint); padding-top: 2px; }
+  .log-body { flex: 1 1 auto; min-width: 0; }
+  .log-tag { display: inline-block; font: 800 10.5px/1 var(--mono); letter-spacing: 0.08em; padding: 3px 7px; border-radius: 3px; margin-bottom: 7px; }
+  .log-tag.you { background: rgba(255,255,255,0.08); color: var(--ink-dim); }
+  .log-tag.rc { background: rgba(225,6,0,0.16); color: var(--f1-red-bright); }
+  .log-text { font: 500 14.5px/1.65 var(--sans); }
+  .log-text p { margin: 0 0 10px; }
+  .log-text p:last-child { margin-bottom: 0; }
+  .log-text ul { margin: 8px 0; padding-left: 20px; }
+  .log-text li { margin: 5px 0; }
+  .log-text strong { color: #fff; font-weight: 700; }
+
+  .on-air { display: flex; align-items: center; gap: 9px; }
+  .rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--f1-red); animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(225,6,0,0.5); } 50% { opacity: .55; box-shadow: 0 0 0 5px rgba(225,6,0,0); } }
+  @media (prefers-reduced-motion: reduce) { .rec-dot { animation: none; } }
+  .on-air-text { font: 600 12.5px var(--mono); color: var(--ink-dim); letter-spacing: .03em; }
+  .on-air-text .cursor { display: inline-block; width: 6px; height: 12px; background: var(--ink-dim); margin-left: 2px; vertical-align: -2px; animation: blink 1s step-end infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .sources-log { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--hairline); font: 500 12.5px/1.8 var(--mono); color: var(--ink-faint); }
+  .sources-log a { color: var(--ink-dim); }
+  .sources-log a:hover { color: var(--amber); }
+  .sources-log .idx { color: var(--f1-red-bright); margin-right: 6px; }
+  .via-web { font: 700 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--amber); margin-top: 8px; display: block; }
+
+  .composer-wrap { flex: 0 0 auto; padding: 14px 0 22px; }
+  .composer { display: flex; align-items: center; gap: 0; background: var(--surface); border: 1px solid var(--hairline-strong); border-radius: 4px; }
+  .composer .ptt-label { flex: 0 0 auto; padding: 12px 12px; font: 700 10.5px var(--mono); letter-spacing: .06em; color: var(--ink-faint); border-right: 1px solid var(--hairline); text-transform: uppercase; }
+  .composer input { flex: 1; background: transparent; border: none; color: var(--ink); padding: 12px 14px; font: 500 14.5px var(--mono); outline: none; }
+  .composer input::placeholder { color: var(--ink-faint); }
+  .composer button { background: var(--f1-red); color: #fff; border: none; padding: 0 20px; align-self: stretch; font: 800 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  .composer button:hover { background: var(--f1-red-bright); }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="mh-title">Ask about a race</div>
+  <div class="mh-sub"><span class="frq">CH 09 · PIT WALL</span> — answers this race's own detected events + commentary first, falls back to web search for general F1 questions</div>
+</div>
+
+<main>
+  <div class="thread" id="thread">
+    <div class="log-line">
+      <div class="log-time">10:41:32</div>
+      <div class="log-body">
+        <span class="log-tag you">YOU</span>
+        <div class="log-text">what happened with Hamilton's penalty?</div>
+      </div>
+    </div>
+    <div class="log-line" id="rc-line">
+      <div class="log-time">10:41:33</div>
+      <div class="log-body">
+        <span class="log-tag rc">RACE CONTROL</span>
+        <div class="log-text">
+          <div class="on-air" id="thinking-el">
+            <span class="rec-dot"></span>
+            <span class="on-air-text" id="thinking-label">searching the web<span class="cursor"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="composer-wrap">
+    <form class="composer" id="composer">
+      <span class="ptt-label">TX</span>
+      <input type="text" placeholder="ask about this race…" autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+</main>
+
+<script>
+const ANSWER_MD = `Hamilton has racked up **four penalties across the last three races** in 2026:
+
+- **Belgian GP**: 5-second penalty for causing a collision with George Russell at the start (ended Russell's race on lap 1)
+- **British GP**: 5-second penalty for a jump start at Silverstone (deemed to be creeping before lights out)
+- **Hungarian GP**: Two separate penalties — a **3-place grid drop** for impeding Oscar Piastri in qualifying, and a **5-second race penalty** for pitlane speeding (just 0.1 km/h over the limit), dropping him to P5
+
+Ferrari explained the Hungarian incidents as a "succession of mistakes." The penalty run has been costly — Hamilton now trails championship leader Kimi Antonelli by **50 points**.`;
+
+const SOURCES = [
+  { label: "Hamilton penalty for unsafe pit release in Belgian GP confirmed", url: "#" },
+  { label: "FIA confirms Lewis Hamilton penalty after Piastri investigation", url: "#" },
+  { label: "Ferrari explains “succession of mistakes” — crash.net", url: "#" },
+];
+
+function renderMarkdown(md) {
+  const blocks = md.trim().split(/\n\n+/);
+  return blocks.map(block => {
+    const lines = block.split('\n').filter(l => l.trim());
+    if (lines.every(l => /^-\s/.test(l))) {
+      return '<ul>' + lines.map(l => `<li>${inline(l.replace(/^-\s/, ''))}</li>`).join('') + '</ul>';
+    }
+    return `<p>${inline(lines.join(' '))}</p>`;
+  }).join('');
+}
+function inline(s) {
+  return s
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+
+const labels = ['reading race records', 'checking detected events', 'searching the web', 'composing the answer'];
+let li = 0;
+const labelEl = document.getElementById('thinking-label');
+const rotate = setInterval(() => {
+  li = (li + 1) % labels.length;
+  labelEl.innerHTML = labels[li] + '<span class="cursor"></span>';
+}, 1400);
+
+setTimeout(() => {
+  clearInterval(rotate);
+  document.getElementById('rc-line').querySelector('.log-body').innerHTML = `
+    <span class="log-tag rc">RACE CONTROL</span>
+    <div class="log-text">
+      ${renderMarkdown(ANSWER_MD)}
+      <span class="via-web">via web search</span>
+      <div class="sources-log">
+        ${SOURCES.map((s, i) => `<div><span class="idx">[${i + 1}]</span><a href="${s.url}">${s.label}</a></div>`).join('')}
+      </div>
+    </div>
+  `;
+}, 4200);
+</script>
+</body>
+</html>

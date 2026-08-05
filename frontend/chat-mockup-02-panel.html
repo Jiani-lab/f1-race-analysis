@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chat mockup B — Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,500;0,600;0,700;0,800;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --track:          #08090b;
+    --panel:          #131417;
+    --panel-raised:   #1a1c20;
+    --hairline:       rgba(255,255,255,0.07);
+    --hairline-strong: rgba(255,255,255,0.16);
+    --ink:            #f2f2f0;
+    --ink-dim:        #96979c;
+    --ink-faint:      #58595d;
+    --f1-red:         #E10600;
+    --f1-red-bright:  #ff2a1f;
+    --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", sans-serif;
+    --sans-display: "Saira Condensed", "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body { margin: 0; background: var(--track); color: var(--ink); font-family: var(--sans); display: flex; flex-direction: column; }
+  a { color: inherit; }
+  button, input { font-family: inherit; }
+
+  .masthead { padding: 18px 20px 14px; border-bottom: 1px solid var(--hairline); flex: 0 0 auto; }
+  .mh-title { font: italic 900 20px/1.15 var(--sans-display); }
+  .mh-sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
+
+  main { flex: 1 1 auto; max-width: 720px; width: 100%; margin: 0 auto; padding: 20px 20px 0; display: flex; flex-direction: column; min-height: 0; }
+  .thread { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding-bottom: 16px; }
+
+  .row { display: flex; gap: 10px; align-items: flex-start; }
+  .row.user { flex-direction: row-reverse; }
+  .avatar { flex: 0 0 auto; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font: 800 11px var(--mono); }
+  .avatar.bot { background: var(--f1-red); color: #fff; }
+  .avatar.user { background: var(--panel-raised); color: var(--ink-dim); border: 1px solid var(--hairline-strong); }
+
+  .content { max-width: calc(100% - 40px); }
+  .row.user .content { text-align: right; }
+  .plain-msg { display: inline-block; font: 500 14.5px/1.6 var(--sans); color: var(--ink); padding-top: 3px; }
+
+  .panel-card {
+    background: var(--panel); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden;
+  }
+  .panel-head {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--hairline);
+    font: 700 10.5px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .panel-head .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--f1-red); }
+  .panel-body { padding: 16px; font: 500 14.5px/1.65 var(--sans); }
+  .panel-body p { margin: 0 0 11px; }
+  .panel-body p:last-child { margin-bottom: 0; }
+  .panel-body ul { margin: 8px 0; padding-left: 20px; }
+  .panel-body li { margin: 5px 0; }
+  .panel-body strong { color: #fff; font-weight: 700; }
+
+  .thinking-panel { display: flex; align-items: center; gap: 10px; padding: 15px 16px; }
+  .wave { display: flex; align-items: center; gap: 3px; height: 14px; }
+  .wave span { width: 3px; background: var(--f1-red); border-radius: 2px; animation: wave 1s ease-in-out infinite; }
+  .wave span:nth-child(1) { height: 40%; animation-delay: 0s; }
+  .wave span:nth-child(2) { height: 100%; animation-delay: .12s; }
+  .wave span:nth-child(3) { height: 65%; animation-delay: .24s; }
+  .wave span:nth-child(4) { height: 90%; animation-delay: .36s; }
+  .wave span:nth-child(5) { height: 50%; animation-delay: .48s; }
+  @keyframes wave { 0%, 100% { transform: scaleY(.5); opacity: .6; } 50% { transform: scaleY(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .wave span { animation: none; } }
+  .thinking-text { font: 500 13px var(--sans); color: var(--ink-dim); }
+
+  .panel-foot { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--hairline); background: var(--panel-raised); }
+  .source-pill { font: 600 11px/1 var(--sans); color: var(--ink-dim); background: var(--track); border: 1px solid var(--hairline-strong); border-radius: 6px; padding: 6px 9px; text-decoration: none; }
+  .source-pill:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .via-note { font: 600 11px var(--mono); color: var(--ink-faint); padding: 12px 16px; border-top: 1px solid var(--hairline); background: var(--panel-raised); letter-spacing: .04em; text-transform: uppercase; }
+
+  .composer-wrap { flex: 0 0 auto; padding: 16px 0 22px; }
+  .composer {
+    display: flex; align-items: flex-end; gap: 8px; background: var(--panel); border: 1px solid var(--hairline-strong);
+    border-radius: 14px; padding: 10px 10px 10px 16px;
+  }
+  .composer:focus-within { border-color: rgba(225,6,0,0.5); }
+  .composer input { flex: 1; background: transparent; border: none; color: var(--ink); padding: 8px 0; font: 500 14.5px var(--sans); outline: none; }
+  .composer input::placeholder { color: var(--ink-faint); }
+  .composer button { background: var(--f1-red); color: #fff; border: none; padding: 10px 18px; border-radius: 9px; font: 700 12.5px var(--sans-display); letter-spacing: .02em; cursor: pointer; }
+  .composer button:hover { background: var(--f1-red-bright); }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="mh-title">Ask about a race</div>
+  <div class="mh-sub">Answers this race's own detected events + commentary first, falls back to web search for general F1 questions</div>
+</div>
+
+<main>
+  <div class="thread" id="thread">
+    <div class="row user">
+      <div class="avatar user">YOU</div>
+      <div class="content"><span class="plain-msg">what happened with Hamilton's penalty?</span></div>
+    </div>
+    <div class="row">
+      <div class="avatar bot">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8A2.5 2.5 0 0 1 17.5 16H10l-4.5 4.2V16h-.5A2.5 2.5 0 0 1 2.5 13.5v-8A2.5 2.5 0 0 1 4 5.5Z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="content" style="max-width: 620px; width: 100%;">
+        <div class="panel-card" id="panel-card">
+          <div class="panel-head"><span class="live-dot"></span>F1 Race Control</div>
+          <div class="thinking-panel" id="thinking-el">
+            <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="thinking-text" id="thinking-label">Searching the web…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="composer-wrap">
+    <form class="composer" id="composer">
+      <input type="text" placeholder="Ask about this race…" autocomplete="off" />
+      <button type="submit">Ask</button>
+    </form>
+  </div>
+</main>
+
+<script>
+const ANSWER_MD = `Hamilton has racked up **four penalties across the last three races** in 2026:
+
+- **Belgian GP**: 5-second penalty for causing a collision with George Russell at the start (ended Russell's race on lap 1)
+- **British GP**: 5-second penalty for a jump start at Silverstone (deemed to be creeping before lights out)
+- **Hungarian GP**: Two separate penalties — a **3-place grid drop** for impeding Oscar Piastri in qualifying, and a **5-second race penalty** for pitlane speeding (just 0.1 km/h over the limit), dropping him to P5
+
+Ferrari explained the Hungarian incidents as a "succession of mistakes." The penalty run has been costly — Hamilton now trails championship leader Kimi Antonelli by **50 points**.`;
+
+const SOURCES = [
+  { label: "formula1.com", url: "#" },
+  { label: "planetf1.com", url: "#" },
+  { label: "crash.net", url: "#" },
+  { label: "espn.com", url: "#" },
+];
+
+function renderMarkdown(md) {
+  const blocks = md.trim().split(/\n\n+/);
+  return blocks.map(block => {
+    const lines = block.split('\n').filter(l => l.trim());
+    if (lines.every(l => /^-\s/.test(l))) {
+      return '<ul>' + lines.map(l => `<li>${inline(l.replace(/^-\s/, ''))}</li>`).join('') + '</ul>';
+    }
+    return `<p>${inline(lines.join(' '))}</p>`;
+  }).join('');
+}
+function inline(s) {
+  return s
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+}
+
+const labels = ['Reading race records…', 'Checking detected events…', 'Searching the web…', 'Composing the answer…'];
+let li = 0;
+const labelEl = document.getElementById('thinking-label');
+const rotate = setInterval(() => { li = (li + 1) % labels.length; labelEl.textContent = labels[li]; }, 1400);
+
+setTimeout(() => {
+  clearInterval(rotate);
+  document.getElementById('panel-card').innerHTML = `
+    <div class="panel-head"><span class="live-dot"></span>F1 Race Control</div>
+    <div class="panel-body">${renderMarkdown(ANSWER_MD)}</div>
+    <div class="panel-foot">${SOURCES.map(s => `<a class="source-pill" href="${s.url}">${s.label} ↗</a>`).join('')}</div>
+  `;
+}, 4200);
+</script>
+</body>
+</html>
