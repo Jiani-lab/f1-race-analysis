@@ -5,15 +5,31 @@
 
 ## 运行
 
-前提：Luci 正在跑（`screen-memory` MCP 在 `http://127.0.0.1:8765`），且已经打开 ASR。
+**首次安装**：先确保 [Luci](https://luci.so)（或你自己的 `screen-memory` MCP）已经装好并在跑，
+打开了 ASR；然后跑：
+
+```bash
+./setup.sh
+```
+
+自动装 Python 依赖（`uv sync`）、生成 Web Push 用的 VAPID 密钥对、探测 Luci 是否连得上、引导你
+配置 RAG chatbot 的 Voyage key（可选，跳过也能用，只是 chatbot 会退化成纯联网搜索）。装不了的
+那几步（Luci 本体、Voyage 账号注册、浏览器通知权限）脚本会打印清楚下一步该做什么，不会假装帮
+你做了。具体每个变量是什么、为什么有些能自动填有些不能，见 [`.env.example`](.env.example)。
+
+跑完脚本会提示你启动命令：
 
 ```bash
 uv run uvicorn app:app --app-dir backend --reload --port 8800
 ```
 
-打开 http://127.0.0.1:8800 。后台每 90 秒检测一次是否在看 B站 F1 直播（`browserUrl` 含
-`bilibili.com` 且画面里出现 `LAP n/70` 格式文字），检测到自动开始录 session；结束时手动点
-网站上的「结束本场」。
+打开 http://127.0.0.1:8800 ，首页有个「开启比赛提醒」按钮，点一下授权浏览器通知（只需要做一次，
+之后每场比赛都会自动推送，不用再开着标签页）。
+
+**已经装过、只是重开电脑/换目录**：`.env` 还在的话直接跑启动命令就行，不用重新走 `setup.sh`。
+
+后台每 90 秒检测一次画面里是否出现 `LAP n/70` 格式文字（不限定平台，B站/YouTube 等转播源都认），
+检测到自动开始录 session；结束时手动点网站上的「结束本场」。
 
 ## 目录
 
@@ -29,7 +45,8 @@ uv run uvicorn app:app --app-dir backend --reload --port 8800
 
 ## 已知限制 / 下一步
 
-- 检测规则目前只认 bilibili.com，换平台看比赛要改 `detect.py`
+- ~~检测规则目前只认 bilibili.com~~ 已在 Phase 4 放开，只要求画面里出现 `LAP n/70` 格式文字，不
+  限定转播平台
 - 胎况色块图标识别（多模态兜底）还没写，目前靠 audio + 平台字幕覆盖，真的需要时再补
   `vision_read.py`
 - 后台检测只在你手动跑起 `uvicorn` 之后才生效，不是开机自启
