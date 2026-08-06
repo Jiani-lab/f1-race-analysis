@@ -9,6 +9,13 @@ session under one dated bullet where it makes sense.
 
 ---
 
+- **2026-08-06** — Removed the 8 `frontend/style-0N-*.html` mockups
+  (2026-07-31) after confirming with the user they were superseded, not
+  still a live decision — real site (`index.html`) already loads Saira
+  Condensed directly via `--sans-display`, while the mockups referenced a
+  different, never-updated font variable, confirming the 8-03 restyle had
+  already made the choice. Updated the stale cross-reference in
+  `CURRENT-STATUS.md`'s "known limitations" section accordingly.
 - **2026-08-05** — RAG chatbot rebuilt to stream over SSE with a
   persisted, reconnectable run (`analysis.start_chat_run`/`get_chat_run`,
   `/session/chat/stream/{run_id}`) instead of a single blocking

@@ -90,7 +90,9 @@ today, no accounts, no auth, no CORS — `app.py` has exactly one global
 - No auth anywhere in `backend/`. Every endpoint is trusted-local-only.
 - Luci's `app` field is unreliable (often null) — detection and event
   logic depend on on-screen OCR text, not app identity.
-- `frontend/style-0N-*.html` and `frontend/module-*.html` are design
-  exploration/preview files, not part of the live site — don't treat
-  their design choices (or design-hook findings on them) as bugs in the
-  real UI (`home.html`, `index.html`, `chat.html`, `settings.html`).
+- `frontend/module-*.html` are design exploration/preview files, not part
+  of the live site — don't treat their design choices (or design-hook
+  findings on them) as bugs in the real UI (`home.html`, `index.html`,
+  `chat.html`, `settings.html`). (The sibling `style-0N-*.html` mockups
+  from 2026-07-31 were removed 2026-08-06 — confirmed superseded by the
+  Saira Condensed restyle already applied to the real site.)

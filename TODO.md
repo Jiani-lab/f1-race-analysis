@@ -44,8 +44,3 @@ Blocked on 6c. Five things to actually check when it happens (not assume):
 - [ ] `README.md`'s `目录` and `已知限制` sections are still mostly
   Milestone-0-era and don't reflect Phase 2–6 — needs a real rewrite, not
   just the one-line fixes done so far.
-- [ ] Unclear whether the 8 `frontend/style-0N-*.html` mockups (2026-07-31)
-  are still a live decision to pick from, or superseded by the direct
-  Saira Condensed restyle already applied to the real site (2026-08-03) —
-  worth confirming with the user; if superseded, consider whether to keep
-  them around as reference or remove them.
