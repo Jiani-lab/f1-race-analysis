@@ -27,7 +27,25 @@ Luci (local-only, loopback)  →  backend/ (FastAPI, one process per person)  �
 worker/ (Cloudflare Worker, SEPARATE sub-project)
   → reverse-proxies f1lightout.com to this Mac's tunnel
   → falls back to a read-only KV snapshot (backend/sync_snapshot.py pushes it) if the Mac is offline
+  → for an ENDED session, can generate a post-race summary via the Anthropic API directly
+    (worker/src/cloud_generate.js + a Worker secret), reading that session's full merged.jsonl
+    (also synced by sync_snapshot.py) -- works with the Mac fully off, no `claude -p` involved
 ```
+
+**Privacy note on the line above, read before extending it further**: raw
+commentary text (`merged.jsonl`) leaving this Mac at all is a real
+exception, not the default. It is synced ONLY for sessions whose `status`
+is `"ended"` (never a live one), and ONLY for cloud_generate.js's own use
+(summary generation) -- per an explicit 2026-08-06 user decision that
+overrides the *general* "raw commentary stays local" privacy stance for
+this one specific, single-user (Jiani-only) use case. This does **not**
+carry over to the separate, still-unbuilt Phase 6c multi-user portal
+(TODO.md) -- that plan's own exclusion of `merged.jsonl`/`rag_chunks`
+stands as previously decided, because a multi-tenant portal (other
+people's transcripts, unclear account-isolation boundaries at this point)
+is a materially different privacy situation than one person's own
+offline-fallback site. Don't treat this decision as blanket permission to
+sync more raw data elsewhere without asking again.
 
 **Luci is strictly local-machine-only** (`LUCI_MCP_URL` is always
 `127.0.0.1`, no remote mode exists) — this is why "everyone gets their own
@@ -62,7 +80,13 @@ today, no accounts, no auth, no CORS — `app.py` has exactly one global
   itself restarts, in-flight runs are gone, same as everything else here.
 - **Offline fallback**: `f1lightout.com` stays up (read-only cached
   snapshot) even when this Mac is off, via the separate `worker/` +
-  `sync_snapshot.py` sub-project.
+  `sync_snapshot.py` sub-project. Ended sessions additionally get a
+  cloud-generated post-race summary button (Anthropic API called directly
+  from the Worker, `thinking: disabled` -- learned the hard way that this
+  model's extended thinking otherwise consumes the whole `max_tokens`
+  budget on an empty `thinking` block, leaving nothing for the actual
+  answer) -- reads that session's full log, synced once per ended session
+  and cached forever after (see the privacy note above).
 - **Watchdog**: alerts (via push) if the backend, tunnel, or sync loop
   stop responding — added after a real crash-loop went unnoticed.
 - **Tests**: `backend/tests/` (pytest, run with `uv run pytest`) covers

@@ -15,9 +15,31 @@
 // like the live site's images do, they'd be exactly as unreachable as
 // everything else on a Mac that's off, defeating the point.
 
+import { generateSummary } from "./cloud_generate.js";
+
 const ORIGIN = "https://origin.f1lightout.com";
 const ORIGIN_TIMEOUT_MS = 4000;
+// The chat SSE stream (backend/analysis.py's start_chat_run +
+// /session/chat/stream/{run_id}) is a genuinely long-lived response by
+// design -- generation can take tens of seconds up to ~180s worst case
+// (a local-grounded attempt falling through to a web-search fallback,
+// each up to 90s). ORIGIN_TIMEOUT_MS exists to detect "the Mac is off"
+// quickly for ordinary fast requests, but applying that same 4s limit to
+// this path killed every real chat answer before it could finish, even
+// with a perfectly healthy origin -- verified for real: a request that
+// hit this exact timeout had already completed successfully server-side
+// moments later, the origin was never actually down. 200s is a generous
+// upper bound on the worst case above; if Cloudflare's own platform-level
+// subrequest limit is shorter than that on whatever plan this runs under,
+// this ceiling won't matter (untested against that, no way to verify it
+// from outside an actual Cloudflare account).
+const STREAM_TIMEOUT_MS = 200_000;
 const ASSET_PREFIX = "/fallback-assets/";
+const CLOUD_SUMMARY_PATH = "/api/cloud-summary";
+
+function isStreamingPath(pathname) {
+  return pathname.startsWith("/session/chat/stream/");
+}
 
 export default {
   async fetch(request, env) {
@@ -29,6 +51,31 @@ export default {
       const assetUrl = new URL(request.url);
       assetUrl.pathname = url.pathname.slice(ASSET_PREFIX.length - 1); // keep leading /
       return env.ASSETS.fetch(new Request(assetUrl, request));
+    }
+
+    // Cloud-side generation (see cloud_generate.js) -- deliberately NOT
+    // routed through the origin-try-first logic below. This only makes
+    // sense to call when the Mac is offline in the first place (the local
+    // backend already has its own, better version of this feature that
+    // runs when the Mac is up); trying the origin first here would just
+    // add ORIGIN_TIMEOUT_MS of latency to every call for no benefit.
+    if (url.pathname === CLOUD_SUMMARY_PATH) {
+      const sessionId = url.searchParams.get("session");
+      if (!sessionId) {
+        return new Response(JSON.stringify({ error: "missing ?session=" }), {
+          status: 400, headers: { "content-type": "application/json" },
+        });
+      }
+      try {
+        const result = await generateSummary(env, sessionId);
+        return new Response(JSON.stringify(result), {
+          status: 200, headers: { "content-type": "application/json" },
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: String(err.message || err) }), {
+          status: 502, headers: { "content-type": "application/json" },
+        });
+      }
     }
 
     const originUrl = ORIGIN + url.pathname + url.search;
@@ -45,7 +92,7 @@ export default {
         headers: request.headers,
         body: ["GET", "HEAD"].includes(request.method) ? undefined : request.body,
         redirect: "manual",
-        signal: AbortSignal.timeout(ORIGIN_TIMEOUT_MS),
+        signal: AbortSignal.timeout(isStreamingPath(url.pathname) ? STREAM_TIMEOUT_MS : ORIGIN_TIMEOUT_MS),
       });
       if (CLOUDFLARE_TUNNEL_ERROR_CODES.has(resp.status)) {
         return renderFallback(env, url);
@@ -101,6 +148,18 @@ async function renderFallback(env, url) {
     }
 
     const isLive = target.status === "active";
+    // Cloud summary generation only makes sense for an ended session --
+    // there is no synced log at all for a still-live one (see
+    // sync_ended_session_logs in sync_snapshot.py), and "what happened so
+    // far" for a race nobody is currently watching isn't a question this
+    // feature answers.
+    const summaryBlock = isLive ? "" : `
+      <div class="card">
+        <div class="events-label">Post-race summary (generated in the cloud, works even though the Mac is off)</div>
+        <button class="ghost-btn" id="gen-summary-btn" data-session="${escapeHtml(target.session_id)}" style="margin-top: 10px;">Generate summary</button>
+        <div id="summary-result" style="margin-top: 12px; display: none;"></div>
+      </div>`;
+
     return new Response(shellHTML(`
       <div class="banner">⚠ Live view is offline (Jiani's machine is asleep/off) — showing the last synced snapshot from ${syncedAt}. Nothing here updates until it's back${isLive ? " — this session was still live at last sync" : ""}.</div>
       <div class="card ${isLive ? "live-card" : ""}">
@@ -113,8 +172,9 @@ async function renderFallback(env, url) {
             ${(target.events || []).slice(-8).reverse().map(eventRow).join("")}
           </div>` : `<div class="events-label">No events captured for this session.</div>`}
       </div>
+      ${summaryBlock}
       <a class="back-link" href="/">← All races</a>
-    `), { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
+    `, true), { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
   }
 
   const liveBlock = liveSession ? `
@@ -171,7 +231,7 @@ const FLAG_ICON_SVG = `
     </g>
   </svg>`;
 
-function shellHTML(body) {
+function shellHTML(body, withSummaryScript = false) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -251,6 +311,12 @@ function shellHTML(body) {
   .event .lap { font: 700 11px var(--mono); color: var(--ink-faint); margin-right: 8px; }
   .empty-state { font: 500 14px/1.7 var(--sans); color: var(--ink-faint); padding: 30px 4px; text-align: center; border: 1px dashed var(--hairline-strong); border-radius: 12px; }
   .back-link { display: inline-block; margin-top: 20px; color: var(--ink-dim); font: 700 12px var(--sans-display); text-decoration: none; }
+  .ghost-btn { background: transparent; border: 1px solid var(--hairline-strong); color: var(--ink-dim); padding: 9px 15px; border-radius: 8px; font: 700 12.5px var(--sans-display); cursor: pointer; transition: border-color .15s, color .15s; }
+  .ghost-btn:hover { border-color: #ff6a5f; color: #ff9c94; }
+  .ghost-btn:disabled { opacity: .5; cursor: default; }
+  .summary-text { font: 500 14px/1.7 var(--sans); color: var(--ink-dim); white-space: pre-wrap; }
+  .summary-note { font: 600 11px var(--mono); color: var(--ink-faint); margin-top: 10px; }
+  .summary-error { color: #ff9c94; font: 600 13px/1.6 var(--sans); }
 </style>
 </head>
 <body>
@@ -269,6 +335,35 @@ function shellHTML(body) {
 <main>
   ${body}
 </main>
+${withSummaryScript ? `<script>
+  const btn = document.getElementById("gen-summary-btn");
+  if (btn) {
+    btn.addEventListener("click", async () => {
+      const sessionId = btn.dataset.session;
+      const out = document.getElementById("summary-result");
+      btn.disabled = true;
+      btn.textContent = "Generating (cloud)...";
+      out.style.display = "block";
+      out.innerHTML = '<div class="summary-note">Calling the cloud model over the synced log -- can take up to a minute for a full race.</div>';
+      try {
+        const resp = await fetch("${CLOUD_SUMMARY_PATH}?session=" + encodeURIComponent(sessionId));
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || ("HTTP " + resp.status));
+        out.innerHTML = '<div class="summary-text"></div><div class="summary-note"></div>';
+        out.querySelector(".summary-text").textContent = data.text;
+        out.querySelector(".summary-note").textContent = data.cached
+          ? "Cached from an earlier generation."
+          : "Generated just now" + (data.truncated ? " (log was truncated -- unusually long session)" : "") + ".";
+        btn.style.display = "none";
+      } catch (err) {
+        out.innerHTML = '<div class="summary-error"></div>';
+        out.querySelector(".summary-error").textContent = "Could not generate: " + err.message;
+        btn.disabled = false;
+        btn.textContent = "Generate summary";
+      }
+    });
+  }
+</script>` : ""}
 </body>
 </html>`;
 }

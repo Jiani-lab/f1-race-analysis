@@ -25,6 +25,21 @@ checked — a done item isn't a todo.
   person, the portal is view-only. (Noted here so nobody "fixes" this by
   accident.)
 
+## Offline cloud-side generation (worker/, extends the 2026-08-06 work)
+
+- [ ] Only "post-race summary" is built. Catch-up, What-If, and RAG chat
+  were the original ask too but deliberately deferred to prove the pattern
+  on one feature first — What-If needs multi-turn state (the local version
+  uses `claude -p --resume`; the Anthropic API equivalent is just resending
+  conversation history, but the Worker needs somewhere to keep the running
+  message array per session), and RAG chat additionally needs a second
+  external key (Voyage, for the query embedding) before it can retrieve
+  anything.
+- [ ] `TRUNCATE_CHARS` (700k chars) in `cloud_generate.js` is untested — the
+  one real session on record (2238 records) came in under it. A much
+  longer session will silently truncate rather than chunk like the local
+  `analysis.py` map-reduce pipeline does above `CHUNK_RECORD_THRESHOLD`.
+
 ## Phase 6d — validate with a real second person
 
 Blocked on 6c. Five things to actually check when it happens (not assume):

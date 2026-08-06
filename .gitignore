@@ -18,3 +18,4 @@ backend/voyage_usage.json
 
 # Cloudflare Worker build cache
 worker/.wrangler/
+backend/.synced_session_logs.json

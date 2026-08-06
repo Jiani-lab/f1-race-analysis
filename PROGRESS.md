@@ -9,6 +9,28 @@ session under one dated bullet where it makes sense.
 
 ---
 
+- **2026-08-06** — Cloud-side post-race summary generation for ended
+  sessions, working with the Mac fully off (`worker/src/cloud_generate.js`,
+  calls the Anthropic API directly with a new `ANTHROPIC_API_KEY` Worker
+  secret, since Workers cannot shell out to `claude -p`). Required an
+  explicit privacy-decision override: `sync_snapshot.py` now uploads each
+  ENDED session's full `merged.jsonl` to KV once (never a live session's),
+  which the general "raw commentary stays local" stance previously
+  excluded -- confirmed with the user this is scoped to this one feature,
+  not a blanket policy change (see the privacy note in
+  `CURRENT-STATUS.md`, and note the separate Phase 6c portal's own
+  exclusion in `TODO.md` is untouched by this). Two real bugs hit and
+  fixed getting it working: macOS's command-line argument length limit
+  broke the upload for anything over ~1MB (the one real full-race log is
+  1.1MB) -- fixed by writing to a temp file and using `wrangler kv key put
+  --path=` instead of passing the content as a CLI argument. And the
+  model's extended thinking defaulted on and consumed the entire
+  `max_tokens` budget on an empty `thinking` block, leaving zero tokens
+  for the actual answer (confirmed by dumping the raw API response) --
+  fixed with `thinking: { type: "disabled" }`. Verified end-to-end against
+  the one real full session on record (2238 records, ~140k prompt tokens):
+  a real, well-structured post-race summary generated in ~40s, comparable
+  in depth/quality to the local `claude -p` pipeline's own summaries.
 - **2026-08-06** — Rewrote README.md's `目录` and `已知限制` sections
   (Housekeeping TODO), which were still Milestone-0-era — `目录` only
   listed the original 5 backend files + `index.html` and never mentioned
