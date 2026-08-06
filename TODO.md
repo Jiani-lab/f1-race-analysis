@@ -38,9 +38,3 @@ Blocked on 6c. Five things to actually check when it happens (not assume):
   never see person B's race data.
 - [ ] The portal view actually stays live during a real race, not just on
   first load.
-
-## Housekeeping
-
-- [ ] `README.md`'s `目录` and `已知限制` sections are still mostly
-  Milestone-0-era and don't reflect Phase 2–6 — needs a real rewrite, not
-  just the one-line fixes done so far.

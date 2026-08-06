@@ -33,24 +33,46 @@ uv run uvicorn app:app --app-dir backend --reload --port 8800
 
 ## 目录
 
-- `backend/mcp_client.py` — 直连 Luci MCP HTTP 端点的最小 JSON-RPC 客户端
-- `backend/detect.py` — 直播检测逻辑
-- `backend/retrieval.py` — 确定性抓取：分块拉 vision（`aggregate_range`），关键词扫 audio
-  （`audio_transcript_search`，用常见字做 sweep 保证覆盖率），合并成按时间排序的 JSONL，
-  外加从 vision 文本里抽取的圈速/差距数值序列
-- `backend/analysis.py` — A/B/C/D 四个功能调 `claude -p`（headless），E 是纯结构化数据
-- `backend/app.py` — FastAPI，含内置后台检测轮询任务（不依赖 openclaw / 云端 cron）
-- `frontend/index.html` — 单页前端，状态条 + 补看输入框 + 总结/What-if 按钮 + 可点击时间轴 +
-  Chart.js 折线图
+后端（`backend/`，FastAPI，一人一进程，无多租户/无鉴权，见 [`CURRENT-STATUS.md`](CURRENT-STATUS.md)）：
 
-## 已知限制 / 下一步
+- `mcp_client.py` — 直连 Luci MCP HTTP 端点的最小 JSON-RPC 客户端
+- `detect.py` — 直播检测逻辑（画面里认 `LAP n/70` 格式文字，不限定转播平台）
+- `retrieval.py` — 确定性抓取：分块拉 vision（`aggregate_range`），关键词扫 audio
+  （`audio_transcript_search`），合并成按时间排序的 JSONL，外加从 vision 文本里抽取的
+  圈速/差距数值序列
+- `analysis.py` — 调 `claude -p`（headless）生成事件短评/赛后总结/What-if 等，事件每
+  5 分钟刷新一次；RAG 聊天走独立的流式后台任务（`start_chat_run`），支持断线重连续播
+- `app.py` — FastAPI 入口，含内置后台检测轮询任务（不依赖 openclaw / 云端 cron）
+- `push.py` — 真实浏览器推送（VAPID + Service Worker），零标签页也能收到通知
+- `rag.py` — 赛事问答的检索增强层：Voyage embeddings 建索引 + `claude -p` 兜底联网搜索
+- `sync_snapshot.py` — 把最新状态同步到 Cloudflare KV，供 `worker/` 的离线兜底页使用
+- `watchdog.py` — 独立跑的看门狗，backend/隧道/同步任一挂了就推送报警
+- `tests/` — pytest（`uv run pytest`），覆盖日历自动命名、断线去重、事件选手归属这几处
+  查出过真 bug 的纯逻辑
 
-- ~~检测规则目前只认 bilibili.com~~ 已在 Phase 4 放开，只要求画面里出现 `LAP n/70` 格式文字，不
-  限定转播平台
+前端（`frontend/`，静态 HTML/JS，同源；`module-*.html`/`chat-mockup-*.html`/
+`design-directions.html` 是设计预览稿，不是站点本体）：
+
+- `home.html` — 首页，比赛列表 + 直播状态
+- `index.html` — 单场比赛页，状态条 + 补看输入框 + 总结/What-if + 可点击时间轴 + 图表
+- `chat.html` — RAG 聊天独立页
+- `settings.html` — 通知偏好设置
+
+其他：
+
+- `worker/` — 独立的 Cloudflare Worker 子项目，把 f1lightout.com 反代到本机隧道，本机离线
+  时改用 `sync_snapshot.py` 同步过去的 KV 快照兜底（详见 `CURRENT-STATUS.md` 架构图）
+- `setup.sh` — 一键装依赖/生成 VAPID 密钥/探测 Luci 连通性/引导配置 Voyage key
+
+## 已知限制
+
+（完整、随时更新的版本见 [`CURRENT-STATUS.md`](CURRENT-STATUS.md) 的「Known constraints」——
+这里只列几条最容易踩的坑）
+
+- 一个后端进程只有一份全局 `state`，同一时间只能追踪一场比赛，也没有多用户概念——每个人
+  跑自己的一整套本地服务（`./setup.sh`），不是共享一个服务器
+- `backend/` 所有接口都不带鉴权，默认只信任本机访问
+- Luci 的 `app` 字段经常是 null 不可靠，检测/事件逻辑全靠画面 OCR 文字，不依赖它
 - 胎况色块图标识别（多模态兜底）还没写，目前靠 audio + 平台字幕覆盖，真的需要时再补
-  `vision_read.py`
-- 后台检测只在你手动跑起 `uvicorn` 之后才生效，不是开机自启
-- 已用 Milestone 0 的真实 8 分钟录制数据跑通全链路（94 条 vision + 81 条 audio 合并，
-  `catchup` 输出的赛后小结正确综合了两条流的信息，包括维斯塔潘车辆故障、阿隆索调查这类
-  只在音频里出现的细节）——下一步是找一场完整/更长的比赛实测 Milestone 1（真正端到端跑
-  一整场，检测自动触发+实时补看+赛后总结+时间轴+图表全部试一遍）
+- 多用户 portal（让朋友登录网站看自己的比赛，不用自己搭一整套）还只是设计，没开始写，
+  卡在账号机制怎么选，见 [`TODO.md`](TODO.md)

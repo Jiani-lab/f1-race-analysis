@@ -9,6 +9,15 @@ session under one dated bullet where it makes sense.
 
 ---
 
+- **2026-08-06** — Rewrote README.md's `目录` and `已知限制` sections
+  (Housekeeping TODO), which were still Milestone-0-era — `目录` only
+  listed the original 5 backend files + `index.html` and never mentioned
+  `push.py`/`rag.py`/`watchdog.py`/`sync_snapshot.py`/`worker/`/`tests/`
+  that shipped since; `已知限制` still framed the project as "validated on
+  an 8-minute test recording, next step is a real race" when it's long
+  since been tracking real races for real users. Both now point back to
+  `CURRENT-STATUS.md` as the canonical up-to-date source rather than
+  duplicating it, to avoid the same rot happening again.
 - **2026-08-06** — Removed the 8 `frontend/style-0N-*.html` mockups
   (2026-07-31) after confirming with the user they were superseded, not
   still a live decision — real site (`index.html`) already loads Saira
