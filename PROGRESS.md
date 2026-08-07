@@ -9,6 +9,20 @@ session under one dated bullet where it makes sense.
 
 ---
 
+- **2026-08-07** — Ran an Impeccable dual-agent design critique across the
+  4 real pages (home/race/chat/settings) — 26/40, "Acceptable." Full
+  report at `.impeccable/critique/2026-08-06T07-07-59Z__frontend-
+  dashboard-home-race-chat-settings.md`. Fixed the two smallest findings
+  directly: `index.html`'s status pill kept its old color (often green)
+  when a status poll failed instead of reflecting "Backend not
+  responding" (new `.status-error` class, reuses the existing `--amber`
+  token already used elsewhere for uncertain/caution states); `doWhatIf()`
+  had no empty-input guard, unlike the chat composer's own
+  `if (!question) return`, so a blank submit could burn a multi-minute
+  backend generation for nothing. Remaining findings (a11y hardening,
+  `index.html`'s page-level hierarchy, `--ink-faint` contrast, cross-page
+  CSS token consolidation) tracked in `TODO.md`, being worked one at a
+  time per the user's preference.
 - **2026-08-06** — Cloud-side post-race summary generation for ended
   sessions, working with the Mac fully off (`worker/src/cloud_generate.js`,
   calls the Anthropic API directly with a new `ANTHROPIC_API_KEY` Worker

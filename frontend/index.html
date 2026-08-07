@@ -82,6 +82,8 @@ FORM: same file, direct edit of the existing live-connected index.html — not c
   .status-active .dot { background: #ff6a5f; animation: pulse 1.1s ease-in-out infinite; }
   .status-ended { background: var(--green-dim); color: var(--green); }
   .status-ended .dot { background: var(--green); }
+  .status-error { background: rgba(245,166,35,0.12); color: var(--amber); }
+  .status-error .dot { background: var(--amber); }
   @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
   .status-note { font: 500 11.5px var(--mono); color: var(--ink-faint); }
 
@@ -1273,6 +1275,11 @@ async function refreshStatus() {
     note.textContent = s.session_id ? `session ${s.session_id}${SESSION_ID && s.session_id === SESSION_ID ? ' (viewing this race)' : ''}` : '';
     if (s.start_ms != null) sessionStartMs = s.start_ms;
   } catch (e) {
+    // Text alone used to update here while the pill kept whatever color the
+    // last successful poll left it (often green/idle) -- misleading exactly
+    // when a viewer glances over specifically to check "is this actually
+    // live right now" (2026-08-06 critique finding).
+    $('status-pill').className = 'status-pill status-error';
     $('status-text').textContent = 'Backend not responding';
   }
 }
@@ -1662,7 +1669,12 @@ async function doSummary() {
 
 // ---------------- What-If: real scenario probabilities from claude -p JSON ----------------
 async function doWhatIf() {
-  const hypothesis = $('whatif-input').value;
+  const input = $('whatif-input');
+  const hypothesis = input.value.trim();
+  // Same guard the chat composer already has (cw-composer's submit handler)
+  // -- without it an empty submit burned a multi-minute backend generation
+  // for nothing (2026-08-06 critique finding).
+  if (!hypothesis) { input.focus(); return; }
   const btn = $('btn-whatif');
   const scenariosEl = $('whatif-scenarios'), verdictEl = $('whatif-verdict'), textOut = $('whatif-reasoning-text');
   btn.disabled = true;

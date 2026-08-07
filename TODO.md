@@ -40,6 +40,31 @@ checked — a done item isn't a todo.
   longer session will silently truncate rather than chunk like the local
   `analysis.py` map-reduce pipeline does above `CHUNK_RECORD_THRESHOLD`.
 
+## Design critique follow-ups (2026-08-06, dual-agent critique of home/race/chat/settings, 26/40)
+
+Full report: `.impeccable/critique/2026-08-06T07-07-59Z__frontend-dashboard-home-race-chat-settings.md`.
+P0 (status pill color not resetting on backend-failure) and one P2 (What-If
+empty-input validation) are already fixed directly. Remaining, in the order
+the user chose ("all of it, one at a time"):
+
+- [ ] Accessibility hardening pass (`/impeccable harden`): notification
+  badge + account-switcher menu are keyboard-unreachable (`<div onclick>`,
+  no tabindex/role); status text and streamed chat answers have zero
+  `aria-live` regions; several inputs (`#race-search`, `#whatif-input`,
+  chat composers) rely on placeholder-only text with no `<label>`.
+- [ ] Page-level hierarchy pass on `index.html` (`/impeccable layout`) —
+  the biggest single opportunity from the critique: ~10 co-equal-weight
+  sections with no primary focus; make the replay slider the real anchor
+  and use the backend's already-computed `notification_worthy` signal to
+  visually promote events instead of uniform weight everywhere.
+- [ ] `--ink-faint` fails WCAG AA contrast (~3.3:1 on `#050506`) and is
+  used for functional metadata, not just decoration (`/impeccable
+  colorize`).
+- [ ] Consolidate the 4 real pages' independent `<style>` blocks (drifting
+  token names/values — `--track`/`--ink-faint`/`.surface` vs `.panel`)
+  into one shared stylesheet/token system (`/impeccable extract`).
+- [ ] `/impeccable polish` as the final pass once the above land.
+
 ## Phase 6d — validate with a real second person
 
 Blocked on 6c. Five things to actually check when it happens (not assume):
