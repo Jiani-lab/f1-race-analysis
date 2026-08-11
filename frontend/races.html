@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>F1 Race Control — Races</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,500;0,600;0,700;0,800;0,900;1,900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --track:          #050506;
+    --surface:        #101013;
+    --surface-raised: #17171b;
+    --hairline:       rgba(255,255,255,0.08);
+    --hairline-strong: rgba(255,255,255,0.18);
+    --ink:            #f5f5f3;
+    --ink-dim:        #9c9c9f;
+    --ink-faint:      #616164;
+    --f1-red:         #E10600;
+    --f1-red-bright:  #ff2a1f;
+    --f1-red-dim:     rgba(225,6,0,0.16);
+    --f1-red-glow:    rgba(225,6,0,0.35);
+    --green:          #17c964;
+    --green-dim:      rgba(23,201,100,0.14);
+    --mono: "SF Mono", "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", sans-serif;
+    --sans-display: "Saira Condensed", "Helvetica Neue Condensed Bold", "Arial Narrow", "Roboto Condensed", var(--sans);
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { overflow-x: hidden; max-width: 100%; }
+  body {
+    position: relative;
+    margin: 0; padding: 0 0 72px; background: var(--track); color: var(--ink);
+    font-family: var(--sans);
+    background-image:
+      radial-gradient(ellipse 900px 460px at 12% -8%, rgba(225,6,0,0.09), transparent 60%),
+      repeating-linear-gradient(115deg, rgba(255,255,255,0.014) 0px, rgba(255,255,255,0.014) 1px, transparent 1px, transparent 64px);
+  }
+  /* Fading photo wash for everything below the masthead -- opaque masthead
+     covers the top of this, so it only becomes visible right at the red
+     line, then fades back into --track well before the page content ends. */
+  .page-bg-photo {
+    position: absolute; top: 0; left: 0; right: 0; height: 900px;
+    z-index: -1; pointer-events: none; opacity: 0.3;
+    background-image: url('img/page-bg-spa.jpg');
+    background-size: cover; background-position: center 42%; background-repeat: no-repeat;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 25%, transparent 85%);
+            mask-image: linear-gradient(180deg, #000 0%, #000 25%, transparent 85%);
+  }
+  main { max-width: 1080px; margin: 0 auto; padding: 0 20px; min-width: 0; }
+  a { color: inherit; }
+  button, select { font-family: inherit; }
+
+  :focus-visible { outline: 2px solid var(--f1-red-bright); outline-offset: 3px; border-radius: 4px; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- site nav (shared across home/races/race/chat/settings) ---------- */
+  .site-nav { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 20px; height: 46px; background: var(--track); border-bottom: 1px solid var(--hairline); }
+  .site-nav-brand { display: flex; align-items: center; gap: 8px; font: 800 12.5px/1 var(--sans-display); letter-spacing: 0.03em; color: var(--ink-dim); text-decoration: none; text-transform: uppercase; }
+  .site-nav-brand:hover { color: var(--ink); }
+  .site-nav-brand svg { display: block; flex: none; }
+  .site-nav-links { display: flex; align-items: center; gap: 22px; overflow-x: auto; }
+  .site-nav-link { font: 700 11px/1 var(--mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-faint); text-decoration: none; padding: 15px 0 13px; border-bottom: 2px solid transparent; white-space: nowrap; transition: color .15s var(--ease-out), border-color .15s var(--ease-out); }
+  .site-nav-link:hover { color: var(--ink-dim); }
+  .site-nav-link.active { color: var(--ink); border-bottom-color: var(--f1-red); }
+
+  /* ---------- masthead + account picker ---------- */
+  .masthead { position: relative; background: linear-gradient(180deg, #170f0e 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 22px 20px 20px; }
+  .masthead::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(90deg, var(--track) 0%, rgba(5,5,6,0.82) 38%, rgba(5,5,6,0.1) 100%),
+      url('img/masthead-track.jpg');
+    background-repeat: no-repeat, no-repeat;
+    background-size: 100% 100%, cover;
+    background-position: 0 0, center 65%;
+  }
+  .masthead::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.05;
+    background-image: repeating-conic-gradient(#fff 0% 25%, transparent 0% 50%);
+    background-size: 16px 16px; background-position: 0 0;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+  }
+  .photo-credit { position: absolute; right: 20px; bottom: 8px; font: 600 9.5px/1 var(--mono); letter-spacing: 0.02em; color: rgba(245,245,243,0.6); text-shadow: 0 1px 4px rgba(0,0,0,0.8); pointer-events: none; }
+  .live-hero .photo-credit { right: 18px; bottom: 10px; }
+  .page-bg-credit { right: 4px; bottom: auto; top: 6px; }
+  .masthead-inner { position: relative; max-width: 1080px; margin: 0 auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .mh-flag-icon { flex: 0 0 auto; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5)); }
+  .mh-flag-icon svg { display: block; animation: flag-wave 2.6s ease-in-out infinite; transform-origin: 4px 6px; }
+  @keyframes flag-wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
+  .mh-title-row { display: flex; align-items: center; gap: 12px; }
+  .mh-round { font: 700 11.5px/1 var(--mono); letter-spacing: 0.16em; color: var(--f1-red-bright); text-transform: uppercase; }
+  .mh-title { font: italic 900 clamp(24px, 4.4vw, 32px)/1.1 var(--sans-display); letter-spacing: -0.01em; margin: 5px 0 0; }
+  .mh-sub { font: 500 14.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 5px; max-width: 480px; }
+
+  .mh-actions { display: flex; align-items: center; gap: 10px; }
+  .account { position: relative; }
+  .account-btn { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--hairline-strong); padding: 6px 12px 6px 6px; border-radius: 24px; cursor: pointer; color: var(--ink); font: 600 13px var(--sans-display); }
+  .account-btn:hover { background: var(--surface-raised); }
+  .account-avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--f1-red), #ff6a5f); display: flex; align-items: center; justify-content: center; font: 800 11px var(--mono); flex: 0 0 auto; }
+  .account-chevron { color: var(--ink-faint); font-size: 10px; transition: transform .15s var(--ease-out); }
+  .account.open .account-chevron { transform: rotate(180deg); }
+  .account-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 200px; background: var(--surface-raised); border: 1px solid var(--hairline-strong); border-radius: 10px; padding: 6px; box-shadow: 0 20px 40px -12px rgba(0,0,0,0.6); display: none; z-index: 10; }
+  .account.open .account-menu { display: block; animation: rise .18s var(--ease-out); }
+  .account-menu-label { font: 700 9.5px/1 var(--mono); letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; padding: 8px 10px 4px; }
+  .account-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font: 600 13px var(--sans-display); }
+  .account-item:hover { background: rgba(255,255,255,0.06); }
+  .account-item.active { color: var(--green); }
+  .account-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-faint); flex: 0 0 auto; }
+  .account-item.active .dot { background: var(--green); }
+  .account-sep { height: 1px; background: var(--hairline); margin: 6px 4px; }
+
+  /* ---------- hero intro ---------- */
+  .intro { position: relative; padding: 34px 0 20px; }
+  .intro h1 { font: italic 900 clamp(26px, 4vw, 32px)/1.2 var(--sans-display); margin: 0 0 8px; letter-spacing: -0.005em; }
+  .intro p { font: 500 15px/1.6 var(--sans); color: var(--ink-dim); margin: 0; max-width: 620px; }
+
+  /* ---------- live hero ---------- */
+  .live-hero {
+    position: relative; overflow: hidden; border-radius: 18px; margin: 26px 0 0;
+    background-image:
+      linear-gradient(100deg, rgba(10,4,4,0.95) 0%, rgba(10,4,4,0.88) 32%, rgba(18,6,6,0.55) 62%, rgba(18,6,6,0.28) 100%),
+      radial-gradient(ellipse 640px 300px at 85% -20%, rgba(225,6,0,0.35), transparent 60%),
+      url('img/live-hero-car.jpg');
+    background-repeat: no-repeat, no-repeat, no-repeat;
+    background-size: 100% 100%, 100% 100%, cover;
+    background-position: 0 0, 0 0, right center;
+    border: 1px solid rgba(225,6,0,0.3);
+    padding: 26px 28px 24px;
+    animation: rise .5s var(--ease-out) both;
+  }
+  .live-hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+    background-image: repeating-linear-gradient(100deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 46px);
+  }
+  .live-tag { position: relative; display: inline-flex; align-items: center; gap: 7px; font: 800 11px/1 var(--mono); letter-spacing: 0.14em; color: #fff; background: var(--f1-red); padding: 5px 11px 5px 9px; border-radius: 20px; text-transform: uppercase; }
+  .live-tag .dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: livepulse 1.3s var(--ease-out) infinite; }
+  @keyframes livepulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
+  .live-hero-round { position: relative; font: 700 11.5px/1 var(--mono); letter-spacing: 0.12em; color: #ff9c94; text-transform: uppercase; margin-top: 16px; display: flex; align-items: center; gap: 7px; }
+  .live-hero-name { position: relative; font: italic 900 clamp(24px, 4.6vw, 38px)/1.15 var(--sans-display); letter-spacing: -0.005em; margin-top: 6px; max-width: 760px; }
+  .live-hero-meta { position: relative; font: 600 13px/1 var(--mono); color: var(--ink-dim); margin-top: 14px; }
+  .live-hero-cta {
+    position: relative; display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
+    background: var(--f1-red); color: #fff; text-decoration: none; font: 800 13px var(--sans-display);
+    padding: 12px 20px; border-radius: 9px; transition: background .15s, transform .15s var(--ease-out);
+  }
+  .live-hero-cta .arrow { transition: transform .15s var(--ease-out); }
+  .live-hero-cta:hover { background: var(--f1-red-bright); transform: translateY(-1px); }
+  .live-hero-cta:hover .arrow { transform: translateX(3px); }
+
+  /* ---------- one-time push-notification setup ---------- */
+  .push-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 18px 20px; margin-top: 22px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .push-card .body { flex: 1; min-width: 220px; }
+  .push-card .title { font: 800 14px var(--sans-display); }
+  .push-card .sub { font: 500 12.5px/1.5 var(--sans); color: var(--ink-dim); margin-top: 4px; }
+  .push-card select { background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 8px 10px; border-radius: 8px; font: 500 13px var(--sans-display); }
+  .push-card button { background: var(--f1-red); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font: 800 12px var(--sans-display); cursor: pointer; white-space: nowrap; transition: background .15s; }
+  .push-card button:hover { background: var(--f1-red-bright); }
+  .push-card button:disabled { opacity: .5; cursor: default; }
+  .push-card.enabled { border-color: rgba(23,201,100,0.35); }
+  .push-card .status-line { font: 700 12px var(--sans-display); color: var(--green); display: none; }
+  .push-card.enabled .status-line { display: block; }
+  .push-card.enabled .setup-row { display: none; }
+
+  /* ---------- sessions section ---------- */
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 38px 0 16px; }
+  .section-head h2 { font: 700 clamp(19px, 2.6vw, 22px)/1.2 var(--sans-display); letter-spacing: -0.005em; margin: 0; }
+  .section-head .count { font: 600 13px var(--sans-display); color: var(--ink-faint); margin-left: 8px; }
+  .section-head-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+
+  .search-row { position: relative; flex: 0 1 240px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); pointer-events: none; }
+  .search-row input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--hairline-strong); color: var(--ink); padding: 8px 12px 8px 34px; border-radius: 20px; font: 500 13px var(--sans-display); }
+  .search-row input::placeholder { color: var(--ink-faint); }
+  .search-row input:focus { border-color: var(--f1-red); }
+
+  .year-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .year-tab {
+    font: 700 12px/1 var(--mono); letter-spacing: 0.03em; color: var(--ink-dim);
+    background: transparent; border: 1px solid var(--hairline-strong); padding: 7px 13px;
+    border-radius: 20px; cursor: pointer; transition: border-color .15s, color .15s, background .15s;
+  }
+  .year-tab:hover { border-color: var(--ink-faint); color: var(--ink); }
+  .year-tab.active { background: var(--f1-red); border-color: var(--f1-red); color: #fff; }
+
+  .race-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .race-card {
+    display: block; text-decoration: none; background: var(--surface); border: 1px solid var(--hairline);
+    border-radius: 14px; padding: 18px; transition: border-color .15s, transform .15s var(--ease-out), background .15s;
+    position: relative; overflow: hidden;
+    animation: rise .45s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 45ms);
+  }
+  .race-card:hover { border-color: var(--hairline-strong); transform: translateY(-3px); background: var(--surface-raised); }
+  .race-mini-track { position: absolute; top: 16px; right: 14px; width: 46px; height: 20px; opacity: 0.32; pointer-events: none; transition: opacity .15s; }
+  .race-mini-track svg { width: 100%; height: 100%; display: block; }
+  .race-card:hover .race-mini-track { opacity: 0.6; }
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; font: 800 10px/1 var(--mono); letter-spacing: 0.1em; padding: 4px 9px; border-radius: 20px; text-transform: uppercase; }
+  .status-badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .status-badge.ended { background: var(--green-dim); color: var(--green); }
+  .status-badge.ended .dot { background: var(--green); }
+  .status-badge.idle { background: rgba(255,255,255,0.06); color: var(--ink-faint); }
+  .status-badge.idle .dot { background: var(--ink-faint); }
+  .race-round { font: 700 10.5px/1 var(--mono); letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; margin-top: 13px; display: flex; align-items: center; gap: 6px; }
+  .gp-flag { font-size: 13px; line-height: 1; }
+  .race-name { font: 800 16.5px/1.3 var(--sans-display); margin-top: 6px; }
+  .race-meta { font: 600 12px/1 var(--mono); color: var(--ink-faint); margin-top: 11px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .race-cta { display: flex; align-items: center; gap: 6px; font: 700 11.5px/1 var(--mono); letter-spacing: 0.04em; color: var(--f1-red); margin-top: 15px; text-transform: uppercase; }
+  .race-cta .arrow { transition: transform .15s var(--ease-out); }
+  .race-card:hover .race-cta { color: var(--f1-red-bright); }
+  .race-card:hover .race-cta .arrow { transform: translateX(3px); }
+
+  .empty-state { font: 500 14.5px/1.7 var(--sans); color: var(--ink-faint); padding: 30px 4px; text-align: center; border: 1px dashed var(--hairline-strong); border-radius: 12px; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav" aria-label="Primary">
+  <a class="site-nav-brand" href="/">
+    <svg width="14" height="16" viewBox="0 0 34 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="2" y="2" width="3" height="37" rx="1.5" fill="#9c9c9f"/>
+      <path d="M5 3 C 14 -1, 22 7, 31 3 L 31 21 C 22 25, 14 17, 5 21 Z" fill="#f5f5f3"/>
+      <g fill="#101013">
+        <rect x="5" y="3" width="4.3" height="4.5"/><rect x="13.6" y="2.4" width="4.3" height="4.5"/><rect x="22.2" y="3.6" width="4.3" height="4.5"/>
+        <rect x="9.3" y="7.5" width="4.3" height="4.5"/><rect x="17.9" y="6.9" width="4.3" height="4.5"/><rect x="26.5" y="8.1" width="4.3" height="4.5"/>
+        <rect x="5" y="12" width="4.3" height="4.5"/><rect x="13.6" y="11.4" width="4.3" height="4.5"/><rect x="22.2" y="12.6" width="4.3" height="4.5"/>
+        <rect x="9.3" y="16.5" width="4.3" height="4.5"/><rect x="17.9" y="15.9" width="4.3" height="4.5"/>
+      </g>
+    </svg>
+    F1 Race Control
+  </a>
+  <div class="site-nav-links">
+    <a class="site-nav-link" href="/">Home</a>
+    <a class="site-nav-link active" href="/races">Race</a>
+    <a class="site-nav-link" href="/chat">Question</a>
+    <a class="site-nav-link" href="/settings">Settings</a>
+  </div>
+</nav>
+
+<div class="page-bg-photo"></div>
+
+<div class="masthead">
+  <span class="photo-credit">Photo: Thomas De Giorgio / Unsplash</span>
+  <div class="masthead-inner">
+    <div>
+      <div class="mh-round">LIVE-WIRED DASHBOARD</div>
+      <div class="mh-title-row">
+        <span class="mh-flag-icon">
+          <svg width="34" height="40" viewBox="0 0 34 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="2" y="2" width="3" height="37" rx="1.5" fill="#9c9c9f"/>
+            <path d="M5 3 C 14 -1, 22 7, 31 3 L 31 21 C 22 25, 14 17, 5 21 Z" fill="#f5f5f3"/>
+            <g fill="#101013">
+              <rect x="5" y="3" width="4.3" height="4.5"/><rect x="13.6" y="2.4" width="4.3" height="4.5"/><rect x="22.2" y="3.6" width="4.3" height="4.5"/>
+              <rect x="9.3" y="7.5" width="4.3" height="4.5"/><rect x="17.9" y="6.9" width="4.3" height="4.5"/><rect x="26.5" y="8.1" width="4.3" height="4.5"/>
+              <rect x="5" y="12" width="4.3" height="4.5"/><rect x="13.6" y="11.4" width="4.3" height="4.5"/><rect x="22.2" y="12.6" width="4.3" height="4.5"/>
+              <rect x="9.3" y="16.5" width="4.3" height="4.5"/><rect x="17.9" y="15.9" width="4.3" height="4.5"/>
+            </g>
+          </svg>
+        </span>
+        <div class="mh-title">F1 RACE CONTROL</div>
+      </div>
+      <div class="mh-sub">Real screen + audio capture, real recall, no scripted content</div>
+    </div>
+    <div class="mh-actions">
+    <div class="account" id="account">
+      <button class="account-btn" onclick="toggleAccount(event)">
+        <span class="account-avatar" id="account-avatar">J</span>
+        <span id="account-name">Jiani</span>
+        <span class="account-chevron">▾</span>
+      </button>
+      <div class="account-menu">
+        <div class="account-menu-label">Switch Account</div>
+        <div class="account-item active" data-name="Jiani" data-initial="J" onclick="selectAccount(this)"><span class="dot"></span>Jiani</div>
+        <div class="account-item" data-name="Guest" data-initial="G" onclick="selectAccount(this)"><span class="dot"></span>Guest</div>
+        <div class="account-sep"></div>
+        <div class="account-item" onclick="toggleAccount()">Sign out</div>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="intro">
+    <h1>Your races</h1>
+    <p>Pick up a race in progress or revisit a past one — each has its own live-wired replay, auto-detected key moments, and What-If simulator.</p>
+    <span class="photo-credit page-bg-credit">Photo: Brecht Denil / Unsplash</span>
+  </div>
+
+  <div id="live-hero-slot"></div>
+
+  <div class="push-card" id="push-card">
+    <div class="body">
+      <div class="title">Race notifications</div>
+      <div class="sub setup-row">One-time setup — after this, notifications work even with no tab open, for every future race.</div>
+      <div class="status-line" id="push-status-line">Notifications enabled — you're set for every future race.</div>
+    </div>
+    <div class="setup-row" style="display:flex; gap:8px; align-items:center;">
+      <select id="push-driver-select"></select>
+      <button id="push-enable-btn" onclick="enablePush()">Enable notifications</button>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div><h2 style="display:inline">Past Sessions</h2><span class="count" id="session-count"></span></div>
+    <div class="section-head-controls">
+      <div class="search-row">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="text" id="race-search" placeholder="Search by name, round, or country...">
+      </div>
+      <div class="year-tabs" id="year-tabs"></div>
+    </div>
+  </div>
+  <div class="race-grid" id="race-grid">
+    <div class="empty-state">Loading races...</div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+// Cosmetic only -- there is no backend auth here (single-user local/demo
+// project). This just mirrors the account-switcher UI real racing sites
+// have, persisted in localStorage so a refresh doesn't reset it.
+function toggleAccount(ev) {
+  if (ev) ev.stopPropagation();
+  $('account').classList.toggle('open');
+}
+function selectAccount(el) {
+  document.querySelectorAll('.account-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  $('account-name').textContent = el.dataset.name;
+  $('account-avatar').textContent = el.dataset.initial;
+  localStorage.setItem('f1-account-name', el.dataset.name);
+  localStorage.setItem('f1-account-initial', el.dataset.initial);
+  $('account').classList.remove('open');
+}
+document.addEventListener('click', () => $('account').classList.remove('open'));
+(function restoreAccount() {
+  const name = localStorage.getItem('f1-account-name');
+  if (!name) return;
+  const item = [...document.querySelectorAll('.account-item[data-name]')].find(i => i.dataset.name === name);
+  if (item) selectAccount(item);
+})();
+
+// ---------------- one-time push-notification setup ----------------
+// This is the ONE thing that can't be automated away -- browsers require a
+// real user gesture in a real tab to grant notification permission, no way
+// around that for any site. But it only needs doing once, ever: the
+// favorite-driver preference stored here is global (not per-race, matches
+// frontend/index.html's PREFS_DRIVER_KEY), so every future detected race
+// works with zero further action -- the backend compares its own copy of
+// this preference (POSTed to /push/subscribe) against notification_worthy
+// events on its own 5-minute refresh loop, no tab needs to be open at all.
+const PUSH_DRIVER_NAMES = {
+  NOR: 'NORRIS', PIA: 'PIASTRI', HAM: 'HAMILTON', LEC: 'LECLERC', VER: 'VERSTAPPEN',
+  PER: 'PEREZ', ANT: 'ANTONELLI', RUS: 'RUSSELL', ALO: 'ALONSO', STR: 'STROLL',
+  GAS: 'GASLY', COL: 'COLAPINTO', ALB: 'ALBON', SAI: 'SAINZ', HAD: 'HADJAR',
+  LAW: 'LAWSON', HUL: 'HULKENBERG', BOR: 'BORTOLETO', OCO: 'OCON', BEA: 'BEARMAN',
+  BOT: 'BOTTAS', LIN: 'LINDBLAD',
+};
+
+function populatePushDriverSelect() {
+  const sel = $('push-driver-select');
+  const codes = Object.keys(PUSH_DRIVER_NAMES).sort((a, b) => PUSH_DRIVER_NAMES[a].localeCompare(PUSH_DRIVER_NAMES[b]));
+  sel.innerHTML = codes.map(c => `<option value="${c}">${PUSH_DRIVER_NAMES[c]}</option>`).join('');
+  const existing = localStorage.getItem('f1-fav-driver');
+  if (existing) sel.value = existing;
+}
+populatePushDriverSelect();
+
+function urlBase64ToUint8Array(base64) {
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function enablePush() {
+  const btn = $('push-enable-btn');
+  btn.disabled = true;
+  btn.textContent = 'Enabling...';
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      throw new Error('This browser doesn\'t support push notifications');
+    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') throw new Error('Permission denied');
+    const registration = await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    const { key } = await (await fetch('/push/vapid-public-key')).json();
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key),
+    });
+    const driver = $('push-driver-select').value;
+    const res = await fetch('/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: subscription.toJSON(), favorite_driver: driver }),
+    });
+    if (!res.ok) throw new Error('Server rejected the subscription');
+    localStorage.setItem('f1-fav-driver', driver);
+    localStorage.setItem('f1-push-enabled', '1');
+    $('push-card').classList.add('enabled');
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Enable notifications';
+    alert('Could not enable notifications: ' + e.message);
+  }
+}
+
+if (localStorage.getItem('f1-push-enabled') === '1' && Notification.permission === 'granted') {
+  $('push-card').classList.add('enabled');
+}
+
+function fmtDate(ms) {
+  if (ms == null) return '—';
+  const d = new Date(ms), pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// ---------------- country flags ----------------
+// Derived from the race name text -- there's no structured venue/country
+// field in /sessions, but the name already encodes it (e.g. "FORMULA 1 AWS
+// HUNGARIAN GRAND PRIX"). Covers the real 2026 calendar; a session with a
+// generic auto-detected name (not yet manually identified) just gets no
+// flag rather than a guessed one.
+const GP_FLAGS = [
+  { match: /AUSTRALIA/, flag: '🇦🇺', country: 'Australia' },
+  { match: /CHINA|CHINESE/, flag: '🇨🇳', country: 'China' },
+  { match: /JAPAN/, flag: '🇯🇵', country: 'Japan' },
+  { match: /BAHRAIN/, flag: '🇧🇭', country: 'Bahrain' },
+  { match: /SAUDI/, flag: '🇸🇦', country: 'Saudi Arabia' },
+  { match: /MIAMI/, flag: '🇺🇸', country: 'United States' },
+  { match: /EMILIA ROMAGNA|IMOLA/, flag: '🇮🇹', country: 'Italy' },
+  { match: /MONACO/, flag: '🇲🇨', country: 'Monaco' },
+  { match: /CANADA|CANADIAN/, flag: '🇨🇦', country: 'Canada' },
+  { match: /SPAIN|SPANISH/, flag: '🇪🇸', country: 'Spain' },
+  { match: /AUSTRIA/, flag: '🇦🇹', country: 'Austria' },
+  { match: /BRITAIN|BRITISH|SILVERSTONE/, flag: '🇬🇧', country: 'Great Britain' },
+  { match: /BELGIUM|BELGIAN/, flag: '🇧🇪', country: 'Belgium' },
+  { match: /HUNGARY|HUNGARIAN/, flag: '🇭🇺', country: 'Hungary' },
+  { match: /NETHERLANDS|DUTCH/, flag: '🇳🇱', country: 'Netherlands' },
+  { match: /ITALY|ITALIAN|MONZA/, flag: '🇮🇹', country: 'Italy' },
+  { match: /AZERBAIJAN|BAKU/, flag: '🇦🇿', country: 'Azerbaijan' },
+  { match: /SINGAPORE/, flag: '🇸🇬', country: 'Singapore' },
+  { match: /UNITED STATES|AUSTIN|COTA/, flag: '🇺🇸', country: 'United States' },
+  { match: /MEXICO/, flag: '🇲🇽', country: 'Mexico' },
+  { match: /BRAZIL|SAO PAULO|SÃO PAULO|INTERLAGOS/, flag: '🇧🇷', country: 'Brazil' },
+  { match: /LAS VEGAS/, flag: '🇺🇸', country: 'United States' },
+  { match: /QATAR/, flag: '🇶🇦', country: 'Qatar' },
+  { match: /ABU DHABI/, flag: '🇦🇪', country: 'United Arab Emirates' },
+];
+function flagFor(name) {
+  const upper = (name || '').toUpperCase();
+  return GP_FLAGS.find(g => g.match.test(upper)) || null;
+}
+
+// ---------------- live hero ----------------
+function liveHero(s) {
+  if (!s) return '';
+  const gp = flagFor(s.name);
+  return `
+    <div class="live-hero">
+      <span class="live-tag"><span class="dot"></span>Live</span>
+      <div class="live-hero-round">${gp ? `<span class="gp-flag">${gp.flag}</span>` : ''}${s.round}</div>
+      <div class="live-hero-name">${s.name}</div>
+      <div class="live-hero-meta">Capturing since ${fmtDate(s.start_ms)}</div>
+      <a class="live-hero-cta" href="/race?session=${encodeURIComponent(s.session_id)}">Open Live Dashboard <span class="arrow">→</span></a>
+      <span class="photo-credit">Photo: Jonathan Borba / Pexels</span>
+    </div>`;
+}
+
+// ---------------- past-sessions grid + year filter ----------------
+let allPast = [];
+let activeYear = null;
+
+function yearOf(s) {
+  return s.start_ms ? new Date(s.start_ms).getFullYear() : null;
+}
+
+// Small set of abstract circuit-outline variants (not traces of any real
+// track) -- picked per session by a stable hash so the same race always
+// shows the same shape, and different races visually read as "different
+// tracks" without needing real geography data we don't have.
+const MINI_TRACK_VARIANTS = [
+  'M4 20 C4 10, 14 4, 24 6 C34 8, 32 18, 42 18 C52 18, 54 8, 64 6',
+  'M4 8 C14 4, 20 16, 30 12 C42 8, 44 20, 56 18 C64 17, 66 10, 66 6',
+  'M4 16 C10 6, 22 6, 26 14 C30 22, 42 22, 46 12 C50 4, 60 4, 66 12',
+  'M4 6 C4 18, 16 22, 22 14 C28 6, 40 6, 44 16 C48 24, 60 22, 66 14',
+  'M4 12 C10 4, 20 4, 24 10 C30 18, 40 20, 44 12 C48 6, 58 8, 66 16',
+];
+function hashCode(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function miniTrackSVG(sessionId) {
+  const d = MINI_TRACK_VARIANTS[hashCode(sessionId || '') % MINI_TRACK_VARIANTS.length];
+  return `<svg viewBox="0 0 70 26" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="${d}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+}
+
+function raceCard(s, i) {
+  const statusClass = s.status === 'ended' ? 'ended' : 'idle';
+  const statusLabel = s.status === 'ended' ? 'Completed' : 'Idle';
+  const gp = flagFor(s.name);
+  return `
+    <a class="race-card" href="/race?session=${encodeURIComponent(s.session_id)}" style="--i:${i}">
+      <div class="race-mini-track">${miniTrackSVG(s.session_id)}</div>
+      <span class="status-badge ${statusClass}"><span class="dot"></span>${statusLabel}</span>
+      <div class="race-round">${gp ? `<span class="gp-flag">${gp.flag}</span>` : ''}${s.round}</div>
+      <div class="race-name">${s.name}</div>
+      <div class="race-meta"><span>${fmtDate(s.start_ms)}</span></div>
+      <div class="race-cta">Open Dashboard <span class="arrow">→</span></div>
+    </a>`;
+}
+
+function renderYearTabs() {
+  const years = [...new Set(allPast.map(yearOf).filter(y => y != null))].sort((a, b) => b - a);
+  const tabs = $('year-tabs');
+  if (years.length <= 1) { tabs.innerHTML = ''; return; }
+  if (!years.includes(activeYear)) activeYear = years[0];
+  tabs.innerHTML = years.map(y =>
+    `<button class="year-tab ${y === activeYear ? 'active' : ''}" data-year="${y}">${y}</button>`
+  ).join('');
+  tabs.querySelectorAll('.year-tab').forEach(btn => {
+    btn.onclick = () => { activeYear = Number(btn.dataset.year); renderYearTabs(); renderGrid(); };
+  });
+}
+
+// Keyword search combines (AND) with the year filter -- matches against
+// name, round, and the derived country name so "hungary" finds the
+// Hungarian GP even though that word never appears in the raw name/round.
+let searchQuery = '';
+function matchesSearch(s) {
+  if (!searchQuery) return true;
+  const gp = flagFor(s.name);
+  const haystack = [s.name, s.round, gp && gp.country].filter(Boolean).join(' ').toLowerCase();
+  return haystack.includes(searchQuery.toLowerCase());
+}
+
+function renderGrid() {
+  const grid = $('race-grid');
+  const years = [...new Set(allPast.map(yearOf).filter(y => y != null))];
+  let visible = years.length <= 1 ? allPast : allPast.filter(s => yearOf(s) === activeYear);
+  visible = visible.filter(matchesSearch);
+  $('session-count').textContent = visible.length ? `${visible.length} race${visible.length === 1 ? '' : 's'}` : '';
+  grid.innerHTML = visible.length
+    ? visible.map(raceCard).join('')
+    : `<div class="empty-state">${searchQuery ? 'No races match your search.' : 'No races captured yet — start recording a live broadcast to see it here.'}</div>`;
+}
+$('race-search').addEventListener('input', e => {
+  searchQuery = e.target.value.trim();
+  renderGrid();
+});
+
+async function loadSessions() {
+  const grid = $('race-grid');
+  try {
+    const res = await fetch('/sessions');
+    if (!res.ok) throw new Error(res.statusText);
+    const { sessions } = await res.json();
+    const live = sessions.find(s => s.status === 'active');
+    $('live-hero-slot').innerHTML = liveHero(live);
+    allPast = sessions.filter(s => s.status !== 'active');
+    renderYearTabs();
+    renderGrid();
+  } catch (e) {
+    grid.innerHTML = `<div class="empty-state">Error loading races: ${e.message}</div>`;
+  }
+}
+loadSessions();
+setInterval(loadSessions, 15000); // catches a newly-detected live race without a manual refresh
+</script>
+
+</body>
+</html>

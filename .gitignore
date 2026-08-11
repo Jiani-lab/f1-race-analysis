@@ -19,3 +19,9 @@ backend/voyage_usage.json
 # Cloudflare Worker build cache
 worker/.wrangler/
 backend/.synced_session_logs.json
+
+# AI-generated demo video for home.html -- large binary, not source, don't
+# commit it; drop the finished file locally and home.html's placeholder
+# swaps out on its own (see frontend/home.html's inline script)
+frontend/video/*
+!frontend/video/.gitkeep

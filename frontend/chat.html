@@ -34,6 +34,16 @@
   button, select, input { font-family: inherit; }
   :focus-visible { outline: 2px solid var(--f1-red-bright); outline-offset: 2px; border-radius: 4px; }
 
+  /* ---------- site nav (shared across home/races/race/chat/settings) ---------- */
+  .site-nav { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 20px; height: 46px; background: var(--track); border-bottom: 1px solid var(--hairline); flex: 0 0 auto; }
+  .site-nav-brand { display: flex; align-items: center; gap: 8px; font: 800 12.5px/1 var(--sans-display); letter-spacing: 0.03em; color: var(--ink-dim); text-decoration: none; text-transform: uppercase; }
+  .site-nav-brand:hover { color: var(--ink); text-decoration: none; }
+  .site-nav-brand svg { display: block; flex: none; }
+  .site-nav-links { display: flex; align-items: center; gap: 22px; overflow-x: auto; }
+  .site-nav-link { font: 700 11px/1 var(--mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-faint); text-decoration: none; padding: 15px 0 13px; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .site-nav-link:hover { color: var(--ink-dim); text-decoration: none; }
+  .site-nav-link.active { color: var(--ink); border-bottom-color: var(--f1-red); }
+
   .masthead { position: relative; background: linear-gradient(180deg, #14100f 0%, var(--track) 100%); border-bottom: 3px solid var(--f1-red); padding: 18px 20px 16px; overflow: hidden; flex: 0 0 auto; }
   .masthead::after {
     content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.05;
@@ -41,8 +51,6 @@
     background-size: 16px 16px; mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
   }
   .masthead-inner { position: relative; max-width: 780px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .back-home { display: inline-block; font: 700 11.5px/1 var(--mono); letter-spacing: 0.06em; color: var(--ink-faint); text-decoration: none; margin-bottom: 8px; }
-  .back-home:hover { color: var(--ink); }
   .mh-title-row { display: flex; align-items: center; gap: 10px; }
   .mh-flag-icon { flex: 0 0 auto; filter: drop-shadow(0 3px 8px rgba(0,0,0,0.5)); }
   .mh-flag-icon svg { display: block; animation: flag-wave 2.6s ease-in-out infinite; transform-origin: 4px 6px; }
@@ -129,10 +137,31 @@
 </head>
 <body>
 
+<nav class="site-nav" aria-label="Primary">
+  <a class="site-nav-brand" href="/">
+    <svg width="14" height="16" viewBox="0 0 34 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="2" y="2" width="3" height="37" rx="1.5" fill="#9c9c9f"/>
+      <path d="M5 3 C 14 -1, 22 7, 31 3 L 31 21 C 22 25, 14 17, 5 21 Z" fill="#f5f5f3"/>
+      <g fill="#101013">
+        <rect x="5" y="3" width="4.3" height="4.5"/><rect x="13.6" y="2.4" width="4.3" height="4.5"/><rect x="22.2" y="3.6" width="4.3" height="4.5"/>
+        <rect x="9.3" y="7.5" width="4.3" height="4.5"/><rect x="17.9" y="6.9" width="4.3" height="4.5"/><rect x="26.5" y="8.1" width="4.3" height="4.5"/>
+        <rect x="5" y="12" width="4.3" height="4.5"/><rect x="13.6" y="11.4" width="4.3" height="4.5"/><rect x="22.2" y="12.6" width="4.3" height="4.5"/>
+        <rect x="9.3" y="16.5" width="4.3" height="4.5"/><rect x="17.9" y="15.9" width="4.3" height="4.5"/>
+      </g>
+    </svg>
+    F1 Race Control
+  </a>
+  <div class="site-nav-links">
+    <a class="site-nav-link" href="/">Home</a>
+    <a class="site-nav-link" href="/races">Race</a>
+    <a class="site-nav-link active" href="/chat">Question</a>
+    <a class="site-nav-link" href="/settings">Settings</a>
+  </div>
+</nav>
+
 <div class="masthead">
   <div class="masthead-inner">
     <div>
-      <a class="back-home" href="/">← All Races</a>
       <div class="mh-title-row">
         <span class="mh-flag-icon">
           <svg width="26" height="30" viewBox="0 0 34 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

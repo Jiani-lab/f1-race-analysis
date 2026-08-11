@@ -68,7 +68,7 @@ def _alert_once(key: str, title: str, body: str) -> None:
     now = time.time()
     if now - _last_alert_at.get(key, 0) < ALERT_COOLDOWN_SEC:
         return
-    push.send_push(title, body, "/")
+    push.send_push(title, body, "/races")
     _last_alert_at[key] = now
     print(f"[watchdog] ALERT sent: {title} -- {body}")
 
@@ -77,7 +77,7 @@ def _track(key: str, healthy: bool, down_title: str, down_body: str, up_title: s
     if not healthy:
         _alert_once(key, down_title, down_body)
     elif _was_down.get(key):
-        push.send_push(up_title, up_body, "/")
+        push.send_push(up_title, up_body, "/races")
         print(f"[watchdog] recovery: {key}")
     _was_down[key] = not healthy
 

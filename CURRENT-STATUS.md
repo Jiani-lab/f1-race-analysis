@@ -99,6 +99,16 @@ today, no accounts, no auth, no CORS — `app.py` has exactly one global
   fresh install (deps, VAPID keygen, .env scaffolding, Luci connectivity
   probe, guided Voyage key setup). See `.env.example` for what's left
   manual and why.
+- **Site navigation** (2026-08-11): `/` now serves a real landing page
+  (`home.html`) — what the site is, a demo-video slot (placeholder until
+  a real clip lands at `frontend/video/demo-walkthrough.mp4`, gitignored,
+  see `frontend/demo-video-storyboard.md`), links into the rest. The race
+  list that used to live at `/` moved to `/races` (`races.html`). All five
+  real pages (`home.html`, `races.html`, `index.html`, `chat.html`,
+  `settings.html`) now share one top nav — Home / Race / Question /
+  Settings — instead of each page having its own ad hoc back-link. `/race`
+  (single-race dashboard, `index.html`) is unchanged and still reached by
+  clicking into a race from `/races`, not a direct nav item.
 
 ## What's designed but not built
 
@@ -116,7 +126,7 @@ today, no accounts, no auth, no CORS — `app.py` has exactly one global
   logic depend on on-screen OCR text, not app identity.
 - `frontend/module-*.html` are design exploration/preview files, not part
   of the live site — don't treat their design choices (or design-hook
-  findings on them) as bugs in the real UI (`home.html`, `index.html`,
-  `chat.html`, `settings.html`). (The sibling `style-0N-*.html` mockups
-  from 2026-07-31 were removed 2026-08-06 — confirmed superseded by the
-  Saira Condensed restyle already applied to the real site.)
+  findings on them) as bugs in the real UI (`home.html`, `races.html`,
+  `index.html`, `chat.html`, `settings.html`). (The sibling `style-0N-*.html`
+  mockups from 2026-07-31 were removed 2026-08-06 — confirmed superseded by
+  the Saira Condensed restyle already applied to the real site.)

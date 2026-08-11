@@ -20,6 +20,16 @@ Built on [Luci](https://luci.so), the on-device screen/audio memory engine from 
 - **Pushes real notifications.** Browser Web Push (VAPID) — grant permission once, get notified for every future race with zero tabs open.
 - **Keeps working when your machine doesn't.** A Cloudflare Worker mirrors the latest state so the public site stays up (read-only) even if the local backend is off.
 
+## The problem this solves
+
+| | Watching a stream alone | With this tool |
+|---|:---:|:---:|
+| Miss a pit stop while you're away | ❌ | ✅ auto-detected + pushed |
+| "Wait, what just happened?" | rewind & guess | ✅ ask the RAG chatbot |
+| Understand undercut/overcut strategy | figure it out yourself | ✅ LLM explains it |
+| Notified only for your favorite driver | ❌ | ✅ per-driver toggle |
+| Still works if you close the tab | ❌ | ✅ real Web Push |
+
 ## Demo
 
 *(video/GIF goes here — see the TODO comment in the README source)*
@@ -40,7 +50,7 @@ Then start the server:
 uv run uvicorn app:app --app-dir backend --reload --port 8800
 ```
 
-Open http://127.0.0.1:8800, hit "Enable race alerts" once, and you're done — every future race gets detected and pushed automatically.
+Open http://127.0.0.1:8800 — from there, head to Race or Settings and hit "Enable notifications" once, and you're done — every future race gets detected and pushed automatically.
 
 Already set up and just restarting your machine? Skip `setup.sh` — if `.env` is still there, the run command above is all you need.
 
@@ -77,12 +87,13 @@ Key backend modules:
 | `watchdog.py` | Independent process that pushes an alert if the backend/tunnel/sync loop dies |
 | `tests/` | pytest (`uv run pytest`) — covers the pure-logic pieces that have had real bugs |
 
-Frontend (`frontend/`, static HTML/JS, same-origin — `module-*.html` / `chat-mockup-*.html` / `design-directions.html` are design-exploration previews, not the live site):
+Frontend (`frontend/`, static HTML/JS, same-origin — `module-*.html` / `chat-mockup-*.html` / `design-directions.html` are design-exploration previews, not the live site). Every real page shares the same top nav (Home / Race / Question / Settings):
 
-- `home.html` — race list + live status
-- `index.html` — single-race page: status bar, catch-up input, summary/what-if, clickable timeline, charts
-- `chat.html` — standalone RAG chat page
-- `settings.html` — notification preferences
+- `home.html` (`/`) — landing page: what the site does, a short demo video, links into the rest
+- `races.html` (`/races`) — race list + live status (the "Race" nav item)
+- `index.html` (`/race?session=...`) — single-race page: status bar, catch-up input, summary/what-if, clickable timeline, charts
+- `chat.html` (`/chat`) — standalone RAG chat page (the "Question" nav item)
+- `settings.html` (`/settings`) — notification preferences
 
 ## Known limitations
 

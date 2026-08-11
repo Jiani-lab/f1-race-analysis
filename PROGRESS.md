@@ -29,6 +29,33 @@ session under one dated bullet where it makes sense.
   audio, not translatable text, translating them would break audio
   detection; `PROGRESS.md`'s own older entries — historical log, left as an
   accurate record of what things were literally called at the time.
+- **2026-08-11** — New site IA: `/` is now a real landing page (`home.html`
+  — what the site does, a "how it works" walkthrough, a demo-video slot)
+  instead of the race list. The race list moved from `home.html`/`/` to
+  `races.html`/`/races` (a straight rename, content untouched). All 5 real
+  pages (`home.html`, `races.html`, `index.html`, `chat.html`,
+  `settings.html`) now share one top nav — Home / Race / Question /
+  Settings — replacing each page's own ad hoc back-link
+  (`.back-home`/`.back-link`) and `races.html`'s icon-only shortcuts.
+  Landing-page copy was written for actual F1 fans, not developers — an
+  early draft leaned on repo/dev language ("`./setup.sh`",
+  "`CURRENT-STATUS.md`", "local process") and was rewritten in plain terms
+  after the user flagged it directly; also matched "B站" to "Bilibili" to
+  follow the spelled-out convention the same-day README rewrite (another
+  concurrent session) already settled on. Updated everywhere that
+  hardcoded `/` as "the race list": `backend/watchdog.py`'s alert pushes,
+  `sw.js`'s default notification URL, `worker/src/worker.js`'s
+  offline-fallback "All races" links — all now point at `/races`. New
+  `/video` static mount in `app.py` for the eventual demo clip
+  (`frontend/video/` is gitignored, binary media isn't source —
+  `home.html`'s placeholder checks for the file via a HEAD request and
+  swaps itself out once it exists). The demo video itself isn't made yet —
+  storyboard/shot list at `frontend/demo-video-storyboard.md` (mixes real
+  screen recording, since AI video tools render UI text illegibly, with
+  AI-gen B-roll for the human "watching TV" shot), open questions at its
+  bottom need the user's input before generating anything. README's
+  frontend file table and Quickstart's notification-setup line updated to
+  match the new routes.
 - **2026-08-07** — Ran an Impeccable dual-agent design critique across the
   4 real pages (home/race/chat/settings) — 26/40, "Acceptable." Full
   report at `.impeccable/critique/2026-08-06T07-07-59Z__frontend-

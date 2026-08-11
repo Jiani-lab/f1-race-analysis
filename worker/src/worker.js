@@ -143,7 +143,7 @@ async function renderFallback(env, url) {
     if (!target) {
       return new Response(shellHTML(`
         <div class="banner">⚠ Offline snapshot from ${syncedAt} — this session wasn't in it (never synced, or the ID doesn't match).</div>
-        <a class="back-link" href="/">← All races</a>
+        <a class="back-link" href="/races">← All races</a>
       `), { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
     }
 
@@ -173,7 +173,7 @@ async function renderFallback(env, url) {
           </div>` : `<div class="events-label">No events captured for this session.</div>`}
       </div>
       ${summaryBlock}
-      <a class="back-link" href="/">← All races</a>
+      <a class="back-link" href="/races">← All races</a>
     `, true), { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
   }
 

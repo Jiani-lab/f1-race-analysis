@@ -35,6 +35,7 @@ POLL_INTERVAL_SEC = 90
 # quali, Sunday race) are never merged.
 SESSION_RESUME_GAP_MS = 15 * 60 * 1000
 FRONTEND_HOME = Path(__file__).parent.parent / "frontend" / "home.html"
+FRONTEND_RACES = Path(__file__).parent.parent / "frontend" / "races.html"
 FRONTEND_SETTINGS = Path(__file__).parent.parent / "frontend" / "settings.html"
 FRONTEND_CHAT = Path(__file__).parent.parent / "frontend" / "chat.html"
 FRONTEND_SW = Path(__file__).parent.parent / "frontend" / "sw.js"
@@ -322,6 +323,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="F1 Race Analysis", lifespan=lifespan)
 app.mount("/img", StaticFiles(directory=Path(__file__).parent.parent / "frontend" / "img"), name="img")
+# Serves home.html's demo walkthrough clip once it exists (frontend/video/ is
+# gitignored -- see .gitignore -- so this directory is empty on a fresh
+# clone; home.html's own placeholder covers that, see its inline script).
+app.mount("/video", StaticFiles(directory=Path(__file__).parent.parent / "frontend" / "video"), name="video")
 
 
 def _session_exists(session_id: str) -> bool:
@@ -386,6 +391,11 @@ def _display_info(session_id: str, start_ms: int | None, end_ms: int | None, sta
 @app.get("/")
 def home():
     return FileResponse(FRONTEND_HOME)
+
+
+@app.get("/races")
+def races_list():
+    return FileResponse(FRONTEND_RACES)
 
 
 @app.get("/race")

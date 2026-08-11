@@ -11,12 +11,35 @@ checked — a done item isn't a todo.
   LLM commentary line landing) and drop it into the README hero section —
   this is the single biggest missing piece; a placeholder comment marks
   the spot in `README.md`.
-- [ ] Once `frontend/*.html`'s in-flight rename/restyle (another session,
-  in progress as of this entry) settles, do a final pass for any stray
-  Chinese UI strings — at last check only two tiny fragments existed
-  (`index.html` line ~4, `home.html` "B站"), low priority.
+- [x] ~~Once `frontend/*.html`'s in-flight rename/restyle settles, do a
+  final pass for any stray Chinese UI strings~~ — checked post-rename
+  (2026-08-11): `home.html`'s "B站" swapped for "Bilibili" to match the
+  spelled-out convention README/CURRENT-STATUS.md already settled on;
+  the one remaining fragment, `index.html`'s direction comment quoting
+  real captured commentary audio as evidence for its data claims, is not
+  UI copy and stays as-is.
 - [ ] Confirm MIT is actually the intended license (added 2026-08-11 as
   the trending-repo default) — swap `LICENSE` if not.
+
+## Home page + site nav (2026-08-11)
+
+`/` is now a real landing page (`home.html`); the old race list moved to
+`/races` (`races.html`). All 5 real pages share one top nav. Full picture
+in `CURRENT-STATUS.md`'s "Site navigation" bullet.
+
+- [ ] **Produce the actual demo video** — storyboard/shot list drafted at
+  `frontend/demo-video-storyboard.md` (mix of real screen recording for
+  anything with UI text + AI-gen B-roll via Seedance/LibTV for the
+  "watching TV" human shot). Blocked on the open questions listed at the
+  bottom of that file (real photo of the user as the AI-gen seed or
+  generic, voiceover or silent, which session's data to feature) — needs
+  the user's call, not something to just pick and run with. Drop the
+  finished file at `frontend/video/demo-walkthrough.mp4` (gitignored) —
+  `home.html`'s placeholder swaps out on its own, no code change needed.
+- [ ] The cross-page CSS token consolidation already tracked below (design
+  critique follow-ups) should fold the new `.site-nav` component in too —
+  it's currently duplicated verbatim across all 5 files' own `<style>`
+  blocks, same drift risk as everything else in that TODO.
 
 ## Phase 6c — multi-user portal (f1lightout.com login, see CURRENT-STATUS.md)
 
