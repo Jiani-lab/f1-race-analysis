@@ -1,8 +1,8 @@
 # 🏎️ F1 Race Analysis
 
-**Point it at any live F1 broadcast. It watches the screen, listens to the commentary, and tells you what's actually happening — pit stops, safety cars, lead changes, strategy — in real time, with an LLM doing the explaining.**
+**A real-time multimodal AI agent for F1 — it watches the screen, listens to the broadcast, and reasons about what's happening: pit stops, safety cars, lead changes, strategy — narrated live by an LLM.**
 
-No official timing feed, no scraping a paid API: just dual-stream perception (screen OCR + audio ASR) fed into an LLM analysis pipeline. Built as a test of that methodology first, grew into a tool people actually use to follow races.
+No official timing feed, no scraping a paid API: just a dual-stream perception pipeline (screen OCR + audio ASR) feeding an LLM reasoning loop — detect, perceive, reason, notify. Built as a test of that agentic methodology first, grew into a tool people actually use to follow races.
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](pyproject.toml)
 [![FastAPI](https://img.shields.io/badge/backend-FastAPI-009688)](backend/app.py)
