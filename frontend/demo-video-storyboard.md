@@ -71,15 +71,23 @@ give, since shot 4 (notification) is the actual hero moment.
 
 ## Sound design
 
-Racing BGM, not silent:
+Racing BGM, not silent. Candidates sourced from Pixabay (Content License
+confirmed: free commercial use, no attribution required, fine for this —
+verified against the actual license page, not assumed):
 
-- **Shots 1-3**: engine drone / cars passing, mixed low enough to read as
-  ambient rather than a soundtrack.
-- **Shot 4 (the notification hit)**: the engine sound briefly tightens up
-  right as the banner slides in — same trick broadcasts use to sell an
-  overtake, cueing the viewer that *this* moment matters before they've
-  even read the text.
-- **Shots 5-7**: audio settles down so the streamed text is easy to read.
+- **Bed for shots 1-3** (ambient engine drone, mixed low): [Sounds of
+  Nuerburgring — Engines of classic race cars](https://pixabay.com/sound-effects/search/race-car/)
+  (fjc_media, 2:08 — long enough to cover the whole clip if needed, trim
+  to taste). Preview before committing, same caveat as the stock footage —
+  judged by listing metadata, not by actually listening.
+- **Shot 4 (the notification hit)**: layer in a quick pass-by/accent —
+  [Fast Car Passing Sound](https://pixabay.com/sound-effects/search/race-car/)
+  (moeeza3, 0:08) or [Heavy Race Car Speeding Reverb](https://pixabay.com/sound-effects/search/race-car/)
+  (kalsstockmedia, 0:12) — right as the banner slides in, same trick
+  broadcasts use to sell an overtake, cueing the viewer that *this* moment
+  matters before they've even read the text.
+- **Shots 5-7**: audio settles back down to the ambient bed so the
+  streamed text is easy to read.
 
 **Notification copy for shot 4** — needs the driver name + standings
 position filled in, e.g.:
@@ -140,13 +148,16 @@ the browser viewport, no menu bar/dock).
    shot 3. Either let it settle on the current lap, or navigate to
    `/race?session=race-1785212472206&lap=44` first to land directly on
    the PIA/NOR overcut lap without scrubbing the slider on camera.
-5. **For shot 4 (the notification)**: once you're recording this part,
-   say so — the real `push.send_push()` function can be called directly
-   from the command line with the exact demo copy (`NOR overtakes PIA —
-   hold this position and you move up to P2 in the championship`, url
-   `/race?session=race-1785212472206`), firing a genuine banner on your
-   already-subscribed browser without waiting for a live event to trigger
-   it naturally. No GUI automation needed for this step, just a one-line
+5. **For shot 4 (the notification)**: checked and ready — there's already
+   a live subscription on file (`backend/push_subscription.json`), so this
+   will fire for real the moment you ask, no setup needed first. Once
+   you're recording this part, just say so — the real `push.send_push()`
+   function gets called directly from the command line with the exact
+   demo copy (`NOR overtakes PIA — hold this position and you move up to
+   P2 in the championship`, url `/race?session=race-1785212472206`),
+   firing a genuine banner on your already-subscribed browser without
+   waiting for a live event to trigger it naturally. No GUI automation
+   needed for this step, just a one-line
    script run at the moment you're ready.
 6. **Shot 5-6**: click into Question (top nav), type "what just happened
    with NOR", let the streamed answer play out fully (trim in editing,
