@@ -56,21 +56,31 @@ Already set up and just restarting your machine? Skip `setup.sh` — if `.env` i
 
 ## Architecture
 
-```
-Luci (local-only, loopback)  →  backend/ (FastAPI, one process per person)  →  frontend/ (static HTML/JS, same-origin)
-                                        │
-                                        ├─ push.py  → browser Web Push (VAPID)
-                                        ├─ rag.py   → Voyage embeddings + claude -p
-                                        └─ watchdog.py → alerts if backend/tunnel/sync die
-
-worker/ (Cloudflare Worker, separate sub-project)
-  → reverse-proxies the public site to this machine's tunnel
-  → falls back to a read-only KV snapshot when the machine is offline
-  → for an ended session, can generate a post-race summary via the Anthropic API directly,
-    fully independent of the local `claude -p` pipeline
+```mermaid
+flowchart LR
+    subgraph Local["Your machine"]
+        L["Luci<br/>screen OCR + audio ASR"] --> B["backend/<br/>FastAPI, one process per person"]
+        B --> P["push.py<br/>Web Push (VAPID)"]
+        B --> R["rag.py<br/>Voyage + claude -p"]
+        B --> W["watchdog.py<br/>alerts on crash"]
+        B --> F["frontend/<br/>static HTML/JS"]
+    end
+    subgraph Cloud["worker/ (Cloudflare, separate sub-project)"]
+        CW["Worker"] -->|reverse proxy| Tunnel[("local tunnel")]
+        CW -->|falls back to| KV[("KV snapshot")]
+        CW -->|ended sessions only| CG["cloud_generate.js<br/>Anthropic API direct"]
+    end
+    B -.syncs snapshot.-> KV
 ```
 
 Full up-to-date architecture notes (including a privacy note on what data ever leaves the machine) live in [`CURRENT-STATUS.md`](CURRENT-STATUS.md).
+
+**Why sweep audio broadly instead of just keyword-searching it?** Tested against a real 8-minute commentary window: a narrow list of topic words alone (`进站`/`超车`/pit/overtake/...) caught only a fraction of what was actually said.
+
+| Approach | Coverage (real 8-min test window) |
+|---|---|
+| Topic-keyword search only | ~5 / 60+ segments (~8%) |
+| + common-word sweep (what this project does) | ~60 / 60+ segments (near-complete) |
 
 Key backend modules:
 
