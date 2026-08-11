@@ -8,6 +8,8 @@ No official timing feed, no scraping a paid API: just dual-stream perception (sc
 [![FastAPI](https://img.shields.io/badge/backend-FastAPI-009688)](backend/app.py)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
+Built on [Luci](https://luci.so), the on-device screen/audio memory engine from [memories.ai](https://memories.ai/) — the team NVIDIA partnered with at GTC 2026 (Cosmos Reason 2 + Metropolis) to bring persistent visual memory to robots and wearables.
+
 <!-- TODO: drop a demo GIF or short screen recording here — this is the single highest-leverage thing missing from this README. Record ~15s of a live session: the event timeline populating + an LLM-generated commentary line appearing. -->
 
 ## What it does
