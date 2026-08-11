@@ -5,6 +5,19 @@ ones under the right section (or a new one) as they surface. If something
 here turns out to already be done, delete it rather than leaving it
 checked — a done item isn't a todo.
 
+## README / GitHub discoverability (2026-08-11)
+
+- [ ] Record a real demo GIF/short video (event timeline populating + an
+  LLM commentary line landing) and drop it into the README hero section —
+  this is the single biggest missing piece; a placeholder comment marks
+  the spot in `README.md`.
+- [ ] Once `frontend/*.html`'s in-flight rename/restyle (another session,
+  in progress as of this entry) settles, do a final pass for any stray
+  Chinese UI strings — at last check only two tiny fragments existed
+  (`index.html` line ~4, `home.html` "B站"), low priority.
+- [ ] Confirm MIT is actually the intended license (added 2026-08-11 as
+  the trending-repo default) — swap `LICENSE` if not.
+
 ## Phase 6c — multi-user portal (f1lightout.com login, see CURRENT-STATUS.md)
 
 - [ ] **Blocked on a decision, not on effort**: account mechanism —

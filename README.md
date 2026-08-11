@@ -1,78 +1,97 @@
-# F1 直播双流分析
+# 🏎️ F1 Race Analysis
 
-验证"Luci screen(OCR) + audio(ASR) 双流数据 + LLM 分析"这套方法论的试验田。计划文档：
-`~/.claude/plans/plan-f1-luci-wild-puffin.md`
+**Point it at any live F1 broadcast. It watches the screen, listens to the commentary, and tells you what's actually happening — pit stops, safety cars, lead changes, strategy — in real time, with an LLM doing the explaining.**
 
-## 运行
+No official timing feed, no scraping a paid API: just dual-stream perception (screen OCR + audio ASR) fed into an LLM analysis pipeline. Built as a test of that methodology first, grew into a tool people actually use to follow races.
 
-**首次安装**：先确保 [Luci](https://luci.so)（或你自己的 `screen-memory` MCP）已经装好并在跑，
-打开了 ASR；然后跑：
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](pyproject.toml)
+[![FastAPI](https://img.shields.io/badge/backend-FastAPI-009688)](backend/app.py)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+<!-- TODO: drop a demo GIF or short screen recording here — this is the single highest-leverage thing missing from this README. Record ~15s of a live session: the event timeline populating + an LLM-generated commentary line appearing. -->
+
+## What it does
+
+- **Detects a live race from the screen alone.** No platform integration — if `LAP 12/70` is visible on screen (Bilibili, YouTube, whatever), it's recognized as a live F1 session and recording starts automatically.
+- **Turns raw perception into a real timeline.** Pit stops, safety cars, lead changes, race control notices, team radio — extracted deterministically from screen + audio, then phrased into headlines and insights by an LLM, refreshed every 5 minutes while the race is live.
+- **Answers questions about the race.** A RAG chatbot grounded in that race's own detected events and audio, with a live web-search fallback for general F1 knowledge it doesn't have locally.
+- **Pushes real notifications.** Browser Web Push (VAPID) — grant permission once, get notified for every future race with zero tabs open.
+- **Keeps working when your machine doesn't.** A Cloudflare Worker mirrors the latest state so the public site stays up (read-only) even if the local backend is off.
+
+## Demo
+
+*(video/GIF goes here — see the TODO comment in the README source)*
+
+## Quickstart
+
+You need [Luci](https://luci.so) (screen OCR + audio ASR) running locally, or your own MCP server implementing the same interface (`screen-memory`).
 
 ```bash
 ./setup.sh
 ```
 
-自动装 Python 依赖（`uv sync`）、生成 Web Push 用的 VAPID 密钥对、探测 Luci 是否连得上、引导你
-配置 RAG chatbot 的 Voyage key（可选，跳过也能用，只是 chatbot 会退化成纯联网搜索）。装不了的
-那几步（Luci 本体、Voyage 账号注册、浏览器通知权限）脚本会打印清楚下一步该做什么，不会假装帮
-你做了。具体每个变量是什么、为什么有些能自动填有些不能，见 [`.env.example`](.env.example)。
+This installs Python dependencies (`uv sync`), generates a VAPID keypair for push notifications, checks that Luci is reachable, and walks you through the optional Voyage API key (RAG chat degrades gracefully to web-search-only without it). Anything the script can't do for you — installing Luci itself, registering for Voyage, granting browser notification permission — it prints clear next steps for instead of pretending it handled it. See [`.env.example`](.env.example) for what each variable does.
 
-跑完脚本会提示你启动命令：
+Then start the server:
 
 ```bash
 uv run uvicorn app:app --app-dir backend --reload --port 8800
 ```
 
-打开 http://127.0.0.1:8800 ，首页有个「开启比赛提醒」按钮，点一下授权浏览器通知（只需要做一次，
-之后每场比赛都会自动推送，不用再开着标签页）。
+Open http://127.0.0.1:8800, hit "Enable race alerts" once, and you're done — every future race gets detected and pushed automatically.
 
-**已经装过、只是重开电脑/换目录**：`.env` 还在的话直接跑启动命令就行，不用重新走 `setup.sh`。
+Already set up and just restarting your machine? Skip `setup.sh` — if `.env` is still there, the run command above is all you need.
 
-后台每 90 秒检测一次画面里是否出现 `LAP n/70` 格式文字（不限定平台，B站/YouTube 等转播源都认），
-检测到自动开始录 session；结束时手动点网站上的「结束本场」。
+## Architecture
 
-## 目录
+```
+Luci (local-only, loopback)  →  backend/ (FastAPI, one process per person)  →  frontend/ (static HTML/JS, same-origin)
+                                        │
+                                        ├─ push.py  → browser Web Push (VAPID)
+                                        ├─ rag.py   → Voyage embeddings + claude -p
+                                        └─ watchdog.py → alerts if backend/tunnel/sync die
 
-后端（`backend/`，FastAPI，一人一进程，无多租户/无鉴权，见 [`CURRENT-STATUS.md`](CURRENT-STATUS.md)）：
+worker/ (Cloudflare Worker, separate sub-project)
+  → reverse-proxies the public site to this machine's tunnel
+  → falls back to a read-only KV snapshot when the machine is offline
+  → for an ended session, can generate a post-race summary via the Anthropic API directly,
+    fully independent of the local `claude -p` pipeline
+```
 
-- `mcp_client.py` — 直连 Luci MCP HTTP 端点的最小 JSON-RPC 客户端
-- `detect.py` — 直播检测逻辑（画面里认 `LAP n/70` 格式文字，不限定转播平台）
-- `retrieval.py` — 确定性抓取：分块拉 vision（`aggregate_range`），关键词扫 audio
-  （`audio_transcript_search`），合并成按时间排序的 JSONL，外加从 vision 文本里抽取的
-  圈速/差距数值序列
-- `analysis.py` — 调 `claude -p`（headless）生成事件短评/赛后总结/What-if 等，事件每
-  5 分钟刷新一次；RAG 聊天走独立的流式后台任务（`start_chat_run`），支持断线重连续播
-- `app.py` — FastAPI 入口，含内置后台检测轮询任务（不依赖 openclaw / 云端 cron）
-- `push.py` — 真实浏览器推送（VAPID + Service Worker），零标签页也能收到通知
-- `rag.py` — 赛事问答的检索增强层：Voyage embeddings 建索引 + `claude -p` 兜底联网搜索
-- `sync_snapshot.py` — 把最新状态同步到 Cloudflare KV，供 `worker/` 的离线兜底页使用
-- `watchdog.py` — 独立跑的看门狗，backend/隧道/同步任一挂了就推送报警
-- `tests/` — pytest（`uv run pytest`），覆盖日历自动命名、断线去重、事件选手归属这几处
-  查出过真 bug 的纯逻辑
+Full up-to-date architecture notes (including a privacy note on what data ever leaves the machine) live in [`CURRENT-STATUS.md`](CURRENT-STATUS.md).
 
-前端（`frontend/`，静态 HTML/JS，同源；`module-*.html`/`chat-mockup-*.html`/
-`design-directions.html` 是设计预览稿，不是站点本体）：
+Key backend modules:
 
-- `home.html` — 首页，比赛列表 + 直播状态
-- `index.html` — 单场比赛页，状态条 + 补看输入框 + 总结/What-if + 可点击时间轴 + 图表
-- `chat.html` — RAG 聊天独立页
-- `settings.html` — 通知偏好设置
+| File | Role |
+|---|---|
+| `mcp_client.py` | Minimal JSON-RPC client for Luci's MCP HTTP endpoint |
+| `detect.py` | Live-broadcast detection (`LAP n/70`-style on-screen text, platform-agnostic) |
+| `retrieval.py` | Deterministic capture: chunked vision pulls, keyword audio sweeps, merged into a time-sorted JSONL, plus lap-time/gap extraction |
+| `analysis.py` | Calls `claude -p` (headless) for event commentary / post-race summaries / what-ifs; streaming RAG chat with reconnect support |
+| `app.py` | FastAPI entrypoint with a built-in background detection loop (no external cron needed) |
+| `push.py` | Real browser push (VAPID + Service Worker) — works with zero tabs open |
+| `rag.py` | Retrieval layer for race Q&A: Voyage embeddings + `claude -p` web-search fallback |
+| `sync_snapshot.py` | Syncs the latest state to Cloudflare KV for the offline-fallback page |
+| `watchdog.py` | Independent process that pushes an alert if the backend/tunnel/sync loop dies |
+| `tests/` | pytest (`uv run pytest`) — covers the pure-logic pieces that have had real bugs |
 
-其他：
+Frontend (`frontend/`, static HTML/JS, same-origin — `module-*.html` / `chat-mockup-*.html` / `design-directions.html` are design-exploration previews, not the live site):
 
-- `worker/` — 独立的 Cloudflare Worker 子项目，把 f1lightout.com 反代到本机隧道，本机离线
-  时改用 `sync_snapshot.py` 同步过去的 KV 快照兜底（详见 `CURRENT-STATUS.md` 架构图）
-- `setup.sh` — 一键装依赖/生成 VAPID 密钥/探测 Luci 连通性/引导配置 Voyage key
+- `home.html` — race list + live status
+- `index.html` — single-race page: status bar, catch-up input, summary/what-if, clickable timeline, charts
+- `chat.html` — standalone RAG chat page
+- `settings.html` — notification preferences
 
-## 已知限制
+## Known limitations
 
-（完整、随时更新的版本见 [`CURRENT-STATUS.md`](CURRENT-STATUS.md) 的「Known constraints」——
-这里只列几条最容易踩的坑）
+Full, continuously-updated version in [`CURRENT-STATUS.md`](CURRENT-STATUS.md)'s "Known constraints" — the short version:
 
-- 一个后端进程只有一份全局 `state`，同一时间只能追踪一场比赛，也没有多用户概念——每个人
-  跑自己的一整套本地服务（`./setup.sh`），不是共享一个服务器
-- `backend/` 所有接口都不带鉴权，默认只信任本机访问
-- Luci 的 `app` 字段经常是 null 不可靠，检测/事件逻辑全靠画面 OCR 文字，不依赖它
-- 胎况色块图标识别（多模态兜底）还没写，目前靠 audio + 平台字幕覆盖，真的需要时再补
-- 多用户 portal（让朋友登录网站看自己的比赛，不用自己搭一整套）还只是设计，没开始写，
-  卡在账号机制怎么选，见 [`TODO.md`](TODO.md)
+- One backend process = one global `state` = one race tracked at a time, no multi-tenancy. Everyone runs their own local stack (`./setup.sh`); this isn't a shared server.
+- No auth on any `backend/` endpoint — it trusts local access only, by design.
+- Luci's `app` field is unreliable (often null), so detection/event logic depends entirely on on-screen OCR text, never on it.
+- Tire-compound icon recognition isn't implemented yet — currently relies on audio + on-screen captions instead.
+- A multi-user portal (so a friend can log in and see their own races without running the whole stack themselves) is designed but not built — see [`TODO.md`](TODO.md).
+
+## License
+
+[MIT](LICENSE)

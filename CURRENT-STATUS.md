@@ -10,7 +10,7 @@ change; don't append to it.
 
 A live F1 race dashboard, built as a personal test of "screen (Luci OCR) +
 audio (Luci ASR) + LLM analysis" as a methodology, that grew into a real
-tool: point it at a live broadcast (any platform — B站, YouTube, etc.,
+tool: point it at a live broadcast (any platform — Bilibili, YouTube, etc.,
 detection isn't platform-locked) and it detects the race, extracts events
 and strategy data in real time, answers questions about what happened, and
 pushes personalized notifications.

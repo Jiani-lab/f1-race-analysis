@@ -9,6 +9,26 @@ session under one dated bullet where it makes sense.
 
 ---
 
+- **2026-08-11** — README rewritten in English for public/star-facing appeal
+  (was Chinese-only, pure install-manual style with no hook/demo section) —
+  requested by the user after asking how to get GitHub traction, following a
+  quick scan of what trending repos' READMEs actually look like (tagline +
+  badges first, demo media near the top, feature bullets, then quickstart).
+  Added a demo-GIF placeholder (`<!-- TODO -->` in the README source, real
+  media still needed — highest-leverage thing left to do), an MIT `LICENSE`
+  (trending repos near-universally have one; flag to the user if a
+  different license is actually wanted), and set the GitHub repo
+  description/topics (both were empty, cheap free discoverability). Also
+  fixed `pyproject.toml`'s placeholder `description` field and one stray
+  "B站" → "Bilibili" in `CURRENT-STATUS.md`. Deliberately did **not** touch:
+  `frontend/*.html` and `backend/{app,watchdog}.py` (another session had
+  uncommitted changes on all of them at the time — see AGENTS.md rule on not
+  bundling another session's in-progress work); `backend/retrieval.py`'s
+  Chinese strings (`AUDIO_SWEEP_WORDS`/`AUDIO_TOPIC_WORDS`) — those are
+  functional keyword lists matched against real Chinese-language commentary
+  audio, not translatable text, translating them would break audio
+  detection; `PROGRESS.md`'s own older entries — historical log, left as an
+  accurate record of what things were literally called at the time.
 - **2026-08-07** — Ran an Impeccable dual-agent design critique across the
   4 real pages (home/race/chat/settings) — 26/40, "Acceptable." Full
   report at `.impeccable/critique/2026-08-06T07-07-59Z__frontend-

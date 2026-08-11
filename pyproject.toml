@@ -1,7 +1,7 @@
 [project]
 name = "f1-race-analysis"
 version = "0.1.0"
-description = "Add your description here"
+description = "Real-time F1 race analysis from dual-stream screen OCR + audio ASR, narrated by an LLM"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.140.7",
