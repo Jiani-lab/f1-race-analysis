@@ -95,18 +95,60 @@ as a genuine stakes-raiser for the demo.
 
 ## Practical steps
 
-1. Source the stock clip(s) for shots 1/1b — a licensed
-   couple-watching-a-laptop-at-night clip, confirm the license actually
-   covers this use (a public site's marketing page) before buying/using.
-2. Load the Hungarian GP session (`race-1785212472206`) on `/race`, use
-   the replay slider to land on the PIA/NOR overcut moment.
-3. Screen-record shots 2, 3, 4, 5, 6 at native resolution, no browser
-   chrome — keep the real UI as the only thing on screen. Shot 2 needs the
-   onboarding overlay actually triggered (it's a one-time flow, check
-   `index.html` for how to re-trigger it for the recording).
-4. Source or build the racing-ambience BGM bed (see "Sound design").
-5. Cut together in CapCut/iMovie: shots 2-6 as full-screen layers with a
-   trim of the stock clip composited as a corner PiP, 1920x1080, h264 mp4.
-6. Export as `demo-walkthrough.mp4`, drop into `frontend/video/` (already
+1. Source the stock clip(s) for shots 1/1b — candidates found:
+   [couch/laptop, cozy](https://www.pexels.com/video/a-couple-sitting-on-a-couch-while-having-fun-watching-at-a-laptop-5657782/)
+   for shot 1, [excited reaction](https://www.pexels.com/video/great-news-27155332/)
+   for shot 1b (daytime-lit — may need a color grade to match shot 1's
+   warmer tone). Pexels License confirmed OK for this use (website B-roll,
+   not implying the people endorse the product) — preview both before
+   committing, description-only judgment isn't a substitute for watching
+   them.
+2. Screen-record shots 2-6 — see "Recording checklist" below for the
+   exact steps, in order, including how to fire a real test notification
+   for shot 4 without waiting for a live race.
+3. Source or build the racing-ambience BGM bed (see "Sound design").
+4. Cut together: shots 2-6 as full-screen layers with a trim of the stock
+   clip composited as a corner PiP, 1920x1080, h264 mp4 — ask for help
+   scripting this with `ffmpeg` once the raw clips exist, no CapCut/
+   iMovie required if you'd rather not do it by hand.
+5. Export as `demo-walkthrough.mp4`, drop into `frontend/video/` (already
    gitignored — the file itself doesn't need to go into git, it's binary
    media, not source).
+
+## Recording checklist (shots 2-6)
+
+Do these in order, in one browser window, screen recording running the
+whole time (macOS: `Cmd+Shift+5` → "Record Selected Portion", crop to just
+the browser viewport, no menu bar/dock).
+
+1. **Reset shot 2's trigger condition.** The pre-race survey only shows
+   once per session per browser — open devtools console on any page of
+   the site and run:
+   ```js
+   localStorage.removeItem('f1-fav-driver');
+   localStorage.removeItem('f1-interest-race-1785212472206');
+   localStorage.removeItem('f1-onboard-skipped-race-1785212472206');
+   ```
+2. **Make sure notifications are already enabled** (Settings page → the
+   one-time "Enable notifications" flow) *before* you start recording —
+   that permission dialog is a real one-time browser prompt, doesn't need
+   to be in the final cut.
+3. **Start recording. Navigate to** `/race?session=race-1785212472206` —
+   the survey overlay should appear immediately (shot 2). Pick a driver,
+   click through the interest question.
+4. **Once the overlay closes**, the dashboard is on screen — this is
+   shot 3. Either let it settle on the current lap, or navigate to
+   `/race?session=race-1785212472206&lap=44` first to land directly on
+   the PIA/NOR overcut lap without scrubbing the slider on camera.
+5. **For shot 4 (the notification)**: once you're recording this part,
+   say so — the real `push.send_push()` function can be called directly
+   from the command line with the exact demo copy (`NOR overtakes PIA —
+   hold this position and you move up to P2 in the championship`, url
+   `/race?session=race-1785212472206`), firing a genuine banner on your
+   already-subscribed browser without waiting for a live event to trigger
+   it naturally. No GUI automation needed for this step, just a one-line
+   script run at the moment you're ready.
+6. **Shot 5-6**: click into Question (top nav), type "what just happened
+   with NOR", let the streamed answer play out fully (trim in editing,
+   don't cut the recording short — a cut-off stream reads as broken).
+7. Stop recording once the answer finishes.
