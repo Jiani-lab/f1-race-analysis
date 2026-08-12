@@ -27,15 +27,29 @@ checked — a done item isn't a todo.
 `/races` (`races.html`). All 5 real pages share one top nav. Full picture
 in `CURRENT-STATUS.md`'s "Site navigation" bullet.
 
-- [ ] **Produce the actual demo video** — storyboard/shot list drafted at
-  `frontend/demo-video-storyboard.md` (mix of real screen recording for
-  anything with UI text + AI-gen B-roll via Seedance/LibTV for the
-  "watching TV" human shot). Blocked on the open questions listed at the
-  bottom of that file (real photo of the user as the AI-gen seed or
-  generic, voiceover or silent, which session's data to feature) — needs
-  the user's call, not something to just pick and run with. Drop the
-  finished file at `frontend/video/demo-walkthrough.mp4` (gitignored) —
-  `home.html`'s placeholder swaps out on its own, no code change needed.
+- [ ] **Produce the actual demo video** — plan finalized and mostly
+  captured, see `frontend/demo-video-storyboard.md`'s "Capture status".
+  Shots 2/3/5/6 (real UI: survey, event feed, question, streamed answer)
+  are captured for real via Playwright, raw clips at
+  `frontend/video/_raw/` (gitignored). Still needed: shot 4 (the desktop
+  notification banner — has to be real screen recording on the user's own
+  browser, OS-level UI can't be captured by an isolated automation
+  instance), the two Pexels stock clips for shots 1/1b (links in the
+  storyboard, needs a real browser click to download), the BGM bed, and
+  the final cut/composite. Drop the finished file at
+  `frontend/video/demo-walkthrough.mp4` (gitignored) — `home.html`'s
+  placeholder swaps out on its own, no code change needed.
+- [ ] **Status-note text shows the wrong session's ID on `/race`** — found
+  while capturing the demo video (2026-08-12): `index.html`'s status-note
+  (the small grey "session race-xxxxx" text) renders `s.session_id` from
+  `/session/status`, which reflects the *backend's global live-tracking
+  state* (whichever session it last auto-resumed on startup), not the
+  page's own `SESSION_ID` from the URL. Cosmetic today (everything else on
+  the page — title, events, battles — correctly follows the URL's
+  session), but worth fixing so the note never shows an unrelated
+  session's ID; either scope that fetch to `SESSION_ID` or suppress the
+  note when they don't match instead of silently showing the mismatched
+  one.
 - [ ] The cross-page CSS token consolidation already tracked below (design
   critique follow-ups) should fold the new `.site-nav` component in too —
   it's currently duplicated verbatim across all 5 files' own `<style>`

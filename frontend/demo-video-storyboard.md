@@ -1,6 +1,7 @@
 # Home page demo video — storyboard draft
 
-**Status: approved (2026-08-11) — production can start.** Fully settled,
+**Status: approved (2026-08-11) — production in progress.** Shots 2, 3,
+5, 6 are captured for real (see "Capture status" below). Fully settled,
 including the source for shots 1/1b (licensed stock footage — see below).
 
 Target: a **~18-20s** clip embedded in `home.html`'s `#demo` section
@@ -9,9 +10,13 @@ out automatically — see that file's inline script). Cut for attention span,
 not for a walkthrough — this is a teaser, not a tutorial.
 
 **Locked in:** Hungarian GP footage (`race-1785212472206` under
-`backend/sessions/` — the real PIA/NOR overcut session already referenced
-in `index.html`'s own direction comment and `CURRENT-STATUS.md`) for every
-real-screen-recording shot below.
+`backend/sessions/`, the real Norris/Piastri battle already referenced in
+`index.html`'s own direction comment and `CURRENT-STATUS.md`) for every
+real-screen-recording shot below. **The exact moment was corrected while
+capturing** — checked the real events directly (`curl /session/events`)
+rather than trust the earlier "around lap 40-44" guess: the actual
+overtake is "Norris takes the race lead from Piastri on lap 36" (leader
+change confirmed lap 37). Shot 3 uses `?lap=37` accordingly, not 44.
 
 ## The core call: real screen recording + licensed stock footage
 
@@ -59,7 +64,7 @@ screen recording) layered in the edit.
 | 1 | Establishing: two people close together, a laptop screen glowing between them, warm room light, one leaning in | Licensed stock footage | 2.5s | Pick a clip where the laptop screen content isn't legible/prominent — it's not meant to show real UI, just the mood |
 | 1b | Reaction moment: same clip (or a second clip from the same library/scene), a beat of them reacting — leaning in further, a smile, a point at the screen — trimmed into a short loop, reused as the PiP source for shots 2-6 | Licensed stock footage | 5-6s source, trimmed as needed | One stock clip, reused throughout rather than sourcing 5 separate reaction shots |
 | 2 | Full-screen: the pre-race survey overlay (driver picker → "what are you most interested in?") + reaction PiP corner | Real recording + PiP | 2s | Quick flash — just long enough to register it's a real, personal setup step |
-| 3 | Full-screen: dashboard event feed on `/race`, landing on the PIA/NOR overcut moment + reaction PiP | Real recording, Hungarian GP session + PiP | 3s | The genuinely dramatic real event in this data |
+| 3 | Full-screen: dashboard event feed on `/race`, landing on lap 37 (Norris just took the lead from Piastri) + reaction PiP | Real recording, Hungarian GP session + PiP | 3s | The genuinely dramatic real event in this data |
 | 4 | Full-screen: macOS-style notification banner slides in with real copy (see below) + reaction PiP, held slightly longer as this is the hero beat | Real recording + PiP | 3.5s | Visibly a desktop/browser notification on the same screen as the stream — not a phone |
 | 5 | Full-screen: click into Question, type "what just happened with NOR" + reaction PiP | Real recording + PiP | 2s | Sped up slightly if needed to hit the time budget |
 | 6 | Full-screen: streamed answer appearing token-by-token + reaction PiP | Real recording + PiP | 2.5s | The streaming itself is worth the half-second it costs |
@@ -101,65 +106,69 @@ already instructed to connect events to championship-standings stakes
 when relevant — this is just picking a driver/position combo that reads
 as a genuine stakes-raiser for the demo.
 
+## Capture status
+
+Shots 2, 3, 5, 6 are captured — for real, not mocked up. Automated via
+Playwright driving a real headless Chromium against the actual running
+dev server (`localhost:8800`), recording the browser viewport directly
+(Playwright's own video capture, not OS screen recording — this is why it
+needed no macOS Screen Recording permission and doesn't touch your real
+browser/profile at all):
+
+| Shot | File | Real duration | What's on screen |
+|---|---|---|---|
+| 2 (survey) | `out/shot2-survey/*.webm` | 7.96s | The real onboarding overlay, driver picker → interest question, both actually clicked through |
+| 3 (event feed) | `out/shot3-eventfeed/*.webm` | 26s (mostly load/settle time, trims down easily) | `/race?session=race-1785212472206&lap=37` — Norris shown P1, "Lead is growing," right after the real lap-36 overtake |
+| 5-6 (question+answer) | `out/shot5-6-question/*.webm` | 55.6s (full untrimmed stream) | Typed "what just happened with NOR" into the real Question page, waited for the real streamed answer to finish |
+
+All three verified by extracting preview frames and actually looking at
+them (not just checking the files aren't empty) — nav bar renders
+correctly and shows the right active tab in every one. One cosmetic,
+pre-existing quirk noticed along the way, not something this work
+introduced: the small grey "session race-xxxxx" status-note text in the
+status row reflects the *backend's global live-tracking state*
+(`state.session_id` — whatever session it last auto-resumed on startup),
+not the `?session=` you're actually viewing, so it can show a different
+ID than the page's real content when they don't happen to match. Everything
+else on the page (title, lap counter, events, battles) correctly reflects
+the URL's session. Worth a real fix at some point (TODO'd separately,
+harmless for this video — that text is tiny and easy to crop/ignore).
+
+These raw clips live in this session's scratch directory, not the repo —
+say the word and they can be copied into `frontend/video/_raw/` (gitignored,
+same as the final export) so they survive past this conversation.
+
+**Still not captured — genuinely can't be, from here:**
+
+- **Shot 4 (the notification banner)**: Web Push notifications render at
+  the OS level, outside any page's DOM — Playwright's viewport recording
+  fundamentally cannot show them, and the real subscription in
+  `push_subscription.json` is bound to *your actual browser profile*, not
+  an isolated automation instance. This one has to be real screen
+  recording on your actual machine, in your actual browser, while it's
+  actually subscribed. Tell me when you're rolling and I'll fire the real
+  `push.send_push()` call the moment you need it — copy still: `NOR
+  overtakes PIA — hold this position and you move up to P2 in the
+  championship`.
+- **Shots 1/1b (the human moment)**: still just the two Pexels links
+  above — no tool here can generate or fetch that footage automatically
+  (checked Pexels' direct CDN links too, page is JS-rendered + bot-guarded,
+  no scrape shortcut). Downloading needs a real browser click on the
+  Pexels page.
+
 ## Practical steps
 
-1. Source the stock clip(s) for shots 1/1b — candidates found:
-   [couch/laptop, cozy](https://www.pexels.com/video/a-couple-sitting-on-a-couch-while-having-fun-watching-at-a-laptop-5657782/)
-   for shot 1, [excited reaction](https://www.pexels.com/video/great-news-27155332/)
-   for shot 1b (daytime-lit — may need a color grade to match shot 1's
-   warmer tone). Pexels License confirmed OK for this use (website B-roll,
-   not implying the people endorse the product) — preview both before
-   committing, description-only judgment isn't a substitute for watching
-   them.
-2. Screen-record shots 2-6 — see "Recording checklist" below for the
-   exact steps, in order, including how to fire a real test notification
-   for shot 4 without waiting for a live race.
+1. Preview and download the stock clip(s) for shots 1/1b (links above) —
+   confirm the mood/lighting actually work before committing.
+2. Do the shot-4 screen recording (see "Still not captured" above) — say
+   when you're ready and the real notification fires on cue.
 3. Source or build the racing-ambience BGM bed (see "Sound design").
-4. Cut together: shots 2-6 as full-screen layers with a trim of the stock
-   clip composited as a corner PiP, 1920x1080, h264 mp4 — ask for help
-   scripting this with `ffmpeg` once the raw clips exist, no CapCut/
-   iMovie required if you'd rather not do it by hand.
+4. Cut together: shots 2-6 (already captured) as full-screen layers with
+   a trim of the stock clip composited as a corner PiP, 1920x1080, h264
+   mp4 — ask for help scripting this with `ffmpeg` once shot 4 and the
+   stock clips are in hand, no CapCut/iMovie required if you'd rather not
+   do it by hand.
 5. Export as `demo-walkthrough.mp4`, drop into `frontend/video/` (already
    gitignored — the file itself doesn't need to go into git, it's binary
    media, not source).
-
-## Recording checklist (shots 2-6)
-
-Do these in order, in one browser window, screen recording running the
-whole time (macOS: `Cmd+Shift+5` → "Record Selected Portion", crop to just
-the browser viewport, no menu bar/dock).
-
-1. **Reset shot 2's trigger condition.** The pre-race survey only shows
-   once per session per browser — open devtools console on any page of
-   the site and run:
-   ```js
-   localStorage.removeItem('f1-fav-driver');
-   localStorage.removeItem('f1-interest-race-1785212472206');
-   localStorage.removeItem('f1-onboard-skipped-race-1785212472206');
-   ```
-2. **Make sure notifications are already enabled** (Settings page → the
-   one-time "Enable notifications" flow) *before* you start recording —
-   that permission dialog is a real one-time browser prompt, doesn't need
-   to be in the final cut.
-3. **Start recording. Navigate to** `/race?session=race-1785212472206` —
-   the survey overlay should appear immediately (shot 2). Pick a driver,
-   click through the interest question.
-4. **Once the overlay closes**, the dashboard is on screen — this is
-   shot 3. Either let it settle on the current lap, or navigate to
-   `/race?session=race-1785212472206&lap=44` first to land directly on
-   the PIA/NOR overcut lap without scrubbing the slider on camera.
-5. **For shot 4 (the notification)**: checked and ready — there's already
-   a live subscription on file (`backend/push_subscription.json`), so this
-   will fire for real the moment you ask, no setup needed first. Once
-   you're recording this part, just say so — the real `push.send_push()`
-   function gets called directly from the command line with the exact
-   demo copy (`NOR overtakes PIA — hold this position and you move up to
-   P2 in the championship`, url `/race?session=race-1785212472206`),
-   firing a genuine banner on your already-subscribed browser without
-   waiting for a live event to trigger it naturally. No GUI automation
-   needed for this step, just a one-line
-   script run at the moment you're ready.
-6. **Shot 5-6**: click into Question (top nav), type "what just happened
-   with NOR", let the streamed answer play out fully (trim in editing,
-   don't cut the recording short — a cut-off stream reads as broken).
 7. Stop recording once the answer finishes.
